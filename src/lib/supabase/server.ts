@@ -1,13 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "@/lib/database.types";
+import { supabaseAnonKey, supabaseUrl } from "./env";
 
 export async function createClient() {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl(),
+    supabaseAnonKey(),
     {
       cookies: {
         getAll() {
@@ -40,12 +41,8 @@ export function createAdminClient() {
     throw new Error("Chybí SUPABASE_SERVICE_ROLE_KEY.");
   }
 
-  return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    key,
-    {
-      cookies: { getAll: () => [], setAll: () => {} },
-      auth: { persistSession: false, autoRefreshToken: false },
-    },
-  );
+  return createServerClient<Database>(supabaseUrl(), key, {
+    cookies: { getAll: () => [], setAll: () => {} },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 }
