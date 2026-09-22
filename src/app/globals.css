@@ -1,26 +1,80 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+  Paleta: tyrkysová #5FC3CE, žlutá #FFF0A6, černá #171717, bílá #FFFFFF.
+  Odvozené odstíny slouží jen k podkladům a okrajům, samotná paleta zůstává čistá.
+*/
+@theme {
+  --color-turquoise-50: #f0fafb;
+  --color-turquoise-100: #dff4f6;
+  --color-turquoise-200: #bfe9ed;
+  --color-turquoise-300: #8fd8e0;
+  --color-turquoise: #5fc3ce;
+  --color-turquoise-600: #3da5b1;
+  --color-turquoise-700: #2d7d87;
+
+  --color-sun-100: #fffbe0;
+  --color-sun: #fff0a6;
+  --color-sun-600: #d6c25a;
+  --color-sun-700: #8a7b21;
+
+  --color-ink: #171717;
+  --color-ink-600: #5c5c5e;
+  --color-ink-500: #8a8a8e;
+  --color-ink-400: #aeaeb2;
+
+  /* iOS „grouped" pozadí a oddělovače */
+  --color-canvas: #f2f2f7;
+  --color-surface: #ffffff;
+  --color-hairline: #e5e5ea;
+
+  --color-danger: #d9544d;
+
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+
+  /* iOS poloměry: karty 16, listy 20, sheet 28 */
+  --radius-card: 1rem;
+  --radius-group: 1.25rem;
+  --radius-sheet: 1.75rem;
+
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  /* iOS: nechceme gumové přetažení celé stránky pod tab barem */
+  overscroll-behavior-y: none;
+}
+
+/* Bezpečné zóny pro iPhone s home indicatorem */
+@utility pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+}
+@utility pt-safe {
+  padding-top: max(env(safe-area-inset-top), 0.5rem);
+}
+
+/* Zvětšení na iOS při fokusu inputu nastane pod 16px — nikdy nejdeme níž. */
+input,
+textarea,
+select {
+  font-size: max(1rem, 16px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

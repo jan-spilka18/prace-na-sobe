@@ -1,36 +1,213 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Práce na sobě
 
-## Getting Started
+Platforma pro koučovací programy Honzy Spilky. Klient si odškrtává denní návyky
+a čte zápisy ze sezení, kouč vidí všechny klienty, dostává ranní souhrn a má
+soukromý prostor na přípravy a poznámky.
 
-First, run the development server:
+Celé rozhraní je česky, časové pásmo Europe/Prague.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Stav
+
+Hotová je **etapa 1**: projekt, databáze, přihlášení, role a zakládání klientů
+v adminu. Zbytek se staví v tomhle pořadí:
+
+| Etapa | Obsah | Stav |
+|---|---|---|
+| 1 | Projekt, Supabase, přihlášení, role, založení klienta | hotovo |
+| 2 | 90denní výzva: typy návyků, zpětné vyplňování, poznámky | připravuje se |
+| 3 | PWA, web push, připomínky návyků | |
+| 4 | Ranní vyhodnocení v 8:00: push, e-mail, vzorce | |
+| 5 | Zápisy ze sezení a zpětná vazba klienta | |
+| 6 | Admin: přípravy, soukromé poznámky, odkazy | |
+
+Databázové schéma je hotové pro všechny etapy najednou, takže se k němu
+nebudeme vracet. Chybí jen obrazovky.
+
+## Technologie
+
+- **Next.js 16** (App Router) + TypeScript, hosting na Vercelu
+- **Supabase** — Postgres, Auth, Row Level Security
+- **Tailwind 4** — vzhled vychází z palety níž
+
+## Název aplikace
+
+Je na jednom místě: `src/lib/config.ts`.
+
+```ts
+export const APP_NAME = "Práce na sobě";
+export const APP_SHORT_NAME = "Na sobě";   // pod ikonou v telefonu
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ve stejném souboru jsou i výchozí délka programu, uzávěrka dne a časové pásmo.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Paleta
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Barva | Kód | Kde |
+|---|---|---|
+| Tyrkysová | `#5FC3CE` | hlavní tlačítka, aktivní stavy, karta dne |
+| Žlutá | `#FFF0A6` | zvýraznění, série splněných dní |
+| Černá | `#171717` | texty |
+| Bílá | `#FFFFFF` | karty a seznamy |
 
-## Learn More
+Definované jsou v `src/app/globals.css` v bloku `@theme`. Odvozené odstíny
+(`turquoise-100`, `ink-600`) slouží jen k podkladům a okrajům.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Nasazení krok za krokem
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Potřebuješ účet na **Supabase** (databáze) a na **Vercelu** (hosting). Oboje
+zdarma na začátek, viz poznámka o tarifech na konci.
 
-## Deploy on Vercel
+## 1. Založ projekt v Supabase
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Na `supabase.com` klikni **New project**.
+2. Jméno třeba `prace-na-sobe`, region **Frankfurt** (nejblíž Česku).
+3. Zvol silné databázové heslo a ulož si ho.
+4. Počkej, než se projekt vytvoří — trvá to asi dvě minuty.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 2. Pusť migrace
+
+1. V projektu otevři **SQL Editor**.
+2. Otevři soubory ze složky `supabase/migrations/` **v pořadí podle čísla**
+   a obsah každého vlož do editoru a spusť tlačítkem **Run**:
+   - `0001_identity_and_programs.sql`
+   - `0002_habits.sql`
+   - `0003_sessions_and_private_notes.sql`
+   - `0004_notifications.sql`
+3. Každá musí skončit hláškou **Success**. Kdyby některá spadla, nepouštěj
+   další a napiš mi, co hlásí.
+
+## 3. Vypni veřejnou registraci
+
+Tohle je důležité. Bez toho si účet může založit kdokoli, i když v aplikaci
+žádný registrační formulář není.
+
+**Authentication → Sign In / Providers → Email** a vypni **Allow new users to
+sign up**. Účty od téhle chvíle zakládáš jen ty z adminu.
+
+## 4. Vytvoř si vlastní admin účet
+
+1. **Authentication → Users → Add user → Create new user**.
+2. Vyplň svůj e-mail a heslo, zaškrtni **Auto Confirm User**.
+3. Jdi do **SQL Editoru** a spusť (svůj e-mail si doplň):
+
+```sql
+update public.profiles
+set role = 'admin', full_name = 'Honza'
+where email = 'tvuj@email.cz';
+```
+
+Bez tohohle kroku by ses přihlásil jako klient a admina bys neviděl.
+
+## 5. Opiš si klíče
+
+**Project Settings → API Keys**. Budeš potřebovat tři hodnoty:
+
+| Kde v Supabase | Do čeho |
+|---|---|
+| Project URL | `NEXT_PUBLIC_SUPABASE_URL` |
+| `anon` `public` klíč | `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
+| `service_role` `secret` klíč | `SUPABASE_SERVICE_ROLE_KEY` |
+
+**Servisní klíč obchází všechna bezpečnostní pravidla.** Patří jen do
+nastavení Vercelu, nikdy do gitu, nikdy do zprávy a nikdy do prohlížeče.
+
+## 6. Nahraj projekt na GitHub
+
+Repozitář ať je **privátní** — jde o data z osobního rozvoje.
+
+## 7. Nasaď na Vercel
+
+1. Na `vercel.com` se přihlas přes GitHub.
+2. **Add New → Project**, vyber repozitář, dej **Import**.
+3. Ještě před nasazením rozbal **Environment Variables** a přidej všechny tři
+   hodnoty z kroku 5.
+4. **Deploy**. Za minutu dostaneš adresu typu `https://neco.vercel.app`.
+
+## 8. Vyzkoušej to
+
+1. Otevři adresu, přihlas se svým admin účtem.
+2. Měl bys vidět obrazovku **Klienti**.
+3. **Nový klient** → vyplň jméno, e-mail a začátek programu.
+4. Aplikace ti ukáže vygenerované heslo. **Zobrazí se jen jednou** — zkopíruj
+   si ho hned. Kdyby se ztratilo, v detailu klienta vygeneruješ nové.
+5. Odhlas se a zkus se přihlásit jako ten klient. Měl bys vidět kartu
+   „Den X z 90" a nic z admina.
+
+## Zkouška na telefonu
+
+Adresu z Vercelu otevři v mobilu. Zatím se chová jako běžná stránka —
+instalace na plochu a notifikace přijdou v etapě 3.
+
+Co se vyplatí projít:
+
+- Přihlášení klientem: vidí jen svoje, nikde není odkaz do admina.
+- Přihlášení sebou: vidíš seznam klientů.
+- Ovládací prvky se dají pohodlně trefit palcem.
+- Klávesnice při psaní e-mailu nepřekrývá tlačítko.
+
+---
+
+# Vývoj
+
+```bash
+npm install
+cp .env.example .env.local   # doplň tři hodnoty z kroku 5
+npm run dev                  # http://localhost:3000
+```
+
+| Příkaz | Co dělá |
+|---|---|
+| `npm run dev` | vývojový server |
+| `npm run build` | produkční build a kontrola typů |
+| `npm test` | testy práce s daty a časovým pásmem |
+| `npm run test:rls` | ověří migrace a bezpečnostní pravidla |
+| `npm run lint` | ESLint |
+
+## Testy bezpečnostních pravidel
+
+`npm run test:rls` si postaví dočasný Postgres, pustí do něj všechny migrace
+a ověří asi padesát tvrzení: že klient nevidí cizí data ani tvoje přípravy,
+že se nedostane ke konceptu zápisu, že si nemůže povýšit roli, že změna cíle
+nepřepíše minulost a že smazání klienta odstraní všechno.
+
+Potřebuje nainstalovaný PostgreSQL 16, Supabase k tomu potřeba není.
+Po každé změně v `supabase/migrations/` ho pusť.
+
+## Struktura
+
+```
+src/
+  app/
+    page.tsx              přehled klienta
+    prihlaseni/           přihlášení
+    admin/                seznam klientů, zakládání, detail
+  components/ui/          tlačítka, seznamy, pole, obrazovka
+  lib/
+    config.ts             název aplikace a výchozí hodnoty
+    date.ts               počítání dní v pražském pásmu
+    supabase/             klienti pro prohlížeč, server a servisní klíč
+supabase/
+  migrations/             schéma databáze
+  tests/                  testy bezpečnostních pravidel
+```
+
+## Na co si dát pozor
+
+**Datum se nikdy nepočítá z UTC.** Server na Vercelu běží v UTC a po 22:00 by
+`new Date()` hlásilo už zítřek. Všechno kolem dní jde přes `src/lib/date.ts`.
+
+**Cíl návyku je časová řada.** Tabulka `habit_targets` drží dvojice (hodnota,
+platí od). Díky tomu změna cíle platí jen do budoucna a starší dny si drží
+původní hodnotu. Nikdy do ní nepiš `update`, vždy přidej nový řádek.
+
+**Servisní klíč obchází Row Level Security.** Používá se jen v
+`src/app/admin/actions.ts` a každá taková funkce si na prvním řádku ověří,
+že ji spustil admin.
+
+## Tarify
+
+Supabase zdarma projekt **po týdnu bez provozu pozastaví** a s ním i
+naplánované úlohy. Na ostrý provoz s klienty počítej s tarifem Pro
+(25 $ měsíčně). Vercel na tarifu Hobby stačí.
