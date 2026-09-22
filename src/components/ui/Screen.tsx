@@ -66,7 +66,7 @@ export function Screen({
         )}
       >
         <div className="mb-5">
-          <h1 className="text-[34px] font-bold leading-tight tracking-tight text-ink">
+          <h1 className="font-display text-[34px] font-bold leading-tight tracking-tight text-ink">
             {title}
           </h1>
           {subtitle && (

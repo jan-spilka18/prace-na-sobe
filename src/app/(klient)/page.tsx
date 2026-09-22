@@ -2,10 +2,10 @@ import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Screen } from "@/components/ui/Screen";
-import { Card, EmptyState } from "@/components/ui/List";
+import { EmptyState } from "@/components/ui/List";
 import { Button } from "@/components/ui/Button";
 import { SignOutButton } from "@/components/SignOutButton";
-import { activeProgram, habitsForDay } from "@/lib/queries";
+import { activeProgram, habitsForDay, programGrid } from "@/lib/queries";
 import {
   addDays,
   clampedProgramDay,
@@ -17,7 +17,8 @@ import {
 } from "@/lib/date";
 import { HabitCard } from "@/components/habits/HabitCard";
 import { CelebrationProvider } from "@/components/habits/Celebration";
-import { DAY_STATUS_LABELS, dayStatus, type HabitForDay } from "@/lib/habits";
+import { DayHero } from "@/components/habits/DayHero";
+import { runningStreak } from "@/lib/habits";
 
 export default async function TodayPage({ searchParams }: PageProps<"/">) {
   const profile = await requireProfile();
@@ -45,6 +46,9 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
   const date = clampToProgram(requested, program.start_date, lastDate, today);
 
   const habits = await habitsForDay(supabase, profile.id, date);
+  const days = await programGrid(supabase, profile.id, program);
+  const streak = runningStreak(days, date, addDays(date, -1));
+
   const dayNumber = clampedProgramDay(
     program.start_date,
     program.duration_days,
@@ -60,9 +64,10 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
     <Screen
       title={capitalize(describeDay(date, today))}
       subtitle={
+        // Číslo dne nese karta pod tím, tady by se jen opakovalo.
         notStarted
           ? `Program začíná ${formatCzechDate(program.start_date)}`
-          : `Den ${dayNumber} z ${program.duration_days} · ${formatCzechWeekday(date)} ${formatCzechDate(date)}`
+          : `${formatCzechWeekday(date)} ${formatCzechDate(date)}`
       }
       action={<SignOutButton />}
     >
@@ -89,7 +94,13 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
         ) : (
           <CelebrationProvider>
             <div className="space-y-4">
-              <DaySummary habits={habits} />
+              <DayHero
+                dayNumber={dayNumber}
+                durationDays={program.duration_days}
+                habits={habits}
+                streak={streak}
+                notStarted={notStarted}
+              />
               {habits.map((habit) => (
                 <HabitCard key={habit.id} habit={habit} date={date} />
               ))}
@@ -101,29 +112,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
   );
 }
 
-function DaySummary({ habits }: { habits: HabitForDay[] }) {
-  const status = dayStatus(habits);
-  const done = habits.filter((habit) => habit.entry?.status === "done").length;
-  const complete = status === "complete";
 
-  return (
-    <Card className={complete ? "bg-turquoise text-white" : "bg-surface"}>
-      <div className="flex items-baseline justify-between">
-        <span className={cnText(complete, "text-[17px] font-semibold")}>
-          {complete ? "Máš hotovo" : DAY_STATUS_LABELS[status]}
-        </span>
-        <span className={cnText(complete, "text-[15px]", true)}>
-          {done} z {habits.length}
-        </span>
-      </div>
-    </Card>
-  );
-}
-
-function cnText(onColor: boolean, base: string, muted = false): string {
-  if (onColor) return muted ? `${base} opacity-90` : base;
-  return muted ? `${base} text-ink-600` : `${base} text-ink`;
-}
 
 function DayStep({
   href,

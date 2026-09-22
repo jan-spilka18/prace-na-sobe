@@ -112,6 +112,22 @@ export function streakEndingAt(
   return streak;
 }
 
+/**
+ * Série, která běží právě teď.
+ *
+ * Dokud dnešek není hotový, počítá se série ke včerejšku. Jinak by klient
+ * po půlnoci viděl nulu, přestože má za sebou šest dní v řadě — což je
+ * přesně ten okamžik, kdy potřebuje vidět, že se má na co navázat.
+ */
+export function runningStreak(
+  days: Array<{ date: string; status: DayStatus }>,
+  today: string,
+  yesterday: string,
+): number {
+  const withToday = streakEndingAt(days, today);
+  return withToday > 0 ? withToday : streakEndingAt(days, yesterday);
+}
+
 /** Návyk platil v daný den — po archivaci už se nenabízí k vyplnění. */
 export function wasActiveOn(habit: Habit, onDate: string): boolean {
   if (!habit.archived_at) return true;

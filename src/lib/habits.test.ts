@@ -4,6 +4,7 @@ import {
   dayStatus,
   formatActual,
   formatTarget,
+  runningStreak,
   streakEndingAt,
   targetFor,
   wasActiveOn,
@@ -181,6 +182,35 @@ describe("streakEndingAt", () => {
 
   it("neznámý den nemá sérii", () => {
     assert.equal(streakEndingAt(days, "2026-02-01"), 0);
+  });
+});
+
+describe("runningStreak", () => {
+  it("dokud dnešek není hotový, počítá se ke včerejšku", () => {
+    const days = [
+      { date: "2026-01-04", status: "complete" as const },
+      { date: "2026-01-05", status: "complete" as const },
+      { date: "2026-01-06", status: "empty" as const },
+    ];
+    assert.equal(runningStreak(days, "2026-01-06", "2026-01-05"), 2);
+  });
+
+  it("hotový dnešek se do série započítá", () => {
+    const days = [
+      { date: "2026-01-04", status: "complete" as const },
+      { date: "2026-01-05", status: "complete" as const },
+      { date: "2026-01-06", status: "complete" as const },
+    ];
+    assert.equal(runningStreak(days, "2026-01-06", "2026-01-05"), 3);
+  });
+
+  it("nesplněný včerejšek sérii ukončil", () => {
+    const days = [
+      { date: "2026-01-04", status: "complete" as const },
+      { date: "2026-01-05", status: "incomplete" as const },
+      { date: "2026-01-06", status: "empty" as const },
+    ];
+    assert.equal(runningStreak(days, "2026-01-06", "2026-01-05"), 0);
   });
 });
 
