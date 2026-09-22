@@ -202,11 +202,32 @@ delete from public.habits where title = 'Čtení 20 stran';
 select pg_temp.check_eq((select count(*)::int from public.habits), 2, 'po smazání návyku bez historie');
 
 \echo ''
+\echo '=== Vize ==='
+insert into public.visions (program_id, client_id, body)
+  values ('aaaaaaaa-0000-0000-0000-000000000001',
+          '00000000-0000-0000-0000-000000000000',
+          'Chci být člověk, na kterého se dá spolehnout.');
+select pg_temp.check_eq(
+  (select client_id from public.visions),
+  '22222222-2222-2222-2222-222222222222'::uuid, 'client_id vize doplnil trigger');
+
+update public.visions set body = 'Upravená vize.'
+  where program_id = 'aaaaaaaa-0000-0000-0000-000000000001';
+select pg_temp.check_eq(
+  (select body from public.visions), 'Upravená vize.', 'klient si vizi přepsal');
+
+select pg_temp.must_fail(
+  $$insert into public.visions (program_id, client_id, body)
+    values ('aaaaaaaa-0000-0000-0000-000000000002', auth.uid(), 'Cizí vize.')$$,
+  'napsat vizi do cizího programu');
+
+\echo ''
 \echo '=== KLIENT B: nevidí data klienta A ==='
 select pg_temp.login('33333333-3333-3333-3333-333333333333');
 select pg_temp.check_eq((select count(*)::int from public.habit_entries), 0, 'cizí záznamy');
 select pg_temp.check_eq((select count(*)::int from public.sessions), 0, 'cizí sezení');
 select pg_temp.check_eq((select count(*)::int from public.session_feedback), 0, 'cizí zpětná vazba');
+select pg_temp.check_eq((select count(*)::int from public.visions), 0, 'cizí vize');
 
 -- UPDATE na neviditelné řádky nevyhodí chybu, jen nic nezmění.
 -- Kontroluje se proto počet zasažených řádků, ne výjimka.
@@ -248,4 +269,5 @@ select pg_temp.check_eq((select count(*)::int from public.habit_entries), 0, 'zb
 select pg_temp.check_eq((select count(*)::int from public.sessions), 0, 'zbylá sezení');
 select pg_temp.check_eq((select count(*)::int from public.session_preps), 0, 'zbylé přípravy');
 select pg_temp.check_eq((select count(*)::int from public.client_notes), 0, 'zbylé poznámky');
+select pg_temp.check_eq((select count(*)::int from public.visions), 0, 'zbylé vize');
 select pg_temp.check_eq((select count(*)::int from public.notification_settings), 2, 'zbylá nastavení');

@@ -5,7 +5,7 @@ import { Screen } from "@/components/ui/Screen";
 import { EmptyState } from "@/components/ui/List";
 import { Button } from "@/components/ui/Button";
 import { SignOutButton } from "@/components/SignOutButton";
-import { activeProgram, habitsForDay, programGrid } from "@/lib/queries";
+import { activeProgram, habitsForDay, programGrid, visionFor } from "@/lib/queries";
 import {
   addDays,
   clampedProgramDay,
@@ -18,6 +18,7 @@ import {
 import { HabitCard } from "@/components/habits/HabitCard";
 import { CelebrationProvider } from "@/components/habits/Celebration";
 import { DayHero } from "@/components/habits/DayHero";
+import { VisionQuote } from "@/components/VisionCard";
 import { runningStreak } from "@/lib/habits";
 
 export default async function TodayPage({ searchParams }: PageProps<"/">) {
@@ -47,6 +48,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
 
   const habits = await habitsForDay(supabase, profile.id, date);
   const days = await programGrid(supabase, profile.id, program);
+  const vision = await visionFor(supabase, program.id);
   const streak = runningStreak(days, date, addDays(date, -1));
 
   const dayNumber = clampedProgramDay(
@@ -101,6 +103,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
                 streak={streak}
                 notStarted={notStarted}
               />
+              <VisionQuote body={vision} />
               {habits.map((habit) => (
                 <HabitCard key={habit.id} habit={habit} date={date} />
               ))}

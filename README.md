@@ -8,20 +8,20 @@ Celé rozhraní je česky, časové pásmo Europe/Prague.
 
 ## Stav
 
-Hotová je **etapa 1**: projekt, databáze, přihlášení, role a zakládání klientů
-v adminu. Zbytek se staví v tomhle pořadí:
+Hotové jsou **etapy 1 a 2**: účty a role, 90denní výzva s odškrtáváním,
+mřížka průběhu, vize klienta a admin pohled na všechno z toho.
 
 | Etapa | Obsah | Stav |
 |---|---|---|
 | 1 | Projekt, Supabase, přihlášení, role, založení klienta | hotovo |
-| 2 | 90denní výzva: typy návyků, zpětné vyplňování, poznámky | připravuje se |
-| 3 | PWA, web push, připomínky návyků | |
+| 2 | 90denní výzva: typy návyků, zpětné vyplňování, poznámky, vize | hotovo |
+| 3 | PWA, web push, připomínky návyků | připravuje se |
 | 4 | Ranní vyhodnocení v 8:00: push, e-mail, vzorce | |
 | 5 | Zápisy ze sezení a zpětná vazba klienta | |
 | 6 | Admin: přípravy, soukromé poznámky, odkazy | |
 
-Databázové schéma je hotové pro všechny etapy najednou, takže se k němu
-nebudeme vracet. Chybí jen obrazovky.
+> **Po aktualizaci aplikace znovu spusť `supabase/schema.sql`** v SQL Editoru.
+> Dá se pustit opakovaně a nic nesmaže — dorovná jen to, co v databázi chybí.
 
 ## Technologie
 

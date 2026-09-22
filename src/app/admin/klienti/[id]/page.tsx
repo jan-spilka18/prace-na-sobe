@@ -5,8 +5,15 @@ import { Screen } from "@/components/ui/Screen";
 import { Card, ListGroup, ListRow } from "@/components/ui/List";
 import { clampedProgramDay, formatCzechDate, todayISO } from "@/lib/date";
 import { DayGrid } from "@/components/DayGrid";
+import { VisionCard } from "@/components/VisionCard";
 import { HABIT_TYPE_LABELS, formatTarget, targetFor } from "@/lib/habits";
-import { activeProgram, allHabits, habitTargets, programGrid } from "@/lib/queries";
+import {
+  activeProgram,
+  allHabits,
+  habitTargets,
+  programGrid,
+  visionFor,
+} from "@/lib/queries";
 import { ProgramForm } from "./ProgramForm";
 import { DangerZone } from "./DangerZone";
 
@@ -35,6 +42,7 @@ export default async function ClientDetailPage({
     habits.map((habit) => habit.id),
   );
   const days = program ? await programGrid(supabase, id, program) : [];
+  const vision = program ? await visionFor(supabase, program.id) : "";
 
   const today = todayISO();
   const day = program
@@ -90,6 +98,8 @@ export default async function ClientDetailPage({
             <ListRow title="Bez programu" />
           </ListGroup>
         )}
+
+        {program && <VisionCard programId={program.id} body={vision} />}
 
         <ListGroup
           title="Návyky"

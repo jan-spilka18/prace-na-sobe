@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Screen } from "@/components/ui/Screen";
 import { Card, EmptyState } from "@/components/ui/List";
 import { DayGrid } from "@/components/DayGrid";
-import { activeProgram, programGrid } from "@/lib/queries";
+import { VisionCard } from "@/components/VisionCard";
+import { activeProgram, programGrid, visionFor } from "@/lib/queries";
 import { clampedProgramDay, todayISO } from "@/lib/date";
 
 export const metadata = { title: "Přehled" };
@@ -25,6 +26,7 @@ export default async function OverviewPage() {
   }
 
   const days = await programGrid(supabase, profile.id, program);
+  const vision = await visionFor(supabase, program.id);
   const today = todayISO();
   const dayNumber = clampedProgramDay(
     program.start_date,
@@ -39,6 +41,8 @@ export default async function OverviewPage() {
   return (
     <Screen title="Přehled" subtitle={program.title}>
       <div className="space-y-5">
+        <VisionCard programId={program.id} body={vision} />
+
         <div className="grid grid-cols-2 gap-3">
           <Card className="bg-turquoise text-white">
             <p className="text-[14px] opacity-90">Den</p>

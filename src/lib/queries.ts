@@ -133,6 +133,19 @@ export async function programGrid(
   return days;
 }
 
+export async function visionFor(
+  supabase: Client,
+  programId: string,
+): Promise<string> {
+  const { data } = await supabase
+    .from("visions")
+    .select("body")
+    .eq("program_id", programId)
+    .maybeSingle();
+
+  return data?.body ?? "";
+}
+
 export async function habitTargets(
   supabase: Client,
   habitIds: string[],

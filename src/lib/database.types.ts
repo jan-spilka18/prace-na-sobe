@@ -83,6 +83,13 @@ export type DaySummary = {
   notified_at: string | null;
 };
 
+export type Vision = Timestamps & {
+  id: string;
+  program_id: string;
+  client_id: string;
+  body: string;
+};
+
 export type SessionRecord = Timestamps & {
   id: string;
   client_id: string;
@@ -171,6 +178,7 @@ export type Database = {
         HabitEntry,
         Audit | "client_id" | "backfilled" | "target_snapshot"
       >;
+      visions: TableDef<Vision, Audit | "client_id">;
       day_summaries: TableDef<DaySummary, "id" | "evaluated_at">;
       sessions: TableDef<SessionRecord, Audit | "published_at">;
       session_feedback: TableDef<SessionFeedback, Audit | "client_id">;
