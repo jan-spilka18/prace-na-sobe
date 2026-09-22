@@ -35,8 +35,10 @@ end $$;
 -- Příprava dat (jako service-role, tedy mimo RLS)
 -- ---------------------------------------------------------------------------
 insert into auth.users (id, email, raw_user_meta_data) values
+  -- Honza vzniká bez role v metadatech, přesně jako účet založený
+  -- tlačítkem v Supabase. Adminem se stává až povýšením níž.
   ('11111111-1111-1111-1111-111111111111', 'honza@example.com',
-   '{"full_name":"Honza","role":"admin"}'::jsonb),
+   '{"full_name":"Honza"}'::jsonb),
   ('22222222-2222-2222-2222-222222222222', 'klient-a@example.com',
    '{"full_name":"Klient A"}'::jsonb),
   ('33333333-3333-3333-3333-333333333333', 'klient-b@example.com',
@@ -44,9 +46,25 @@ insert into auth.users (id, email, raw_user_meta_data) values
 
 \echo '=== Profily vznikly automaticky ==='
 select pg_temp.check_eq((select count(*)::int from public.profiles), 3, 'počet profilů');
-select pg_temp.check_eq((select role from public.profiles where email = 'honza@example.com'), 'admin', 'role Honzy');
+select pg_temp.check_eq((select role from public.profiles where email = 'honza@example.com'), 'client', 'nový účet je klient');
 select pg_temp.check_eq((select role from public.profiles where email = 'klient-a@example.com'), 'client', 'role klienta A');
 select pg_temp.check_eq((select count(*)::int from public.notification_settings), 3, 'nastavení notifikací');
+
+\echo '=== Založení prvního admina ze SQL Editoru ==='
+/*
+  Tady je past, na kterou se dá snadno naletět: pojistka role vyžaduje
+  admina. Kdyby platila i pro SQL Editor, nemohl by vzniknout vůbec první —
+  podmínka by chtěla někoho, kdo ještě neexistuje.
+
+  V SQL Editoru je auth.uid() null, což znamená „požadavek nepřišel od
+  přihlášeného uživatele přes API, ale ze serveru".
+*/
+update public.profiles
+set role = 'admin'
+where email = 'honza@example.com';
+select pg_temp.check_eq(
+  (select role from public.profiles where email = 'honza@example.com'),
+  'admin', 'povýšení prvního admina');
 
 -- Programy a návyky zakládá admin
 insert into public.programs (id, client_id, start_date, duration_days) values

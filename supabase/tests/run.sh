@@ -13,28 +13,34 @@ PGPORT="${PGPORT:-55432}"
 WORKDIR="$(mktemp -d)"
 SOCKET="$WORKDIR/socket"
 
-cleanup() {
-  "$PGBIN/pg_ctl" -D "$WORKDIR/data" stop -m immediate >/dev/null 2>&1 || true
-  rm -rf "$WORKDIR"
-}
-trap cleanup EXIT
-
-mkdir -p "$WORKDIR/data" "$SOCKET"
-
 # initdb odmítá běžet pod rootem, v kontejnerech je to ale běžné.
 RUNNER=""
 if [ "$(id -u)" = "0" ]; then
   RUNNER="su postgres -c"
-  chown -R postgres:postgres "$WORKDIR"
-  chmod 700 "$WORKDIR/data"
 fi
 
 run_pg() {
   if [ -n "$RUNNER" ]; then su postgres -c "$1"; else bash -c "$1"; fi
 }
 
+# Musí běžet přes stejného uživatele jako start, jinak úklid tiše selže
+# a server zůstane viset na pozadí.
+cleanup() {
+  run_pg "$PGBIN/pg_ctl -D $WORKDIR/data stop -m immediate" >/dev/null 2>&1 || true
+  rm -rf "$WORKDIR"
+}
+trap cleanup EXIT
+
+mkdir -p "$WORKDIR/data" "$SOCKET"
+if [ -n "$RUNNER" ]; then
+  chown -R postgres:postgres "$WORKDIR"
+  chmod 700 "$WORKDIR/data"
+fi
+
 run_pg "$PGBIN/initdb -D $WORKDIR/data -U postgres --auth=trust" >/dev/null
-run_pg "$PGBIN/pg_ctl -D $WORKDIR/data -o '-p $PGPORT -k $SOCKET' -l $WORKDIR/server.log start" >/dev/null
+# -h '' vypne TCP a nechá jen unixový socket ve vlastním adresáři. Díky tomu
+# si dva souběžné běhy nesáhnou na stejný port.
+run_pg "$PGBIN/pg_ctl -D $WORKDIR/data -o \"-p $PGPORT -k $SOCKET -h ''\" -l $WORKDIR/server.log start" >/dev/null
 
 PSQL="psql -h $SOCKET -p $PGPORT -U postgres -q -v ON_ERROR_STOP=1"
 

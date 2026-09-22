@@ -122,8 +122,20 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- Klient si nesmí přepsat roli. Politika WITH CHECK by to neuhlídala:
--- kontroluje výslednou řádku, ale role je legitimní sloupec vlastního profilu.
+/*
+  Klient si nesmí přepsat roli. Politika WITH CHECK by to neuhlídala:
+  kontroluje výslednou řádku, ale role je legitimní sloupec vlastního profilu.
+
+  `auth.uid() is null` znamená, že požadavek nepřišel od přihlášeného
+  uživatele přes API, ale ze serveru — z SQL Editoru, ze servisního klíče
+  nebo z naplánované úlohy. Tyhle cesty mají plnou důvěru už tím, že se k nim
+  dostane jen ten, kdo drží klíče k projektu.
+
+  Bez téhle výjimky by nemohl vzniknout vůbec první admin: podmínka by
+  vyžadovala admina, který ještě neexistuje. Přes API je to bezpečné —
+  politika UPDATE pustí jen vlastníka profilu nebo admina, a vlastník
+  s null uid neprojde ani tam.
+*/
 create or replace function public.guard_profile_role()
 returns trigger
 language plpgsql
@@ -131,7 +143,9 @@ security definer
 set search_path = public, pg_temp
 as $$
 begin
-  if new.role is distinct from old.role and not public.is_admin() then
+  if new.role is distinct from old.role
+     and auth.uid() is not null
+     and not public.is_admin() then
     raise exception 'Roli může měnit jen administrátor.';
   end if;
   return new;
