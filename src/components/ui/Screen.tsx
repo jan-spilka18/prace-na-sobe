@@ -21,8 +21,15 @@ export function Screen({
   className?: string;
 }) {
   return (
-    <div className="flex min-h-dvh flex-col bg-canvas">
-      <header className="sticky top-0 z-20 border-b border-hairline bg-surface/85 pt-safe backdrop-blur-xl">
+    // flex-1 místo pevné výšky: obrazovka se roztáhne v layoutu,
+    // takže pod ní může sedět spodní lišta.
+    <div className="flex flex-1 flex-col bg-canvas">
+      {/*
+        Lišta je poloprůhledná jako na iOS, ale málo krycí barva nechá
+        prosvítat text pod ní a hlavička se stane nečitelnou. Rozostření
+        samo nestačí — na to je potřeba krytí.
+      */}
+      <header className="sticky top-0 z-20 border-b border-hairline bg-surface/95 pt-safe backdrop-blur-xl">
         <div className="mx-auto flex h-11 w-full max-w-2xl items-center gap-2 px-4">
           <div className="min-w-0 flex-1">
             {back && (
@@ -52,7 +59,9 @@ export function Screen({
 
       <main
         className={cn(
-          "mx-auto w-full max-w-2xl flex-1 px-4 pb-12 pt-4",
+          // Spodní odsazení musí přesáhnout spodní lištu, jinak se poslední
+          // karta nedá doscrollovat zpod ní.
+          "mx-auto w-full max-w-2xl flex-1 px-4 pb-24 pt-4",
           className,
         )}
       >

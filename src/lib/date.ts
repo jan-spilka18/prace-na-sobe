@@ -90,6 +90,12 @@ export function formatCzechDate(isoDate: string): string {
   return `${d}. ${MONTHS[m - 1]} ${y}`;
 }
 
+/** Pořadí dne v týdnu, kde pondělí je 0 — mřížka začíná pondělkem. */
+export function weekdayIndex(isoDate: string): number {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  return (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;
+}
+
 export function formatCzechWeekday(isoDate: string): string {
   const [y, m, d] = isoDate.split("-").map(Number);
   return WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];

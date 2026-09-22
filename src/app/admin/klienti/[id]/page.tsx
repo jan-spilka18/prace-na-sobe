@@ -4,6 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { Screen } from "@/components/ui/Screen";
 import { Card, ListGroup, ListRow } from "@/components/ui/List";
 import { clampedProgramDay, formatCzechDate, todayISO } from "@/lib/date";
+import { DayGrid } from "@/components/DayGrid";
+import { HABIT_TYPE_LABELS, formatTarget, targetFor } from "@/lib/habits";
+import { activeProgram, allHabits, habitTargets, programGrid } from "@/lib/queries";
 import { ProgramForm } from "./ProgramForm";
 import { DangerZone } from "./DangerZone";
 
@@ -23,12 +26,15 @@ export default async function ClientDetailPage({
 
   if (!client) notFound();
 
-  const { data: program } = await supabase
-    .from("programs")
-    .select("*")
-    .eq("client_id", id)
-    .eq("status", "active")
-    .maybeSingle();
+  const program = await activeProgram(supabase, id);
+  const habits = (await allHabits(supabase, id)).filter(
+    (habit) => !habit.archived_at,
+  );
+  const targets = await habitTargets(
+    supabase,
+    habits.map((habit) => habit.id),
+  );
+  const days = program ? await programGrid(supabase, id, program) : [];
 
   const today = todayISO();
   const day = program
@@ -87,10 +93,43 @@ export default async function ClientDetailPage({
 
         <ListGroup
           title="Návyky"
-          footer="Zadávání a předvyplňování návyků přibude v další etapě."
+          footer={
+            habits.length === 0
+              ? "Klient si návyky zadá sám, nebo mu je předvyplníš ty."
+              : undefined
+          }
         >
-          <ListRow title="Zatím nedostupné" />
+          {habits.map((habit) => (
+            <ListRow
+              key={habit.id}
+              title={habit.title}
+              subtitle={HABIT_TYPE_LABELS[habit.type]}
+              trailing={formatTarget(
+                habit.type,
+                targetFor(targets, habit.id, today),
+              )}
+            />
+          ))}
+          <ListRow
+            href={`/admin/klienti/${id}/navyky`}
+            title={
+              habits.length === 0 ? "Předvyplnit návyky" : "Upravit návyky"
+            }
+            className="text-turquoise-700"
+          />
         </ListGroup>
+
+        {program && days.length > 0 && (
+          <section className="space-y-2">
+            <h2 className="px-4 text-[13px] font-semibold uppercase tracking-wide text-ink-500">
+              Průběh
+            </h2>
+            <DayGrid
+              days={days}
+              hrefFor={(date) => `/admin/klienti/${id}/den/${date}`}
+            />
+          </section>
+        )}
 
         <DangerZone
           clientId={client.id}
