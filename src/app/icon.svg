@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <title>Práce na sobě</title>
+  <rect width="160" height="160" rx="36" fill="#171717"/>
+  <rect x="34" y="92" width="24" height="38" rx="8" fill="#5FC3CE" opacity=".55"/>
+  <rect x="68" y="70" width="24" height="60" rx="8" fill="#5FC3CE"/>
+  <rect x="102" y="40" width="24" height="90" rx="8" fill="#FFF0A6"/>
+</svg>
