@@ -38,13 +38,20 @@ run_pg "$PGBIN/pg_ctl -D $WORKDIR/data -o '-p $PGPORT -k $SOCKET' -l $WORKDIR/se
 
 PSQL="psql -h $SOCKET -p $PGPORT -U postgres -q -v ON_ERROR_STOP=1"
 
+# schema.sql je to, co se doopravdy vkládá do Supabase, takže se testuje ono.
+# Kdyby zestárlo proti migracím, test by ověřoval něco jiného, než co poběží.
+"$REPO_ROOT/scripts/build-schema.sh" > /dev/null
+if ! git -C "$REPO_ROOT" diff --quiet -- supabase/schema.sql 2>/dev/null; then
+  echo "CHYBA: supabase/schema.sql neodpovídá migracím." >&2
+  echo "Přegeneroval jsem ho — zkontroluj změnu a zacommituj." >&2
+  exit 1
+fi
+
 $PSQL -c "create database app;" >/dev/null
 $PSQL -d app -f "$REPO_ROOT/supabase/tests/00_supabase_stub.sql" >/dev/null
 
-for migration in "$REPO_ROOT"/supabase/migrations/*.sql; do
-  echo "migrace: $(basename "$migration")"
-  $PSQL -d app -f "$migration" >/dev/null
-done
+echo "schéma: supabase/schema.sql"
+$PSQL -d app -f "$REPO_ROOT/supabase/schema.sql" >/dev/null
 
 echo
 output="$(psql -h "$SOCKET" -p "$PGPORT" -U postgres -q -d app -P pager=off \

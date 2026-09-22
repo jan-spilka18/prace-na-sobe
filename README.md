@@ -66,17 +66,16 @@ zdarma na začátek, viz poznámka o tarifech na konci.
 3. Zvol silné databázové heslo a ulož si ho.
 4. Počkej, než se projekt vytvoří — trvá to asi dvě minuty.
 
-## 2. Pusť migrace
+## 2. Vytvoř tabulky
 
-1. V projektu otevři **SQL Editor**.
-2. Otevři soubory ze složky `supabase/migrations/` **v pořadí podle čísla**
-   a obsah každého vlož do editoru a spusť tlačítkem **Run**:
-   - `0001_identity_and_programs.sql`
-   - `0002_habits.sql`
-   - `0003_sessions_and_private_notes.sql`
-   - `0004_notifications.sql`
-3. Každá musí skončit hláškou **Success**. Kdyby některá spadla, nepouštěj
-   další a napiš mi, co hlásí.
+1. Otevři na GitHubu soubor **`supabase/schema.sql`** a zkopíruj ho celý
+   (tlačítko **Copy raw file** vpravo nahoře).
+2. V Supabase otevři **SQL Editor**, vlož obsah a klikni **Run**.
+3. Musí to skončit hláškou **Success**. Kdyby to spadlo, napiš mi, co hlásí.
+
+`schema.sql` je spojení všech migrací ze `supabase/migrations/` do jednoho
+souboru, aby se dal vložit najednou. Negeneruje se ručně — po každé změně
+migrací ho přegeneruj příkazem `npm run build:schema`.
 
 ## 3. Vypni veřejnou registraci
 
@@ -162,18 +161,22 @@ npm run dev                  # http://localhost:3000
 | `npm run dev` | vývojový server |
 | `npm run build` | produkční build a kontrola typů |
 | `npm test` | testy práce s daty a časovým pásmem |
-| `npm run test:rls` | ověří migrace a bezpečnostní pravidla |
+| `npm run test:rls` | ověří schéma a bezpečnostní pravidla |
+| `npm run build:schema` | přegeneruje `supabase/schema.sql` z migrací |
 | `npm run lint` | ESLint |
 
 ## Testy bezpečnostních pravidel
 
-`npm run test:rls` si postaví dočasný Postgres, pustí do něj všechny migrace
+`npm run test:rls` si postaví dočasný Postgres, pustí do něj `schema.sql`
 a ověří asi padesát tvrzení: že klient nevidí cizí data ani tvoje přípravy,
 že se nedostane ke konceptu zápisu, že si nemůže povýšit roli, že změna cíle
 nepřepíše minulost a že smazání klienta odstraní všechno.
 
+Testuje se schválně `schema.sql`, tedy přesně to, co se vkládá do Supabase —
+jinak by se ověřovalo něco jiného, než co poběží. Runner navíc odmítne
+pokračovat, když schéma zestárlo proti migracím.
+
 Potřebuje nainstalovaný PostgreSQL 16, Supabase k tomu potřeba není.
-Po každé změně v `supabase/migrations/` ho pusť.
 
 ## Struktura
 
