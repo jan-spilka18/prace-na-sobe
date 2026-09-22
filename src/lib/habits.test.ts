@@ -4,6 +4,7 @@ import {
   dayStatus,
   formatActual,
   formatTarget,
+  streakEndingAt,
   targetFor,
   wasActiveOn,
 } from "./habits";
@@ -145,6 +146,41 @@ describe("dayStatus", () => {
 
   it("den bez návyků je nevyplněný", () => {
     assert.equal(dayStatus([]), "empty");
+  });
+});
+
+describe("streakEndingAt", () => {
+  const days = [
+    { date: "2026-01-01", status: "complete" as const },
+    { date: "2026-01-02", status: "complete" as const },
+    { date: "2026-01-03", status: "incomplete" as const },
+    { date: "2026-01-04", status: "complete" as const },
+    { date: "2026-01-05", status: "complete" as const },
+    { date: "2026-01-06", status: "complete" as const },
+    { date: "2026-01-07", status: "empty" as const },
+  ];
+
+  it("počítá dny v řadě zpětně od daného dne", () => {
+    assert.equal(streakEndingAt(days, "2026-01-06"), 3);
+    assert.equal(streakEndingAt(days, "2026-01-05"), 2);
+    assert.equal(streakEndingAt(days, "2026-01-04"), 1);
+  });
+
+  it("nesplněný den sérii ukončí", () => {
+    assert.equal(streakEndingAt(days, "2026-01-03"), 0);
+  });
+
+  it("nevyplněný den sérii ukončí", () => {
+    assert.equal(streakEndingAt(days, "2026-01-07"), 0);
+  });
+
+  it("série může sahat až na první den programu", () => {
+    assert.equal(streakEndingAt(days, "2026-01-02"), 2);
+    assert.equal(streakEndingAt(days, "2026-01-01"), 1);
+  });
+
+  it("neznámý den nemá sérii", () => {
+    assert.equal(streakEndingAt(days, "2026-02-01"), 0);
   });
 });
 

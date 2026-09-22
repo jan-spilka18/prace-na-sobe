@@ -16,6 +16,7 @@ import {
   todayISO,
 } from "@/lib/date";
 import { HabitCard } from "@/components/habits/HabitCard";
+import { CelebrationProvider } from "@/components/habits/Celebration";
 import { DAY_STATUS_LABELS, dayStatus, type HabitForDay } from "@/lib/habits";
 
 export default async function TodayPage({ searchParams }: PageProps<"/">) {
@@ -86,12 +87,14 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
             }
           />
         ) : (
-          <>
-            <DaySummary habits={habits} />
-            {habits.map((habit) => (
-              <HabitCard key={habit.id} habit={habit} date={date} />
-            ))}
-          </>
+          <CelebrationProvider>
+            <div className="space-y-4">
+              <DaySummary habits={habits} />
+              {habits.map((habit) => (
+                <HabitCard key={habit.id} habit={habit} date={date} />
+              ))}
+            </div>
+          </CelebrationProvider>
         )}
       </div>
     </Screen>

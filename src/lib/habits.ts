@@ -90,6 +90,28 @@ export const DAY_STATUS_LABELS: Record<DayStatus, string> = {
   empty: "Nevyplněno",
 };
 
+/**
+ * Kolik dnů v řadě je splněných, počítáno zpětně od daného dne včetně.
+ *
+ * Nevyplněný ani nesplněný den sérii ukončí. Budoucí dny se neřeší —
+ * série se počítá jen dozadu.
+ */
+export function streakEndingAt(
+  days: Array<{ date: string; status: DayStatus }>,
+  date: string,
+): number {
+  const index = days.findIndex((day) => day.date === date);
+  if (index < 0) return 0;
+
+  let streak = 0;
+  for (let i = index; i >= 0; i--) {
+    if (days[i].status !== "complete") break;
+    streak++;
+  }
+
+  return streak;
+}
+
 /** Návyk platil v daný den — po archivaci už se nenabízí k vyplnění. */
 export function wasActiveOn(habit: Habit, onDate: string): boolean {
   if (!habit.archived_at) return true;

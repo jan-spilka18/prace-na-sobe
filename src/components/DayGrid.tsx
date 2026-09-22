@@ -32,7 +32,11 @@ export function DayGrid({
   return (
     <div className="space-y-3">
       <div className="rounded-group bg-surface p-3">
-        <div className="grid grid-cols-7 gap-1.5">
+        {/*
+          Na tabletu by se čtverce bez omezení roztáhly na skoro sto pixelů
+          a číslo v nich by plavalo. Na telefonu se strop neuplatní.
+        */}
+        <div className="mx-auto grid max-w-[26rem] grid-cols-7 gap-1.5">
           {WEEKDAYS.map((day) => (
             <div
               key={day}

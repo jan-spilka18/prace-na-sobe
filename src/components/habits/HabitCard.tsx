@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { cn } from "@/lib/cn";
 import { actualValueLabel, formatTarget, type HabitForDay } from "@/lib/habits";
 import { saveEntry } from "@/app/actions/habits";
+import { useCelebration } from "./Celebration";
 import type { EntryStatus } from "@/lib/database.types";
 
 export function HabitCard({
@@ -25,15 +26,17 @@ export function HabitCard({
   const [noteOpen, setNoteOpen] = useState(Boolean(habit.entry?.note));
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
+  const celebrate = useCelebration();
 
   const targetLabel = formatTarget(habit.type, habit.target);
   const needsValue = habit.type !== "boolean";
 
-  function persist(next: {
-    status: EntryStatus | null;
-    actual: string;
-    note: string;
-  }) {
+  function persist(
+    next: { status: EntryStatus | null; actual: string; note: string },
+    // Gratulace patří ke klepnutí na Splněno, ne k pozdější úpravě
+    // poznámky nebo hodnoty na už hotovém dni.
+    announceCompletion = false,
+  ) {
     setError(undefined);
     startTransition(async () => {
       const parsed = next.actual.trim() === "" ? null : Number(next.actual);
@@ -44,7 +47,12 @@ export function HabitCard({
         actualValue: Number.isFinite(parsed as number) ? parsed : null,
         note: next.note,
       });
-      if (result.error) setError(result.error);
+
+      if (result.error) return setError(result.error);
+
+      if (announceCompletion && result.dayComplete) {
+        celebrate(result.streak ?? 1);
+      }
     });
   }
 
@@ -53,7 +61,7 @@ export function HabitCard({
   function choose(value: EntryStatus) {
     const next = status === value ? null : value;
     setStatus(next);
-    persist({ status: next, actual, note });
+    persist({ status: next, actual, note }, next === "done");
   }
 
   return (
@@ -118,9 +126,11 @@ export function HabitCard({
       </div>
 
       {status === "done" && needsValue && (
-        <label className="mt-3 flex items-center gap-3">
-          <span className="text-[15px] text-ink-600">
-            {actualValueLabel(habit.type)}
+        // Popisek nad polem, ne vedle: na úzkém telefonu se vedle sebe láme.
+        <label className="mt-3 block">
+          <span className="block text-[15px] text-ink-600">
+            {actualValueLabel(habit.type)}{" "}
+            <span className="text-ink-500">· nepovinné</span>
           </span>
           <input
             type="number"
@@ -131,9 +141,8 @@ export function HabitCard({
             placeholder={habit.target?.toString() ?? ""}
             onChange={(event) => setActual(event.target.value)}
             onBlur={() => persist({ status, actual, note })}
-            className="w-24 rounded-card border border-hairline px-3 py-2 text-[17px] focus:border-turquoise focus:outline-none focus:ring-2 focus:ring-turquoise-200"
+            className="mt-1.5 w-28 rounded-card border border-hairline px-3 py-2 text-[17px] focus:border-turquoise focus:outline-none focus:ring-2 focus:ring-turquoise-200"
           />
-          <span className="text-[15px] text-ink-500">nepovinné</span>
         </label>
       )}
 

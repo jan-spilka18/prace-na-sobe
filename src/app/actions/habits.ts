@@ -3,9 +3,18 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
+import { activeProgram, programGrid } from "@/lib/queries";
+import { streakEndingAt } from "@/lib/habits";
 import type { EntryStatus, HabitType } from "@/lib/database.types";
 
 export type ActionResult = { error?: string };
+
+export type SaveEntryResult = ActionResult & {
+  /** Den je po tomhle uložení celý splněný. */
+  dayComplete?: boolean;
+  /** Kolik dnů v řadě je splněných, včetně tohoto. */
+  streak?: number;
+};
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -27,8 +36,8 @@ export async function saveEntry(input: {
   status: EntryStatus | null;
   actualValue: number | null;
   note: string;
-}): Promise<ActionResult> {
-  await requireProfile();
+}): Promise<SaveEntryResult> {
+  const profile = await requireProfile();
 
   if (!ISO_DATE.test(input.date)) return { error: "Neplatné datum." };
 
@@ -62,7 +71,21 @@ export async function saveEntry(input: {
   if (error) return { error: error.message };
 
   refresh();
-  return {};
+
+  // Den může uzavřít jen splnění. Ostatní uložení (poznámka, hodnota)
+  // stav dne nemění, takže není důvod kvůli nim sahat do databáze.
+  if (input.status !== "done") return {};
+
+  const program = await activeProgram(supabase, profile.id);
+  if (!program) return {};
+
+  const days = await programGrid(supabase, profile.id, program);
+  const today = days.find((day) => day.date === input.date);
+
+  return {
+    dayComplete: today?.status === "complete",
+    streak: streakEndingAt(days, input.date),
+  };
 }
 
 export type HabitInput = {
