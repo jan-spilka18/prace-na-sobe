@@ -38,13 +38,14 @@ create table if not exists public.sessions (
     check (status <> 'published' or published_at is not null)
 );
 
-create index sessions_client_idx on public.sessions (client_id, session_date desc);
+create index if not exists sessions_client_idx on public.sessions (client_id, session_date desc);
 
 -- Ochrana proti dvojímu doručení stejného zápisu z externí aplikace.
-create unique index sessions_external_ref_idx
+create unique index if not exists sessions_external_ref_idx
   on public.sessions (external_source, external_id)
   where external_source is not null and external_id is not null;
 
+drop trigger if exists sessions_touch_updated_at on public.sessions;
 create trigger sessions_touch_updated_at
   before update on public.sessions
   for each row execute function public.touch_updated_at();
@@ -63,12 +64,14 @@ begin
 end;
 $$;
 
+drop trigger if exists sessions_set_published_at on public.sessions;
 create trigger sessions_set_published_at
   before insert or update on public.sessions
   for each row execute function public.sessions_set_published_at();
 
 alter table public.sessions enable row level security;
 
+drop policy if exists "Klient čte jen publikovaná sezení, admin všechna" on public.sessions;
 create policy "Klient čte jen publikovaná sezení, admin všechna"
   on public.sessions for select to authenticated
   using (
@@ -76,15 +79,18 @@ create policy "Klient čte jen publikovaná sezení, admin všechna"
     or (client_id = auth.uid() and status = 'published')
   );
 
+drop policy if exists "Sezení spravuje jen admin" on public.sessions;
 create policy "Sezení spravuje jen admin"
   on public.sessions for insert to authenticated
   with check (public.is_admin());
 
+drop policy if exists "Sezení upravuje jen admin" on public.sessions;
 create policy "Sezení upravuje jen admin"
   on public.sessions for update to authenticated
   using (public.is_admin())
   with check (public.is_admin());
 
+drop policy if exists "Sezení maže jen admin" on public.sessions;
 create policy "Sezení maže jen admin"
   on public.sessions for delete to authenticated
   using (public.is_admin());
@@ -103,6 +109,7 @@ create table if not exists public.session_feedback (
   updated_at timestamptz not null default now()
 );
 
+drop trigger if exists session_feedback_touch_updated_at on public.session_feedback;
 create trigger session_feedback_touch_updated_at
   before update on public.session_feedback
   for each row execute function public.touch_updated_at();
@@ -125,16 +132,19 @@ begin
 end;
 $$;
 
+drop trigger if exists session_feedback_set_client on public.session_feedback;
 create trigger session_feedback_set_client
   before insert or update of session_id on public.session_feedback
   for each row execute function public.session_feedback_set_client();
 
 alter table public.session_feedback enable row level security;
 
+drop policy if exists "Zpětnou vazbu čte autor nebo admin" on public.session_feedback;
 create policy "Zpětnou vazbu čte autor nebo admin"
   on public.session_feedback for select to authenticated
   using (client_id = auth.uid() or public.is_admin());
 
+drop policy if exists "Zpětnou vazbu píše klient k publikovanému sezení" on public.session_feedback;
 create policy "Zpětnou vazbu píše klient k publikovanému sezení"
   on public.session_feedback for insert to authenticated
   with check (
@@ -147,11 +157,13 @@ create policy "Zpětnou vazbu píše klient k publikovanému sezení"
     )
   );
 
+drop policy if exists "Zpětnou vazbu upravuje autor nebo admin" on public.session_feedback;
 create policy "Zpětnou vazbu upravuje autor nebo admin"
   on public.session_feedback for update to authenticated
   using (client_id = auth.uid() or public.is_admin())
   with check (client_id = auth.uid() or public.is_admin());
 
+drop policy if exists "Zpětnou vazbu maže autor nebo admin" on public.session_feedback;
 create policy "Zpětnou vazbu maže autor nebo admin"
   on public.session_feedback for delete to authenticated
   using (client_id = auth.uid() or public.is_admin());
@@ -168,14 +180,16 @@ create table if not exists public.session_preps (
   updated_at timestamptz not null default now()
 );
 
-create index session_preps_session_idx on public.session_preps (session_id);
+create index if not exists session_preps_session_idx on public.session_preps (session_id);
 
+drop trigger if exists session_preps_touch_updated_at on public.session_preps;
 create trigger session_preps_touch_updated_at
   before update on public.session_preps
   for each row execute function public.touch_updated_at();
 
 alter table public.session_preps enable row level security;
 
+drop policy if exists "Přípravy jsou jen pro admina" on public.session_preps;
 create policy "Přípravy jsou jen pro admina"
   on public.session_preps for all to authenticated
   using (public.is_admin())
@@ -189,14 +203,16 @@ create table if not exists public.client_notes (
   updated_at timestamptz not null default now()
 );
 
-create index client_notes_client_idx on public.client_notes (client_id, created_at desc);
+create index if not exists client_notes_client_idx on public.client_notes (client_id, created_at desc);
 
+drop trigger if exists client_notes_touch_updated_at on public.client_notes;
 create trigger client_notes_touch_updated_at
   before update on public.client_notes
   for each row execute function public.touch_updated_at();
 
 alter table public.client_notes enable row level security;
 
+drop policy if exists "Soukromé poznámky jsou jen pro admina" on public.client_notes;
 create policy "Soukromé poznámky jsou jen pro admina"
   on public.client_notes for all to authenticated
   using (public.is_admin())
@@ -212,14 +228,16 @@ create table if not exists public.client_links (
   updated_at timestamptz not null default now()
 );
 
-create index client_links_client_idx on public.client_links (client_id, position);
+create index if not exists client_links_client_idx on public.client_links (client_id, position);
 
+drop trigger if exists client_links_touch_updated_at on public.client_links;
 create trigger client_links_touch_updated_at
   before update on public.client_links
   for each row execute function public.touch_updated_at();
 
 alter table public.client_links enable row level security;
 
+drop policy if exists "Odkazy jsou jen pro admina" on public.client_links;
 create policy "Odkazy jsou jen pro admina"
   on public.client_links for all to authenticated
   using (public.is_admin())

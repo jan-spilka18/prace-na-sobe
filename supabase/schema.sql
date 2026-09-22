@@ -70,6 +70,7 @@ create table if not exists public.profiles (
   updated_at  timestamptz not null default now()
 );
 
+drop trigger if exists profiles_touch_updated_at on public.profiles;
 create trigger profiles_touch_updated_at
   before update on public.profiles
   for each row execute function public.touch_updated_at();
@@ -116,6 +117,7 @@ end;
 $$;
 
 drop trigger if exists on_auth_user_created on auth.users;
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
@@ -136,21 +138,25 @@ begin
 end;
 $$;
 
+drop trigger if exists profiles_guard_role on public.profiles;
 create trigger profiles_guard_role
   before update on public.profiles
   for each row execute function public.guard_profile_role();
 
 alter table public.profiles enable row level security;
 
+drop policy if exists "Profil čte vlastník nebo admin" on public.profiles;
 create policy "Profil čte vlastník nebo admin"
   on public.profiles for select to authenticated
   using (id = auth.uid() or public.is_admin());
 
+drop policy if exists "Profil upravuje vlastník nebo admin" on public.profiles;
 create policy "Profil upravuje vlastník nebo admin"
   on public.profiles for update to authenticated
   using (id = auth.uid() or public.is_admin())
   with check (id = auth.uid() or public.is_admin());
 
+drop policy if exists "Profil maže jen admin" on public.profiles;
 create policy "Profil maže jen admin"
   on public.profiles for delete to authenticated
   using (public.is_admin());
@@ -174,33 +180,38 @@ create table if not exists public.programs (
   updated_at    timestamptz not null default now()
 );
 
-create index programs_client_idx on public.programs (client_id, status);
+create index if not exists programs_client_idx on public.programs (client_id, status);
 
 -- Jeden běžící program na klienta. Dokončené a archivované se nepočítají,
 -- takže historie zůstává a na nový program se dá plynule navázat.
-create unique index programs_one_active_per_client
+create unique index if not exists programs_one_active_per_client
   on public.programs (client_id)
   where status = 'active';
 
+drop trigger if exists programs_touch_updated_at on public.programs;
 create trigger programs_touch_updated_at
   before update on public.programs
   for each row execute function public.touch_updated_at();
 
 alter table public.programs enable row level security;
 
+drop policy if exists "Program čte vlastník nebo admin" on public.programs;
 create policy "Program čte vlastník nebo admin"
   on public.programs for select to authenticated
   using (client_id = auth.uid() or public.is_admin());
 
+drop policy if exists "Program zakládá jen admin" on public.programs;
 create policy "Program zakládá jen admin"
   on public.programs for insert to authenticated
   with check (public.is_admin());
 
+drop policy if exists "Program upravuje jen admin" on public.programs;
 create policy "Program upravuje jen admin"
   on public.programs for update to authenticated
   using (public.is_admin())
   with check (public.is_admin());
 
+drop policy if exists "Program maže jen admin" on public.programs;
 create policy "Program maže jen admin"
   on public.programs for delete to authenticated
   using (public.is_admin());
@@ -215,12 +226,14 @@ create table if not exists public.app_settings (
   updated_at timestamptz not null default now()
 );
 
+drop trigger if exists app_settings_touch_updated_at on public.app_settings;
 create trigger app_settings_touch_updated_at
   before update on public.app_settings
   for each row execute function public.touch_updated_at();
 
 alter table public.app_settings enable row level security;
 
+drop policy if exists "Nastavení vidí jen admin" on public.app_settings;
 create policy "Nastavení vidí jen admin"
   on public.app_settings for all to authenticated
   using (public.is_admin())
@@ -283,12 +296,13 @@ create table if not exists public.habits (
     check (not reminder_enabled or reminder_time is not null)
 );
 
-create index habits_program_idx on public.habits (program_id, position);
-create index habits_client_idx on public.habits (client_id) where archived_at is null;
+create index if not exists habits_program_idx on public.habits (program_id, position);
+create index if not exists habits_client_idx on public.habits (client_id) where archived_at is null;
 -- Podpora pro cron, který každých pár minut hledá návyky s připomínkou.
-create index habits_reminder_idx on public.habits (reminder_time)
+create index if not exists habits_reminder_idx on public.habits (reminder_time)
   where reminder_enabled and archived_at is null;
 
+drop trigger if exists habits_touch_updated_at on public.habits;
 create trigger habits_touch_updated_at
   before update on public.habits
   for each row execute function public.touch_updated_at();
@@ -313,6 +327,7 @@ begin
 end;
 $$;
 
+drop trigger if exists habits_set_client on public.habits;
 create trigger habits_set_client
   before insert or update of program_id on public.habits
   for each row execute function public.habits_set_client();
@@ -345,10 +360,12 @@ $$;
 
 alter table public.habits enable row level security;
 
+drop policy if exists "Návyk čte vlastník nebo admin" on public.habits;
 create policy "Návyk čte vlastník nebo admin"
   on public.habits for select to authenticated
   using (client_id = auth.uid() or public.is_admin());
 
+drop policy if exists "Návyk zakládá vlastník programu nebo admin" on public.habits;
 create policy "Návyk zakládá vlastník programu nebo admin"
   on public.habits for insert to authenticated
   with check (
@@ -359,11 +376,13 @@ create policy "Návyk zakládá vlastník programu nebo admin"
     )
   );
 
+drop policy if exists "Návyk upravuje vlastník nebo admin" on public.habits;
 create policy "Návyk upravuje vlastník nebo admin"
   on public.habits for update to authenticated
   using (client_id = auth.uid() or public.is_admin())
   with check (client_id = auth.uid() or public.is_admin());
 
+drop policy if exists "Návyk maže vlastník nebo admin" on public.habits;
 create policy "Návyk maže vlastník nebo admin"
   on public.habits for delete to authenticated
   using (client_id = auth.uid() or public.is_admin());
@@ -382,7 +401,7 @@ create table if not exists public.habit_targets (
   unique (habit_id, effective_from)
 );
 
-create index habit_targets_lookup_idx
+create index if not exists habit_targets_lookup_idx
   on public.habit_targets (habit_id, effective_from desc);
 
 -- Cíl platný pro daný den.
@@ -404,6 +423,7 @@ grant execute on function public.habit_target_on(uuid, date) to authenticated;
 
 alter table public.habit_targets enable row level security;
 
+drop policy if exists "Cíl čte vlastník návyku nebo admin" on public.habit_targets;
 create policy "Cíl čte vlastník návyku nebo admin"
   on public.habit_targets for select to authenticated
   using (
@@ -414,6 +434,7 @@ create policy "Cíl čte vlastník návyku nebo admin"
     )
   );
 
+drop policy if exists "Cíl zapisuje vlastník návyku nebo admin" on public.habit_targets;
 create policy "Cíl zapisuje vlastník návyku nebo admin"
   on public.habit_targets for insert to authenticated
   with check (
@@ -424,6 +445,7 @@ create policy "Cíl zapisuje vlastník návyku nebo admin"
     )
   );
 
+drop policy if exists "Cíl upravuje vlastník návyku nebo admin" on public.habit_targets;
 create policy "Cíl upravuje vlastník návyku nebo admin"
   on public.habit_targets for update to authenticated
   using (
@@ -441,6 +463,7 @@ create policy "Cíl upravuje vlastník návyku nebo admin"
     )
   );
 
+drop policy if exists "Cíl maže vlastník návyku nebo admin" on public.habit_targets;
 create policy "Cíl maže vlastník návyku nebo admin"
   on public.habit_targets for delete to authenticated
   using (
@@ -474,9 +497,10 @@ create table if not exists public.habit_entries (
   unique (habit_id, entry_date)
 );
 
-create index habit_entries_client_date_idx
+create index if not exists habit_entries_client_date_idx
   on public.habit_entries (client_id, entry_date desc);
 
+drop trigger if exists habit_entries_touch_updated_at on public.habit_entries;
 create trigger habit_entries_touch_updated_at
   before update on public.habit_entries
   for each row execute function public.touch_updated_at();
@@ -535,30 +559,36 @@ begin
 end;
 $$;
 
+drop trigger if exists habit_entries_fill_derived on public.habit_entries;
 create trigger habit_entries_fill_derived
   before insert or update on public.habit_entries
   for each row execute function public.habit_entries_fill_derived();
 
 -- Musí vzniknout až po habit_entries, protože se na ni odkazuje.
+drop trigger if exists habits_block_delete_with_history on public.habits;
 create trigger habits_block_delete_with_history
   before delete on public.habits
   for each row execute function public.habits_block_delete_with_history();
 
 alter table public.habit_entries enable row level security;
 
+drop policy if exists "Záznam čte vlastník nebo admin" on public.habit_entries;
 create policy "Záznam čte vlastník nebo admin"
   on public.habit_entries for select to authenticated
   using (client_id = auth.uid() or public.is_admin());
 
+drop policy if exists "Záznam zapisuje vlastník nebo admin" on public.habit_entries;
 create policy "Záznam zapisuje vlastník nebo admin"
   on public.habit_entries for insert to authenticated
   with check (client_id = auth.uid() or public.is_admin());
 
+drop policy if exists "Záznam upravuje vlastník nebo admin" on public.habit_entries;
 create policy "Záznam upravuje vlastník nebo admin"
   on public.habit_entries for update to authenticated
   using (client_id = auth.uid() or public.is_admin())
   with check (client_id = auth.uid() or public.is_admin());
 
+drop policy if exists "Záznam maže vlastník nebo admin" on public.habit_entries;
 create policy "Záznam maže vlastník nebo admin"
   on public.habit_entries for delete to authenticated
   using (client_id = auth.uid() or public.is_admin());
@@ -579,10 +609,11 @@ create table if not exists public.day_summaries (
   unique (client_id, day_date)
 );
 
-create index day_summaries_client_idx on public.day_summaries (client_id, day_date desc);
+create index if not exists day_summaries_client_idx on public.day_summaries (client_id, day_date desc);
 
 alter table public.day_summaries enable row level security;
 
+drop policy if exists "Souhrn dne čte vlastník nebo admin" on public.day_summaries;
 create policy "Souhrn dne čte vlastník nebo admin"
   on public.day_summaries for select to authenticated
   using (client_id = auth.uid() or public.is_admin());
@@ -634,13 +665,14 @@ create table if not exists public.sessions (
     check (status <> 'published' or published_at is not null)
 );
 
-create index sessions_client_idx on public.sessions (client_id, session_date desc);
+create index if not exists sessions_client_idx on public.sessions (client_id, session_date desc);
 
 -- Ochrana proti dvojímu doručení stejného zápisu z externí aplikace.
-create unique index sessions_external_ref_idx
+create unique index if not exists sessions_external_ref_idx
   on public.sessions (external_source, external_id)
   where external_source is not null and external_id is not null;
 
+drop trigger if exists sessions_touch_updated_at on public.sessions;
 create trigger sessions_touch_updated_at
   before update on public.sessions
   for each row execute function public.touch_updated_at();
@@ -659,12 +691,14 @@ begin
 end;
 $$;
 
+drop trigger if exists sessions_set_published_at on public.sessions;
 create trigger sessions_set_published_at
   before insert or update on public.sessions
   for each row execute function public.sessions_set_published_at();
 
 alter table public.sessions enable row level security;
 
+drop policy if exists "Klient čte jen publikovaná sezení, admin všechna" on public.sessions;
 create policy "Klient čte jen publikovaná sezení, admin všechna"
   on public.sessions for select to authenticated
   using (
@@ -672,15 +706,18 @@ create policy "Klient čte jen publikovaná sezení, admin všechna"
     or (client_id = auth.uid() and status = 'published')
   );
 
+drop policy if exists "Sezení spravuje jen admin" on public.sessions;
 create policy "Sezení spravuje jen admin"
   on public.sessions for insert to authenticated
   with check (public.is_admin());
 
+drop policy if exists "Sezení upravuje jen admin" on public.sessions;
 create policy "Sezení upravuje jen admin"
   on public.sessions for update to authenticated
   using (public.is_admin())
   with check (public.is_admin());
 
+drop policy if exists "Sezení maže jen admin" on public.sessions;
 create policy "Sezení maže jen admin"
   on public.sessions for delete to authenticated
   using (public.is_admin());
@@ -699,6 +736,7 @@ create table if not exists public.session_feedback (
   updated_at timestamptz not null default now()
 );
 
+drop trigger if exists session_feedback_touch_updated_at on public.session_feedback;
 create trigger session_feedback_touch_updated_at
   before update on public.session_feedback
   for each row execute function public.touch_updated_at();
@@ -721,16 +759,19 @@ begin
 end;
 $$;
 
+drop trigger if exists session_feedback_set_client on public.session_feedback;
 create trigger session_feedback_set_client
   before insert or update of session_id on public.session_feedback
   for each row execute function public.session_feedback_set_client();
 
 alter table public.session_feedback enable row level security;
 
+drop policy if exists "Zpětnou vazbu čte autor nebo admin" on public.session_feedback;
 create policy "Zpětnou vazbu čte autor nebo admin"
   on public.session_feedback for select to authenticated
   using (client_id = auth.uid() or public.is_admin());
 
+drop policy if exists "Zpětnou vazbu píše klient k publikovanému sezení" on public.session_feedback;
 create policy "Zpětnou vazbu píše klient k publikovanému sezení"
   on public.session_feedback for insert to authenticated
   with check (
@@ -743,11 +784,13 @@ create policy "Zpětnou vazbu píše klient k publikovanému sezení"
     )
   );
 
+drop policy if exists "Zpětnou vazbu upravuje autor nebo admin" on public.session_feedback;
 create policy "Zpětnou vazbu upravuje autor nebo admin"
   on public.session_feedback for update to authenticated
   using (client_id = auth.uid() or public.is_admin())
   with check (client_id = auth.uid() or public.is_admin());
 
+drop policy if exists "Zpětnou vazbu maže autor nebo admin" on public.session_feedback;
 create policy "Zpětnou vazbu maže autor nebo admin"
   on public.session_feedback for delete to authenticated
   using (client_id = auth.uid() or public.is_admin());
@@ -764,14 +807,16 @@ create table if not exists public.session_preps (
   updated_at timestamptz not null default now()
 );
 
-create index session_preps_session_idx on public.session_preps (session_id);
+create index if not exists session_preps_session_idx on public.session_preps (session_id);
 
+drop trigger if exists session_preps_touch_updated_at on public.session_preps;
 create trigger session_preps_touch_updated_at
   before update on public.session_preps
   for each row execute function public.touch_updated_at();
 
 alter table public.session_preps enable row level security;
 
+drop policy if exists "Přípravy jsou jen pro admina" on public.session_preps;
 create policy "Přípravy jsou jen pro admina"
   on public.session_preps for all to authenticated
   using (public.is_admin())
@@ -785,14 +830,16 @@ create table if not exists public.client_notes (
   updated_at timestamptz not null default now()
 );
 
-create index client_notes_client_idx on public.client_notes (client_id, created_at desc);
+create index if not exists client_notes_client_idx on public.client_notes (client_id, created_at desc);
 
+drop trigger if exists client_notes_touch_updated_at on public.client_notes;
 create trigger client_notes_touch_updated_at
   before update on public.client_notes
   for each row execute function public.touch_updated_at();
 
 alter table public.client_notes enable row level security;
 
+drop policy if exists "Soukromé poznámky jsou jen pro admina" on public.client_notes;
 create policy "Soukromé poznámky jsou jen pro admina"
   on public.client_notes for all to authenticated
   using (public.is_admin())
@@ -808,14 +855,16 @@ create table if not exists public.client_links (
   updated_at timestamptz not null default now()
 );
 
-create index client_links_client_idx on public.client_links (client_id, position);
+create index if not exists client_links_client_idx on public.client_links (client_id, position);
 
+drop trigger if exists client_links_touch_updated_at on public.client_links;
 create trigger client_links_touch_updated_at
   before update on public.client_links
   for each row execute function public.touch_updated_at();
 
 alter table public.client_links enable row level security;
 
+drop policy if exists "Odkazy jsou jen pro admina" on public.client_links;
 create policy "Odkazy jsou jen pro admina"
   on public.client_links for all to authenticated
   using (public.is_admin())
@@ -856,10 +905,11 @@ create table if not exists public.push_subscriptions (
   fail_count   integer not null default 0
 );
 
-create index push_subscriptions_user_idx on public.push_subscriptions (user_id);
+create index if not exists push_subscriptions_user_idx on public.push_subscriptions (user_id);
 
 alter table public.push_subscriptions enable row level security;
 
+drop policy if exists "Odběr spravuje jeho vlastník" on public.push_subscriptions;
 create policy "Odběr spravuje jeho vlastník"
   on public.push_subscriptions for all to authenticated
   using (user_id = auth.uid())
@@ -879,12 +929,14 @@ create table if not exists public.notification_settings (
   updated_at        timestamptz not null default now()
 );
 
+drop trigger if exists notification_settings_touch_updated_at on public.notification_settings;
 create trigger notification_settings_touch_updated_at
   before update on public.notification_settings
   for each row execute function public.touch_updated_at();
 
 alter table public.notification_settings enable row level security;
 
+drop policy if exists "Nastavení notifikací spravuje jeho vlastník" on public.notification_settings;
 create policy "Nastavení notifikací spravuje jeho vlastník"
   on public.notification_settings for all to authenticated
   using (user_id = auth.uid())
@@ -905,6 +957,7 @@ begin
 end;
 $$;
 
+drop trigger if exists profiles_create_notification_settings on public.profiles;
 create trigger profiles_create_notification_settings
   after insert on public.profiles
   for each row execute function public.create_notification_settings();
@@ -924,10 +977,11 @@ create table if not exists public.notification_log (
   sent_at    timestamptz not null default now()
 );
 
-create index notification_log_user_idx on public.notification_log (user_id, sent_at desc);
+create index if not exists notification_log_user_idx on public.notification_log (user_id, sent_at desc);
 
 alter table public.notification_log enable row level security;
 
+drop policy if exists "Log notifikací vidí jen admin" on public.notification_log;
 create policy "Log notifikací vidí jen admin"
   on public.notification_log for select to authenticated
   using (public.is_admin());

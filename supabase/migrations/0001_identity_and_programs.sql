@@ -48,6 +48,7 @@ create table if not exists public.profiles (
   updated_at  timestamptz not null default now()
 );
 
+drop trigger if exists profiles_touch_updated_at on public.profiles;
 create trigger profiles_touch_updated_at
   before update on public.profiles
   for each row execute function public.touch_updated_at();
@@ -94,6 +95,7 @@ end;
 $$;
 
 drop trigger if exists on_auth_user_created on auth.users;
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
@@ -114,21 +116,25 @@ begin
 end;
 $$;
 
+drop trigger if exists profiles_guard_role on public.profiles;
 create trigger profiles_guard_role
   before update on public.profiles
   for each row execute function public.guard_profile_role();
 
 alter table public.profiles enable row level security;
 
+drop policy if exists "Profil čte vlastník nebo admin" on public.profiles;
 create policy "Profil čte vlastník nebo admin"
   on public.profiles for select to authenticated
   using (id = auth.uid() or public.is_admin());
 
+drop policy if exists "Profil upravuje vlastník nebo admin" on public.profiles;
 create policy "Profil upravuje vlastník nebo admin"
   on public.profiles for update to authenticated
   using (id = auth.uid() or public.is_admin())
   with check (id = auth.uid() or public.is_admin());
 
+drop policy if exists "Profil maže jen admin" on public.profiles;
 create policy "Profil maže jen admin"
   on public.profiles for delete to authenticated
   using (public.is_admin());
@@ -152,33 +158,38 @@ create table if not exists public.programs (
   updated_at    timestamptz not null default now()
 );
 
-create index programs_client_idx on public.programs (client_id, status);
+create index if not exists programs_client_idx on public.programs (client_id, status);
 
 -- Jeden běžící program na klienta. Dokončené a archivované se nepočítají,
 -- takže historie zůstává a na nový program se dá plynule navázat.
-create unique index programs_one_active_per_client
+create unique index if not exists programs_one_active_per_client
   on public.programs (client_id)
   where status = 'active';
 
+drop trigger if exists programs_touch_updated_at on public.programs;
 create trigger programs_touch_updated_at
   before update on public.programs
   for each row execute function public.touch_updated_at();
 
 alter table public.programs enable row level security;
 
+drop policy if exists "Program čte vlastník nebo admin" on public.programs;
 create policy "Program čte vlastník nebo admin"
   on public.programs for select to authenticated
   using (client_id = auth.uid() or public.is_admin());
 
+drop policy if exists "Program zakládá jen admin" on public.programs;
 create policy "Program zakládá jen admin"
   on public.programs for insert to authenticated
   with check (public.is_admin());
 
+drop policy if exists "Program upravuje jen admin" on public.programs;
 create policy "Program upravuje jen admin"
   on public.programs for update to authenticated
   using (public.is_admin())
   with check (public.is_admin());
 
+drop policy if exists "Program maže jen admin" on public.programs;
 create policy "Program maže jen admin"
   on public.programs for delete to authenticated
   using (public.is_admin());
@@ -193,12 +204,14 @@ create table if not exists public.app_settings (
   updated_at timestamptz not null default now()
 );
 
+drop trigger if exists app_settings_touch_updated_at on public.app_settings;
 create trigger app_settings_touch_updated_at
   before update on public.app_settings
   for each row execute function public.touch_updated_at();
 
 alter table public.app_settings enable row level security;
 
+drop policy if exists "Nastavení vidí jen admin" on public.app_settings;
 create policy "Nastavení vidí jen admin"
   on public.app_settings for all to authenticated
   using (public.is_admin())

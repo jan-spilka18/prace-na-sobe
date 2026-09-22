@@ -29,10 +29,11 @@ create table if not exists public.push_subscriptions (
   fail_count   integer not null default 0
 );
 
-create index push_subscriptions_user_idx on public.push_subscriptions (user_id);
+create index if not exists push_subscriptions_user_idx on public.push_subscriptions (user_id);
 
 alter table public.push_subscriptions enable row level security;
 
+drop policy if exists "Odběr spravuje jeho vlastník" on public.push_subscriptions;
 create policy "Odběr spravuje jeho vlastník"
   on public.push_subscriptions for all to authenticated
   using (user_id = auth.uid())
@@ -52,12 +53,14 @@ create table if not exists public.notification_settings (
   updated_at        timestamptz not null default now()
 );
 
+drop trigger if exists notification_settings_touch_updated_at on public.notification_settings;
 create trigger notification_settings_touch_updated_at
   before update on public.notification_settings
   for each row execute function public.touch_updated_at();
 
 alter table public.notification_settings enable row level security;
 
+drop policy if exists "Nastavení notifikací spravuje jeho vlastník" on public.notification_settings;
 create policy "Nastavení notifikací spravuje jeho vlastník"
   on public.notification_settings for all to authenticated
   using (user_id = auth.uid())
@@ -78,6 +81,7 @@ begin
 end;
 $$;
 
+drop trigger if exists profiles_create_notification_settings on public.profiles;
 create trigger profiles_create_notification_settings
   after insert on public.profiles
   for each row execute function public.create_notification_settings();
@@ -97,10 +101,11 @@ create table if not exists public.notification_log (
   sent_at    timestamptz not null default now()
 );
 
-create index notification_log_user_idx on public.notification_log (user_id, sent_at desc);
+create index if not exists notification_log_user_idx on public.notification_log (user_id, sent_at desc);
 
 alter table public.notification_log enable row level security;
 
+drop policy if exists "Log notifikací vidí jen admin" on public.notification_log;
 create policy "Log notifikací vidí jen admin"
   on public.notification_log for select to authenticated
   using (public.is_admin());
