@@ -8,7 +8,8 @@
 
 export type HabitType = "boolean" | "minutes" | "reps";
 export type EntryStatus = "done" | "missed";
-export type DayStatus = "complete" | "incomplete" | "empty";
+/** `rest` = den, na který nepřipadá žádný návyk. Klient nic nezanedbal. */
+export type DayStatus = "complete" | "incomplete" | "empty" | "rest";
 export type SessionKind = "coaching" | "breathwork";
 export type SessionStatus = "draft" | "published";
 export type UserRole = "admin" | "client";
@@ -51,6 +52,8 @@ export type Habit = Timestamps & {
   reminder_enabled: boolean;
   reminder_time: string | null;
   created_by: string | null;
+  /** Dny v týdnu podle ISO: 1 = pondělí … 7 = neděle. */
+  weekdays: number[];
 };
 
 export type HabitTarget = {

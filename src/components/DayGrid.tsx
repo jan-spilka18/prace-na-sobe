@@ -10,6 +10,9 @@ const CELL: Record<GridDay["status"], string> = {
   complete: "bg-turquoise text-white",
   incomplete: "bg-ink text-white",
   empty: "bg-canvas text-ink-500",
+  // Volno je bez výplně — ať je vidět, že tam nic nebylo, ne že se něco
+  // nestihlo. Jinak by splynulo s nevyplněným dnem.
+  rest: "text-ink-400",
 };
 
 /**
@@ -102,11 +105,18 @@ function Legend({ days }: { days: GridDay[] }) {
     complete: past.filter((day) => day.status === "complete").length,
     incomplete: past.filter((day) => day.status === "incomplete").length,
     empty: past.filter((day) => day.status === "empty").length,
+    rest: past.filter((day) => day.status === "rest").length,
   };
+
+  // Volno se v legendě objeví, jen když nějaké je — u každodenních návyků
+  // by to byla položka, která vždycky ukazuje nulu.
+  const shown = (["complete", "incomplete", "empty", "rest"] as const).filter(
+    (status) => status !== "rest" || counts.rest > 0,
+  );
 
   return (
     <dl className="flex flex-wrap gap-x-5 gap-y-2 px-1">
-      {(["complete", "incomplete", "empty"] as const).map((status) => (
+      {shown.map((status) => (
         <div key={status} className="flex items-center gap-2">
           <span
             aria-hidden
@@ -115,6 +125,7 @@ function Legend({ days }: { days: GridDay[] }) {
               status === "complete" && "bg-turquoise",
               status === "incomplete" && "bg-ink",
               status === "empty" && "bg-canvas ring-1 ring-inset ring-hairline",
+              status === "rest" && "ring-1 ring-inset ring-hairline",
             )}
           />
           <dt className="text-[13px] text-ink-600">

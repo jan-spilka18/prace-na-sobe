@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/Field";
-import { HABIT_TYPE_LABELS, formatTarget } from "@/lib/habits";
+import { HABIT_TYPE_LABELS, describeWeekdays, formatTarget } from "@/lib/habits";
 import { archiveHabit, deleteHabit, restoreHabit } from "@/app/actions/habits";
 import type { Habit, HabitTarget } from "@/lib/database.types";
 import { HabitForm } from "./HabitForm";
@@ -120,7 +120,8 @@ function HabitRow({
         <div className="min-w-0 flex-1">
           <h3 className="text-[17px] font-semibold text-ink">{habit.title}</h3>
           <p className="mt-0.5 text-[14px] text-ink-500">
-            {HABIT_TYPE_LABELS[habit.type]}
+            {describeWeekdays(habit.weekdays)}
+            {` · ${HABIT_TYPE_LABELS[habit.type]}`}
             {targetLabel && ` · ${targetLabel}`}
           </p>
           {habit.description && (

@@ -202,6 +202,36 @@ delete from public.habits where title = 'Čtení 20 stran';
 select pg_temp.check_eq((select count(*)::int from public.habits), 2, 'po smazání návyku bez historie');
 
 \echo ''
+\echo '=== Rozvrh dnů v týdnu ==='
+select pg_temp.check_eq(
+  (select weekdays::text from public.habits
+   where id = 'bbbbbbbb-0000-0000-0000-000000000001'),
+  '{1,2,3,4,5,6,7}', 'výchozí rozvrh je každý den');
+
+-- Kliky jen v pracovní dny. Víkendové vyplnění pak nesmí projít.
+update public.habits set weekdays = array[1,2,3,4,5]::smallint[]
+  where id = 'bbbbbbbb-0000-0000-0000-000000000002';
+
+select pg_temp.must_fail(
+  $$update public.habits set weekdays = array[]::smallint[]
+    where id = 'bbbbbbbb-0000-0000-0000-000000000002'$$,
+  'nechat návyk bez jediného dne');
+
+select pg_temp.must_fail(
+  $$update public.habits set weekdays = array[0,9]::smallint[]
+    where id = 'bbbbbbbb-0000-0000-0000-000000000002'$$,
+  'zadat den mimo rozsah 1 až 7');
+
+-- Nejbližší minulá sobota, tedy den, na který pracovní návyk nepřipadá.
+select pg_temp.must_fail(
+  format(
+    $$insert into public.habit_entries (habit_id, client_id, entry_date, status)
+      values ('bbbbbbbb-0000-0000-0000-000000000002', auth.uid(), %L, 'done')$$,
+    (select d::date from generate_series(current_date - 6, current_date, '1 day') d
+     where extract(isodow from d) = 6 limit 1)),
+  'vyplnit návyk v den, na který nepřipadá');
+
+\echo ''
 \echo '=== Vize ==='
 insert into public.visions (program_id, client_id, body)
   values ('aaaaaaaa-0000-0000-0000-000000000001',

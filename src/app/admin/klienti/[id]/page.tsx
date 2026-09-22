@@ -6,7 +6,12 @@ import { Card, ListGroup, ListRow } from "@/components/ui/List";
 import { clampedProgramDay, formatCzechDate, todayISO } from "@/lib/date";
 import { DayGrid } from "@/components/DayGrid";
 import { VisionCard } from "@/components/VisionCard";
-import { HABIT_TYPE_LABELS, formatTarget, targetFor } from "@/lib/habits";
+import {
+  HABIT_TYPE_LABELS,
+  describeWeekdays,
+  formatTarget,
+  targetFor,
+} from "@/lib/habits";
 import {
   activeProgram,
   allHabits,
@@ -113,7 +118,7 @@ export default async function ClientDetailPage({
             <ListRow
               key={habit.id}
               title={habit.title}
-              subtitle={HABIT_TYPE_LABELS[habit.type]}
+              subtitle={`${describeWeekdays(habit.weekdays)} · ${HABIT_TYPE_LABELS[habit.type]}`}
               trailing={formatTarget(
                 habit.type,
                 targetFor(targets, habit.id, today),

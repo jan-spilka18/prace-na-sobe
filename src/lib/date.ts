@@ -96,6 +96,16 @@ export function weekdayIndex(isoDate: string): number {
   return (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;
 }
 
+/**
+ * Den v týdnu podle ISO: 1 = pondělí … 7 = neděle.
+ *
+ * Stejné číslování používá `extract(isodow from date)` v databázi, takže
+ * se rozvrh návyku nikde nepřepočítává.
+ */
+export function isoWeekday(isoDate: string): number {
+  return weekdayIndex(isoDate) + 1;
+}
+
 export function formatCzechWeekday(isoDate: string): string {
   const [y, m, d] = isoDate.split("-").map(Number);
   return WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];

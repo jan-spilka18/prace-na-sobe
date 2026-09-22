@@ -5,6 +5,7 @@ import type {
   HabitTarget,
   HabitType,
 } from "@/lib/database.types";
+import { isoWeekday } from "@/lib/date";
 
 export type HabitForDay = Habit & {
   /** Cíl platný pro daný den. U typu ano/ne vždy null. */
@@ -67,16 +68,20 @@ export function actualValueLabel(type: HabitType): string {
 }
 
 /**
- * Stav dne podle zadání:
- *   splněno   — všechny návyky splněny
- *   nesplněno — aspoň jeden odkliknutý jako nesplněný
+ * Stav dne:
+ *   volno      — na den nepřipadá žádný návyk
+ *   splněno    — všechny naplánované návyky splněny
+ *   nesplněno  — aspoň jeden odkliknutý jako nesplněný
  *   nevyplněno — u aspoň jednoho návyku chybí záznam
  *
  * Nevyplněno má přednost před nesplněno: když klient odklikl jeden návyk
  * jako nesplněný a další vůbec nevyplnil, den ještě není uzavřený.
+ *
+ * Na vstupu jsou jen návyky naplánované na ten den — filtruje je volající,
+ * protože jedině on ví, o který den jde.
  */
 export function dayStatus(habits: HabitForDay[]): DayStatus {
-  if (habits.length === 0) return "empty";
+  if (habits.length === 0) return "rest";
 
   if (habits.some((habit) => habit.entry === null)) return "empty";
   if (habits.some((habit) => habit.entry?.status === "missed")) return "incomplete";
@@ -88,6 +93,7 @@ export const DAY_STATUS_LABELS: Record<DayStatus, string> = {
   complete: "Splněno",
   incomplete: "Nesplněno",
   empty: "Nevyplněno",
+  rest: "Volno",
 };
 
 /**
@@ -105,6 +111,9 @@ export function streakEndingAt(
 
   let streak = 0;
   for (let i = index; i >= 0; i--) {
+    // Den volna sérii nepřeruší ani ji nenafoukne. Klient v něj nic neměl,
+    // takže by bylo nespravedlivé počítat mu ho jako výpadek i jako výhru.
+    if (days[i].status === "rest") continue;
     if (days[i].status !== "complete") break;
     streak++;
   }
@@ -128,8 +137,38 @@ export function runningStreak(
   return withToday > 0 ? withToday : streakEndingAt(days, yesterday);
 }
 
-/** Návyk platil v daný den — po archivaci už se nenabízí k vyplnění. */
+/** Návyk ještě nebyl archivovaný — po archivaci se nenabízí k vyplnění. */
 export function wasActiveOn(habit: Habit, onDate: string): boolean {
   if (!habit.archived_at) return true;
   return habit.archived_at.slice(0, 10) > onDate;
+}
+
+/** Návyk připadá na tenhle den v týdnu. */
+export function scheduledOn(habit: Habit, onDate: string): boolean {
+  return habit.weekdays.includes(isoWeekday(onDate));
+}
+
+/** Návyk se v daný den skutečně vyplňuje: není archivovaný a připadá na něj. */
+export function appliesOn(habit: Habit, onDate: string): boolean {
+  return wasActiveOn(habit, onDate) && scheduledOn(habit, onDate);
+}
+
+export const WEEKDAY_SHORT = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
+
+export const EVERY_DAY = [1, 2, 3, 4, 5, 6, 7];
+export const WORKDAYS = [1, 2, 3, 4, 5];
+
+/** Popis rozvrhu do seznamu návyků: „Každý den", „Po–Pá", „Po, St, Pá". */
+export function describeWeekdays(weekdays: number[]): string {
+  const sorted = [...weekdays].sort((a, b) => a - b);
+
+  if (sorted.length === 7) return "Každý den";
+  if (sameDays(sorted, WORKDAYS)) return "Po–Pá";
+  if (sameDays(sorted, [6, 7])) return "Víkendy";
+
+  return sorted.map((day) => WEEKDAY_SHORT[day - 1]).join(", ");
+}
+
+function sameDays(a: number[], b: number[]): boolean {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
 }

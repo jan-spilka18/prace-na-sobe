@@ -46,10 +46,15 @@ PSQL="psql -h $SOCKET -p $PGPORT -U postgres -q -v ON_ERROR_STOP=1"
 
 # schema.sql je to, co se doopravdy vkládá do Supabase, takže se testuje ono.
 # Kdyby zestárlo proti migracím, test by ověřoval něco jiného, než co poběží.
+#
+# Porovnává se obsah před přegenerováním a po něm, ne stav v gitu — soubor
+# může být správný a přitom ještě nezacommitovaný.
+schema_before="$(cat "$REPO_ROOT/supabase/schema.sql" 2>/dev/null || true)"
 "$REPO_ROOT/scripts/build-schema.sh" > /dev/null
-if ! git -C "$REPO_ROOT" diff --quiet -- supabase/schema.sql 2>/dev/null; then
-  echo "CHYBA: supabase/schema.sql neodpovídá migracím." >&2
-  echo "Přegeneroval jsem ho — zkontroluj změnu a zacommituj." >&2
+
+if [ "$schema_before" != "$(cat "$REPO_ROOT/supabase/schema.sql")" ]; then
+  echo "CHYBA: supabase/schema.sql zestárlo proti migracím." >&2
+  echo "Přegeneroval jsem ho — zkontroluj změnu a spusť test znovu." >&2
   exit 1
 fi
 

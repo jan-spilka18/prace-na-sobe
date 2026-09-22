@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
 import { Field, FormError, Select, TextArea, TextInput } from "@/components/ui/Field";
-import { HABIT_TYPE_HINTS, HABIT_TYPE_LABELS } from "@/lib/habits";
+import { EVERY_DAY, HABIT_TYPE_HINTS, HABIT_TYPE_LABELS } from "@/lib/habits";
+import { WeekdayPicker } from "./WeekdayPicker";
 import { createHabit, setHabitTarget, updateHabit } from "@/app/actions/habits";
 import type { Habit, HabitType } from "@/lib/database.types";
 
@@ -29,6 +30,7 @@ export function HabitForm({
   const [description, setDescription] = useState(habit?.description ?? "");
   const [linkUrl, setLinkUrl] = useState(habit?.link_url ?? "");
   const [target, setTarget] = useState(currentTarget?.toString() ?? "");
+  const [weekdays, setWeekdays] = useState<number[]>(habit?.weekdays ?? EVERY_DAY);
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
 
@@ -45,6 +47,7 @@ export function HabitForm({
           title,
           description,
           linkUrl,
+          weekdays,
         });
         if (result.error) return setError(result.error);
 
@@ -66,6 +69,7 @@ export function HabitForm({
           description,
           linkUrl,
           target: needsTarget ? Number(target) : null,
+          weekdays,
         });
         if (result.error) return setError(result.error);
       }
@@ -123,6 +127,20 @@ export function HabitForm({
           />
         </Field>
       )}
+
+      {/*
+        Ne <Field>, protože ten je <label> a tlačítka do popisku nepatří —
+        klepnutí na text by spustilo první z nich.
+      */}
+      <fieldset>
+        <legend className="mb-1.5 px-1 text-[13px] font-semibold text-ink-600">
+          Kdy ho dělám
+        </legend>
+        <WeekdayPicker value={weekdays} onChange={setWeekdays} />
+        <p className="px-1 pt-2 text-[13px] text-ink-500">
+          Dny, na které návyk nepřipadá, se ti nenabídnou a sérii nezlomí.
+        </p>
+      </fieldset>
 
       <Field label="Popis" hint="Nepovinné.">
         <TextArea

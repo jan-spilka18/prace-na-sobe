@@ -1,10 +1,13 @@
 import { describe, it } from "vitest";
 import assert from "node:assert/strict";
 import {
+  appliesOn,
   dayStatus,
+  describeWeekdays,
   formatActual,
   formatTarget,
   runningStreak,
+  scheduledOn,
   streakEndingAt,
   targetFor,
   wasActiveOn,
@@ -94,6 +97,7 @@ function habitWith(
     reminder_enabled: false,
     reminder_time: null,
     created_by: null,
+    weekdays: [1, 2, 3, 4, 5, 6, 7],
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
   } satisfies Habit;
@@ -145,8 +149,59 @@ describe("dayStatus", () => {
     assert.equal(dayStatus([habitWith("a", null)]), "empty");
   });
 
-  it("den bez návyků je nevyplněný", () => {
-    assert.equal(dayStatus([]), "empty");
+  it("den, na který nic nepřipadá, je volno", () => {
+    // Ne „nevyplněno" — klient nic nezanedbal, prostě nic neměl.
+    assert.equal(dayStatus([]), "rest");
+  });
+});
+
+describe("scheduledOn a appliesOn", () => {
+  const base = habitWith("a", null);
+  // 21. 9. 2026 je pondělí, 26. 9. sobota, 27. 9. neděle.
+  const workdaysOnly = { ...base, weekdays: [1, 2, 3, 4, 5] };
+
+  it("pracovní návyk na víkend nepřipadá", () => {
+    assert.equal(scheduledOn(workdaysOnly, "2026-09-21"), true);
+    assert.equal(scheduledOn(workdaysOnly, "2026-09-25"), true);
+    assert.equal(scheduledOn(workdaysOnly, "2026-09-26"), false);
+    assert.equal(scheduledOn(workdaysOnly, "2026-09-27"), false);
+  });
+
+  it("každodenní návyk připadá na všechno", () => {
+    assert.equal(scheduledOn(base, "2026-09-26"), true);
+    assert.equal(scheduledOn(base, "2026-09-27"), true);
+  });
+
+  it("jednotlivé dny se dají vybrat", () => {
+    const monWedFri = { ...base, weekdays: [1, 3, 5] };
+    assert.equal(scheduledOn(monWedFri, "2026-09-21"), true);
+    assert.equal(scheduledOn(monWedFri, "2026-09-22"), false);
+    assert.equal(scheduledOn(monWedFri, "2026-09-23"), true);
+  });
+
+  it("archivovaný návyk nepřipadá ani na svůj den", () => {
+    const archived = { ...workdaysOnly, archived_at: "2026-09-22T10:00:00Z" };
+    assert.equal(scheduledOn(archived, "2026-09-23"), true);
+    assert.equal(appliesOn(archived, "2026-09-23"), false);
+    assert.equal(appliesOn(archived, "2026-09-21"), true);
+  });
+});
+
+describe("describeWeekdays", () => {
+  it("pojmenuje běžné rozvrhy", () => {
+    assert.equal(describeWeekdays([1, 2, 3, 4, 5, 6, 7]), "Každý den");
+    assert.equal(describeWeekdays([1, 2, 3, 4, 5]), "Po–Pá");
+    assert.equal(describeWeekdays([6, 7]), "Víkendy");
+  });
+
+  it("vypíše vlastní kombinaci", () => {
+    assert.equal(describeWeekdays([1, 3, 5]), "Po, St, Pá");
+    assert.equal(describeWeekdays([7]), "Ne");
+  });
+
+  it("nezáleží na pořadí", () => {
+    assert.equal(describeWeekdays([5, 1, 3]), "Po, St, Pá");
+    assert.equal(describeWeekdays([5, 4, 3, 2, 1]), "Po–Pá");
   });
 });
 
@@ -182,6 +237,36 @@ describe("streakEndingAt", () => {
 
   it("neznámý den nemá sérii", () => {
     assert.equal(streakEndingAt(days, "2026-02-01"), 0);
+  });
+});
+
+describe("série a dny volna", () => {
+  it("den volna sérii nepřeruší", () => {
+    const days = [
+      { date: "2026-01-02", status: "complete" as const },
+      { date: "2026-01-03", status: "rest" as const },
+      { date: "2026-01-04", status: "rest" as const },
+      { date: "2026-01-05", status: "complete" as const },
+    ];
+    assert.equal(streakEndingAt(days, "2026-01-05"), 2);
+  });
+
+  it("den volna sérii ani nenafoukne", () => {
+    const days = [
+      { date: "2026-01-03", status: "rest" as const },
+      { date: "2026-01-04", status: "rest" as const },
+      { date: "2026-01-05", status: "complete" as const },
+    ];
+    assert.equal(streakEndingAt(days, "2026-01-05"), 1);
+  });
+
+  it("dnešní volno ukáže sérii z minulých dní", () => {
+    const days = [
+      { date: "2026-01-04", status: "complete" as const },
+      { date: "2026-01-05", status: "complete" as const },
+      { date: "2026-01-06", status: "rest" as const },
+    ];
+    assert.equal(streakEndingAt(days, "2026-01-06"), 2);
   });
 });
 

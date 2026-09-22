@@ -95,7 +95,17 @@ export type HabitInput = {
   description: string;
   linkUrl: string;
   target: number | null;
+  weekdays: number[];
 };
+
+/** Rozvrh bez jediného dne by znamenal návyk, který nejde nikdy splnit. */
+function cleanWeekdays(weekdays: number[]): number[] | null {
+  const unique = [...new Set(weekdays)]
+    .filter((day) => Number.isInteger(day) && day >= 1 && day <= 7)
+    .sort((a, b) => a - b);
+
+  return unique.length === 0 ? null : unique;
+}
 
 export async function createHabit(input: HabitInput): Promise<ActionResult> {
   const profile = await requireProfile();
@@ -106,6 +116,9 @@ export async function createHabit(input: HabitInput): Promise<ActionResult> {
   if (input.type !== "boolean" && (!input.target || input.target < 1)) {
     return { error: "Zadej cílovou hodnotu." };
   }
+
+  const weekdays = cleanWeekdays(input.weekdays);
+  if (!weekdays) return { error: "Vyber aspoň jeden den v týdnu." };
 
   const { data: last } = await supabase
     .from("habits")
@@ -124,6 +137,7 @@ export async function createHabit(input: HabitInput): Promise<ActionResult> {
       description: input.description.trim() || null,
       link_url: input.linkUrl.trim() || null,
       position: (last?.position ?? 0) + 1,
+      weekdays,
       created_by: profile.id,
     })
     .select("id")
@@ -158,11 +172,15 @@ export async function updateHabit(input: {
   title: string;
   description: string;
   linkUrl: string;
+  weekdays: number[];
 }): Promise<ActionResult> {
   await requireProfile();
 
   const title = input.title.trim();
   if (!title) return { error: "Návyk potřebuje název." };
+
+  const weekdays = cleanWeekdays(input.weekdays);
+  if (!weekdays) return { error: "Vyber aspoň jeden den v týdnu." };
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -171,6 +189,7 @@ export async function updateHabit(input: {
       title,
       description: input.description.trim() || null,
       link_url: input.linkUrl.trim() || null,
+      weekdays,
     })
     .eq("id", input.habitId);
 

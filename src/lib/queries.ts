@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Habit, HabitEntry, HabitTarget, Program } from "@/lib/database.types";
-import { type HabitForDay, dayStatus, targetFor, wasActiveOn } from "@/lib/habits";
+import { type HabitForDay, appliesOn, dayStatus, targetFor } from "@/lib/habits";
 import { addDays, todayISO } from "@/lib/date";
 import type { DayStatus } from "@/lib/database.types";
 
@@ -45,7 +45,7 @@ export async function habitsForDay(
       .eq("entry_date", date),
   ]);
 
-  const applicable = (habits ?? []).filter((habit) => wasActiveOn(habit, date));
+  const applicable = (habits ?? []).filter((habit) => appliesOn(habit, date));
   if (applicable.length === 0) return [];
 
   const { data: targets } = await supabase
@@ -113,7 +113,7 @@ export async function programGrid(
 
   for (let offset = 0; offset < program.duration_days; offset++) {
     const date = addDays(program.start_date, offset);
-    const applicable = (habits ?? []).filter((habit) => wasActiveOn(habit, date));
+    const applicable = (habits ?? []).filter((habit) => appliesOn(habit, date));
     const forDate = entriesByDate.get(date);
 
     const withEntries: HabitForDay[] = applicable.map((habit) => ({

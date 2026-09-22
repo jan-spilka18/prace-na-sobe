@@ -5,7 +5,13 @@ import { Screen } from "@/components/ui/Screen";
 import { EmptyState } from "@/components/ui/List";
 import { Button } from "@/components/ui/Button";
 import { SignOutButton } from "@/components/SignOutButton";
-import { activeProgram, habitsForDay, programGrid, visionFor } from "@/lib/queries";
+import {
+  activeProgram,
+  allHabits,
+  habitsForDay,
+  programGrid,
+  visionFor,
+} from "@/lib/queries";
 import {
   addDays,
   clampedProgramDay,
@@ -49,6 +55,10 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
   const habits = await habitsForDay(supabase, profile.id, date);
   const days = await programGrid(supabase, profile.id, program);
   const vision = await visionFor(supabase, program.id);
+  // Rozlišuje „ještě si žádné nezadal" od „na dnešek žádný nepřipadá".
+  const hasHabits = (await allHabits(supabase, profile.id)).some(
+    (habit) => !habit.archived_at,
+  );
   const streak = runningStreak(days, date, addDays(date, -1));
 
   const dayNumber = clampedProgramDay(
@@ -83,16 +93,32 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
           <DayStep href={next ? `/?den=${next}` : null} direction="next" />
         </nav>
 
-        {habits.length === 0 ? (
+        {habits.length === 0 && !hasHabits ? (
           <EmptyState
             title="Ještě nemáš návyky"
-            description="Zadej si tři, které chceš během výzvy dělat každý den. Kdykoli je můžeš upravit."
+            description="Zadej si tři, které chceš během výzvy dělat. Kdykoli je můžeš upravit."
             action={
               <Link href="/navyky">
                 <Button>Nastavit návyky</Button>
               </Link>
             }
           />
+        ) : habits.length === 0 ? (
+          // Návyky má, jen na tenhle den v týdnu žádný nepřipadá.
+          <>
+            <DayHero
+              dayNumber={dayNumber}
+              durationDays={program.duration_days}
+              habits={[]}
+              streak={streak}
+              notStarted={notStarted}
+            />
+            <VisionQuote body={vision} />
+            <EmptyState
+              title="Dneska máš volno"
+              description="Na tenhle den sis žádný návyk nenaplánoval. Sérii ti to nezlomí."
+            />
+          </>
         ) : (
           <CelebrationProvider>
             <div className="space-y-4">

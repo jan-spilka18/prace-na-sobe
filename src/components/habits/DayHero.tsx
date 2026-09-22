@@ -47,7 +47,7 @@ export function DayHero({
           </p>
         </div>
 
-        {habits.length > 0 && (
+        {habits.length > 0 ? (
           <div className="pb-1 text-right">
             <p className="text-[28px] font-bold leading-none tabular-nums">
               {done}
@@ -63,6 +63,10 @@ export function DayHero({
               {complete ? "hotovo" : "splněno"}
             </p>
           </div>
+        ) : (
+          <p className="pb-2 text-right text-[17px] font-semibold text-white/80">
+            Volno
+          </p>
         )}
       </div>
 
