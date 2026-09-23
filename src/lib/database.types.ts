@@ -154,6 +154,24 @@ export type PushSubscriptionRow = {
   fail_count: number;
 };
 
+export type NotificationKind =
+  | "habit_reminder"
+  | "daily_summary"
+  | "pattern_alert";
+
+export type NotificationChannel = "push" | "email";
+
+export type NotificationLogRow = {
+  id: string;
+  user_id: string | null;
+  kind: NotificationKind;
+  channel: NotificationChannel;
+  /** Unikátní klíč proti dvojímu odeslání. Zápis při shodě selže. */
+  dedupe_key: string;
+  payload: Record<string, unknown>;
+  sent_at: string;
+};
+
 /**
  * `Generated` vyjmenovává sloupce, které plní databáze — výchozí hodnotou nebo
  * triggerem. Typ je z zápisu odstraní, aby se aplikace nesnažila poslat
@@ -190,6 +208,7 @@ export type Database = {
       client_links: TableDef<ClientLink, Audit>;
       notification_settings: TableDef<NotificationSettings, "created_at" | "updated_at">;
       push_subscriptions: TableDef<PushSubscriptionRow, "id" | "created_at">;
+      notification_log: TableDef<NotificationLogRow, "id" | "sent_at">;
       app_settings: TableDef<
         { key: string; value: unknown; updated_at: string },
         "updated_at"

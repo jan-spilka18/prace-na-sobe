@@ -31,6 +31,10 @@ export function HabitForm({
   const [linkUrl, setLinkUrl] = useState(habit?.link_url ?? "");
   const [target, setTarget] = useState(currentTarget?.toString() ?? "");
   const [weekdays, setWeekdays] = useState<number[]>(habit?.weekdays ?? EVERY_DAY);
+  // V databázi je to time (00:00:00), v <input type="time"> jen hh:mm.
+  const [reminderTime, setReminderTime] = useState(
+    habit?.reminder_enabled ? (habit.reminder_time ?? "").slice(0, 5) : "",
+  );
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
 
@@ -48,6 +52,7 @@ export function HabitForm({
           description,
           linkUrl,
           weekdays,
+          reminderTime,
         });
         if (result.error) return setError(result.error);
 
@@ -70,6 +75,7 @@ export function HabitForm({
           linkUrl,
           target: needsTarget ? Number(target) : null,
           weekdays,
+          reminderTime,
         });
         if (result.error) return setError(result.error);
       }
@@ -141,6 +147,21 @@ export function HabitForm({
           Dny, na které návyk nepřipadá, se ti nenabídnou a sérii nezlomí.
         </p>
       </fieldset>
+
+      <Field
+        label="Připomínka"
+        hint={
+          reminderTime
+            ? "Přijde jen ve dnech, na které návyk připadá, a jen když ho ještě nemáš odškrtnutý."
+            : "Nepovinné. Nech prázdné, pokud připomínku nechceš."
+        }
+      >
+        <TextInput
+          type="time"
+          value={reminderTime}
+          onChange={(event) => setReminderTime(event.target.value)}
+        />
+      </Field>
 
       <Field label="Popis" hint="Nepovinné.">
         <TextArea

@@ -3,12 +3,15 @@ import { Screen } from "@/components/ui/Screen";
 import { ListGroup, ListRow } from "@/components/ui/List";
 import { SignOutButton } from "@/components/SignOutButton";
 import { APP_NAME } from "@/lib/config";
+import { NotificationSettings } from "@/components/NotificationSettings";
+import { publicVapidKey } from "@/lib/push";
 
 export const metadata = { title: "Nastavení" };
 
 export default async function SettingsPage() {
   const profile = await requireProfile();
   const adminPassword = await usesAdminPassword();
+  const vapidKey = publicVapidKey();
 
   return (
     <Screen title="Nastavení" subtitle={profile.full_name || profile.email}>
@@ -25,9 +28,12 @@ export default async function SettingsPage() {
           </div>
         )}
 
+        <NotificationSettings publicKey={vapidKey} />
+
         <ListGroup title="Účet">
           <ListRow title="E-mail" trailing={profile.email} />
           <ListRow title="Změnit heslo" href="/zmena-hesla" />
+          <ListRow title="Appka na plochu" href="/nastaveni/instalace" />
         </ListGroup>
 
         <section className="space-y-2">

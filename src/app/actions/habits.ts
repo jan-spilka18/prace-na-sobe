@@ -97,6 +97,7 @@ export type HabitInput = {
   linkUrl: string;
   target: number | null;
   weekdays: number[];
+  reminderTime?: string | null;
 };
 
 /** Rozvrh bez jediného dne by znamenal návyk, který nejde nikdy splnit. */
@@ -106,6 +107,24 @@ function cleanWeekdays(weekdays: number[]): number[] | null {
     .sort((a, b) => a - b);
 
   return unique.length === 0 ? null : unique;
+}
+
+/**
+ * Čas připomínky do databáze.
+ *
+ * Prázdné pole znamená „bez připomínky". Sloupec reminder_time nesmí zůstat
+ * vyplněný, když je reminder_enabled false — databáze to hlídá kontrolou
+ * reminder_needs_time.
+ */
+function cleanReminder(raw: string | null | undefined): {
+  reminder_enabled: boolean;
+  reminder_time: string | null;
+} {
+  const value = (raw ?? "").trim();
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) {
+    return { reminder_enabled: false, reminder_time: null };
+  }
+  return { reminder_enabled: true, reminder_time: `${value}:00` };
 }
 
 export async function createHabit(input: HabitInput): Promise<ActionResult> {
@@ -139,6 +158,7 @@ export async function createHabit(input: HabitInput): Promise<ActionResult> {
       link_url: safeUrl(input.linkUrl),
       position: (last?.position ?? 0) + 1,
       weekdays,
+      ...cleanReminder(input.reminderTime),
       created_by: profile.id,
     })
     .select("id")
@@ -174,6 +194,7 @@ export async function updateHabit(input: {
   description: string;
   linkUrl: string;
   weekdays: number[];
+  reminderTime?: string | null;
 }): Promise<ActionResult> {
   await requireProfile();
 
@@ -191,6 +212,7 @@ export async function updateHabit(input: {
       description: input.description.trim() || null,
       link_url: safeUrl(input.linkUrl),
       weekdays,
+      ...cleanReminder(input.reminderTime),
     })
     .eq("id", input.habitId);
 

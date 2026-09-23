@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { TabBar } from "@/components/ui/TabBar";
+import { ServiceWorker } from "@/components/ServiceWorker";
 
 export default async function ClientLayout({ children }: LayoutProps<"/">) {
   const profile = await requireProfile();
@@ -10,6 +11,7 @@ export default async function ClientLayout({ children }: LayoutProps<"/">) {
     <>
       {children}
       <TabBar />
+      <ServiceWorker />
     </>
   );
 }
