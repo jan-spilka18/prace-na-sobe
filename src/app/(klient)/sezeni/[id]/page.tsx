@@ -59,7 +59,7 @@ export default async function ClientSessionPage({
                 section.key === HIGHLIGHT_SECTION ? (
                   <section
                     key={section.key}
-                    className="rounded-card bg-sun px-4 py-3.5"
+                    className="rounded-card bg-sun-surface px-4 py-3.5"
                   >
                     <h2 className="font-display text-[19px] font-bold tracking-tight text-ink">
                       {section.title}

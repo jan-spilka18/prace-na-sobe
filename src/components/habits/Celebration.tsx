@@ -76,7 +76,7 @@ function Toast({
         onClick={onDismiss}
         className={cn(
           "pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-sheet",
-          "bg-ink px-4 py-3 text-left text-white shadow-lg",
+          "bg-night px-4 py-3 text-left text-white shadow-lg",
         )}
       >
         <span

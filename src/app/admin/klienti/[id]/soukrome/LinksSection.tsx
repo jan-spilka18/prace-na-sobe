@@ -102,7 +102,7 @@ export function LinksSection({
           type="button"
           onClick={add}
           disabled={pending || title.trim() === "" || url.trim() === ""}
-          className="min-h-[40px] w-full rounded-card bg-sun text-[15px] font-semibold text-ink disabled:opacity-40"
+          className="min-h-[40px] w-full rounded-card bg-sun text-[15px] font-semibold text-on-sun disabled:opacity-40"
         >
           {pending ? "Ukládám…" : "Přidat odkaz"}
         </button>

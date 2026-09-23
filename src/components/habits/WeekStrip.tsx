@@ -77,7 +77,7 @@ function Day({
       !day.isFuture &&
       {
         complete: "bg-turquoise text-white",
-        incomplete: "bg-ink text-white",
+        incomplete: "bg-ink text-on-ink",
         empty: "bg-canvas text-ink-600 ring-1 ring-inset ring-hairline",
         rest: "text-ink-400 ring-1 ring-inset ring-hairline",
       }[day.status],

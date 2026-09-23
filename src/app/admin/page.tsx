@@ -89,7 +89,7 @@ export default async function AdminPage() {
               nic nemá, a kdyby tu svítila nula ze tří, vypadalo by to jako
               průšvih každé ráno.
             */}
-            <section className="rounded-group bg-ink p-4 text-white">
+            <section className="rounded-group bg-night p-4 text-white">
               <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-white/55">
                 Včera · {formatCzechDate(yesterday)}
               </p>

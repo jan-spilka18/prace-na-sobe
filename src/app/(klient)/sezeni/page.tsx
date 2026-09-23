@@ -72,7 +72,7 @@ export default async function ClientSessionsPage() {
                         {formatCzechDate(session.session_date)}
                       </h3>
                       {needsFeedback && (
-                        <span className="shrink-0 rounded-full bg-sun px-2 py-0.5 text-[11px] font-semibold text-ink">
+                        <span className="shrink-0 rounded-full bg-sun-surface px-2 py-0.5 text-[11px] font-semibold text-ink">
                           Čeká na tebe
                         </span>
                       )}

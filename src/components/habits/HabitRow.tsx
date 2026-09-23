@@ -201,7 +201,7 @@ export function HabitRow({
             className={cn(
               "min-h-[40px] w-full rounded-card text-[15px] font-semibold transition-colors",
               status === "missed"
-                ? "bg-ink text-white"
+                ? "bg-ink text-on-ink"
                 : "bg-canvas text-ink-600 active:bg-hairline",
             )}
           >
@@ -244,7 +244,7 @@ function Tick({
           "transition-all duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
           "group-active:scale-90",
           status === "done" && "scale-105 border-turquoise bg-turquoise text-white",
-          status === "missed" && "border-ink bg-ink text-white",
+          status === "missed" && "border-ink bg-ink text-on-ink",
           status === null && "border-hairline text-transparent",
         )}
       >

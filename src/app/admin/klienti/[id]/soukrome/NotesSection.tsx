@@ -69,7 +69,7 @@ export function NotesSection({
           type="button"
           onClick={add}
           disabled={pending || draft.trim() === ""}
-          className="min-h-[40px] w-full rounded-card bg-sun text-[15px] font-semibold text-ink disabled:opacity-40"
+          className="min-h-[40px] w-full rounded-card bg-sun text-[15px] font-semibold text-on-sun disabled:opacity-40"
         >
           {pending ? "Ukládám…" : "Přidat poznámku"}
         </button>

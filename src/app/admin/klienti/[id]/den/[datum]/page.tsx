@@ -57,7 +57,7 @@ export default async function AdminDayPage({
         <Card
           className={cn(
             status === "complete" && "bg-turquoise text-white",
-            status === "incomplete" && "bg-ink text-white",
+            status === "incomplete" && "bg-ink text-on-ink",
           )}
         >
           <p className="text-[17px] font-semibold">
@@ -123,7 +123,7 @@ function HabitDetail({ habit }: { habit: HabitForDay }) {
       )}
 
       {entry?.backfilled && (
-        <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-sun px-2.5 py-1 text-[13px] font-medium text-sun-700">
+        <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-sun-surface px-2.5 py-1 text-[13px] font-medium text-sun-700">
           Doplněno zpětně {formatBackfill(entry.created_at)}
         </p>
       )}
@@ -168,7 +168,7 @@ function StatusBadge({ status }: { status: "done" | "missed" | null }) {
       className={cn(
         "shrink-0 rounded-full px-2.5 py-1 text-[13px] font-semibold",
         status === "done" && "bg-turquoise-100 text-turquoise-700",
-        status === "missed" && "bg-ink text-white",
+        status === "missed" && "bg-ink text-on-ink",
         status === null && "bg-canvas text-ink-500",
       )}
     >

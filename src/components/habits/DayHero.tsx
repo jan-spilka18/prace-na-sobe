@@ -30,8 +30,8 @@ export function DayHero({
       className={cn(
         "rounded-sheet px-5 py-4 text-white",
         complete
-          ? "bg-gradient-to-br from-turquoise to-turquoise-700"
-          : "bg-gradient-to-br from-ink to-[#2c2c2e]",
+          ? "bg-gradient-to-br from-turquoise to-turquoise-deep"
+          : "bg-gradient-to-br from-night to-night-2",
       )}
     >
       <div className="flex items-start justify-between gap-4">

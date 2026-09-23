@@ -137,7 +137,7 @@ export function VisionQuote({ body }: { body: string }) {
       type="button"
       onClick={() => setExpanded((value) => !value)}
       aria-expanded={expanded}
-      className="mt-2 flex w-full items-start gap-3 rounded-group bg-sun px-4 py-3.5 text-left"
+      className="mt-2 flex w-full items-start gap-3 rounded-group bg-sun-surface px-4 py-3.5 text-left"
     >
       <span className="min-w-0 flex-1">
         <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink/55">

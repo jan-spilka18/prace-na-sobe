@@ -8,7 +8,7 @@ const WEEKDAYS = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
 
 const CELL: Record<GridDay["status"], string> = {
   complete: "bg-turquoise text-white",
-  incomplete: "bg-ink text-white",
+  incomplete: "bg-ink text-on-ink",
   empty: "bg-canvas text-ink-500",
   // Volno je bez výplně — ať je vidět, že tam nic nebylo, ne že se něco
   // nestihlo. Jinak by splynulo s nevyplněným dnem.

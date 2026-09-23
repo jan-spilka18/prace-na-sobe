@@ -22,7 +22,7 @@ export function PrivateBlock({
   children: React.ReactNode;
 }) {
   return (
-    <section className={cn("rounded-group bg-ink p-4 text-white", className)}>
+    <section className={cn("rounded-group bg-night p-4 text-white", className)}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="flex items-center gap-1.5 font-display text-[17px] font-semibold">
