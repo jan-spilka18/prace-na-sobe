@@ -240,7 +240,11 @@ export function Onboarding({
             <HabitsStep
               programId={programId}
               existing={existingHabits}
-              onDone={() => complete("habits")}
+              // Fajfka v závěru jen tomu, kdo nějaké návyky opravdu má —
+              // „Přidám později" bez předvyplněných je přeskočení, ne splnění.
+              onDone={(added) =>
+                added > 0 || existingHabits.length > 0 ? complete("habits") : next()
+              }
             />
           )}
           {step === "done" && (

@@ -12,7 +12,7 @@ import { EVERY_DAY, WORKDAYS } from "@/lib/habits";
 import { changePassword } from "@/app/actions/account";
 import { saveVision } from "@/app/actions/vision";
 import { createHabit } from "@/app/actions/habits";
-import { PrimaryButton, Rise, SlideHeading } from "./parts";
+import { Mark, PrimaryButton, Rise, SlideHeading } from "./parts";
 
 /*
   Nastavení v průvodci. Každý krok se dá přeskočit tlačítkem nahoře —
@@ -33,7 +33,7 @@ export function ProfileStep({
   return (
     <div>
       <SlideHeading title="Pár slov o tobě">
-        Ať se ti můžu ozvat a nezapomenu ti popřát k narozeninám.
+        Ať se ti můžu ozvat a <Mark>nezapomenu ti popřát</Mark> k narozeninám.
       </SlideHeading>
       <Rise i={2} className="mt-6">
         <ProfileForm initial={initial} submitLabel="Uložit a dál" onSaved={onDone} />
@@ -60,7 +60,7 @@ export function PasswordStep({ onDone }: { onDone: () => void }) {
   return (
     <div>
       <SlideHeading title="Vlastní heslo">
-        Teď máš heslo ode mě. Nastav si vlastní, ať ho znáš jen ty.
+        Teď máš heslo ode mě. Nastav si vlastní, ať ho <Mark>znáš jen ty</Mark>.
       </SlideHeading>
 
       <Rise i={2} className="mt-6">
@@ -147,7 +147,8 @@ export function VisionStep({
   return (
     <div>
       <SlideHeading title="Tvoje vize">
-        Tři otázky. Odpověz svými slovy — nikdo to hodnotit nebude.
+        Tři otázky. Odpověz <Mark>svými slovy</Mark> — nikdo to hodnotit
+        nebude.
       </SlideHeading>
 
       <Rise i={2} className="mt-6 space-y-3">
@@ -206,6 +207,26 @@ export function VisionStep({
 
 type HabitDraft = { title: string; workdays: boolean };
 
+const EXAMPLES = ["Meditace", "Kliky", "Studená sprcha", "Čtení", "Deník"];
+const MAX_DRAFTS = 5;
+
+function habitWord(count: number): string {
+  if (count === 1) return "návyk";
+  if (count < 5) return "návyky";
+  return "návyků";
+}
+
+/**
+ * Návyky v průvodci.
+ *
+ * Jeden krok pro oba případy: když Honza návyky předvyplnil, klient je
+ * vidí nahoře a pod nimi si může přidat další. Když ne, začíná rovnou
+ * prázdnými řádky.
+ *
+ * Hlavní tlačítko není nikdy zašedlé. Zašedlé tlačítko říká „tady nemůžeš
+ * dál" — a přitom nic tu povinné není. Bez vyplněného řádku se z něj
+ * stane „Přidám později".
+ */
 export function HabitsStep({
   programId,
   existing,
@@ -215,11 +236,13 @@ export function HabitsStep({
   existing: string[];
   onDone: (added: number) => void;
 }) {
-  const [drafts, setDrafts] = useState<HabitDraft[]>([
-    { title: "", workdays: false },
-    { title: "", workdays: false },
-    { title: "", workdays: false },
-  ]);
+  // Kdo nemá nic, dostane tři řádky; kdo už něco má, jeden navíc.
+  const [drafts, setDrafts] = useState<HabitDraft[]>(() =>
+    Array.from({ length: existing.length === 0 ? 3 : 1 }, () => ({
+      title: "",
+      workdays: false,
+    })),
+  );
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
 
@@ -231,7 +254,17 @@ export function HabitsStep({
     );
   }
 
+  function addRow() {
+    setDrafts((current) =>
+      current.length >= MAX_DRAFTS
+        ? current
+        : [...current, { title: "", workdays: false }],
+    );
+  }
+
   function submit() {
+    if (filled.length === 0) return onDone(0);
+
     setError(undefined);
     startTransition(async () => {
       // Postupně, ne najednou: pořadí se počítá z posledního uloženého
@@ -252,86 +285,106 @@ export function HabitsStep({
     });
   }
 
-  // Honza už návyky předvyplnil — klient je jen uvidí a jde dál.
-  if (existing.length > 0) {
-    return (
-      <div>
-        <SlideHeading title="Tvoje návyky">
-          Tyhle jsme si domluvili. Cíle, dny a popisy si kdykoli upravíš
-          v sekci Návyky.
-        </SlideHeading>
+  return (
+    <div>
+      <SlideHeading title="Tvoje návyky">
+        {existing.length > 0 ? (
+          <>
+            Tyhle už máš připravené. Můžeš si <Mark>přidat další</Mark>, nebo
+            pokračovat — doplnit je jde kdykoli.
+          </>
+        ) : (
+          <>
+            Napiš si pár věcí, které chceš během výzvy dělat.{" "}
+            <Mark>Stačí název</Mark>, zbytek doladíš později.
+          </>
+        )}
+      </SlideHeading>
+
+      {existing.length > 0 && (
         <Rise i={2} className="mt-6 space-y-2">
           {existing.map((title) => (
             <div
               key={title}
               className="flex items-center gap-3 rounded-group border border-hairline bg-surface px-3 py-3"
             >
-              <span className="h-8 w-8 shrink-0 rounded-full border-2 border-hairline" />
-              <span className="text-[16px] font-semibold text-ink">{title}</span>
+              <span aria-hidden className="h-8 w-8 shrink-0 rounded-full border-2 border-hairline" />
+              <span className="min-w-0 truncate text-[16px] font-semibold text-ink">{title}</span>
             </div>
           ))}
         </Rise>
-        <div className="mt-6">
-          <PrimaryButton onClick={() => onDone(0)}>Pokračovat</PrimaryButton>
-        </div>
-      </div>
-    );
-  }
+      )}
 
-  return (
-    <div>
-      <SlideHeading title="Tvoje návyky">
-        Napiš si tři věci, které chceš během výzvy dělat. Cíle a připomínky
-        doplníš později v sekci Návyky.
-      </SlideHeading>
+      <Rise i={3} className="mt-6">
+        {existing.length > 0 && (
+          <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-500">
+            Přidat další
+          </h2>
+        )}
 
-      <Rise i={2} className="mt-6 space-y-2">
-        {drafts.map((draft, index) => (
-          <div key={index} className="rounded-group bg-surface p-3">
-            <TextInput
-              aria-label={`Návyk ${index + 1}`}
-              placeholder={["Meditace", "Kliky", "Studená sprcha"][index]}
-              value={draft.title}
-              onChange={(event) => update(index, { title: event.target.value })}
-            />
-            <div
-              role="radiogroup"
-              aria-label="Kdy"
-              className="mt-2 grid grid-cols-2 gap-1 rounded-card bg-canvas p-1"
-            >
-              {[
-                { label: "Každý den", workdays: false },
-                { label: "Po–Pá", workdays: true },
-              ].map((option) => (
-                <button
-                  key={option.label}
-                  type="button"
-                  role="radio"
-                  aria-checked={draft.workdays === option.workdays}
-                  onClick={() => update(index, { workdays: option.workdays })}
-                  className={cn(
-                    "min-h-[36px] rounded-[0.6rem] text-[14px] font-semibold transition-colors duration-150",
-                    draft.workdays === option.workdays
-                      ? "bg-surface text-ink shadow-sm"
-                      : "text-ink-500",
-                  )}
-                >
-                  {option.label}
-                </button>
-              ))}
+        <div className="space-y-2">
+          {drafts.map((draft, index) => (
+            <div key={index} className="rounded-group bg-surface p-3">
+              <TextInput
+                aria-label={`Nový návyk ${index + 1}`}
+                placeholder={EXAMPLES[(existing.length + index) % EXAMPLES.length]}
+                value={draft.title}
+                onChange={(event) => update(index, { title: event.target.value })}
+              />
+              <div
+                role="radiogroup"
+                aria-label="Kdy"
+                className="mt-2 grid grid-cols-2 gap-1 rounded-card bg-canvas p-1"
+              >
+                {[
+                  { label: "Každý den", workdays: false },
+                  { label: "Po–Pá", workdays: true },
+                ].map((option) => (
+                  <button
+                    key={option.label}
+                    type="button"
+                    role="radio"
+                    aria-checked={draft.workdays === option.workdays}
+                    onClick={() => update(index, { workdays: option.workdays })}
+                    className={cn(
+                      "min-h-[36px] rounded-[0.6rem] text-[14px] font-semibold transition-colors duration-150",
+                      draft.workdays === option.workdays
+                        ? "bg-surface text-ink shadow-sm"
+                        : "text-ink-500",
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+
+        {drafts.length < MAX_DRAFTS && (
+          <button
+            type="button"
+            onClick={addRow}
+            className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-group border border-dashed border-hairline text-[15px] font-semibold text-turquoise-700 active:bg-surface"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Další řádek
+          </button>
+        )}
       </Rise>
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-6 space-y-3">
         <FormError>{error}</FormError>
-        <PrimaryButton onClick={submit} disabled={pending || filled.length === 0}>
+        <PrimaryButton onClick={submit} disabled={pending}>
           {pending
             ? "Ukládám…"
-            : filled.length === 0
-              ? "Uložit návyky"
-              : `Uložit ${filled.length} ${filled.length === 1 ? "návyk" : "návyky"}`}
+            : filled.length > 0
+              ? `Uložit ${filled.length} ${habitWord(filled.length)}`
+              : existing.length > 0
+                ? "Pokračovat"
+                : "Přidám později"}
         </PrimaryButton>
       </div>
     </div>
@@ -352,7 +405,8 @@ export function DoneStep({
   return (
     <div>
       <SlideHeading title="Připraveno">
-        Začni hned dneškem. Stačí otevřít aplikaci a odškrtnout, co máš hotové.
+        Začni <Mark>hned dneškem</Mark>. Stačí otevřít aplikaci a odškrtnout,
+        co máš hotové.
       </SlideHeading>
 
       <Rise i={2} className="mt-6">

@@ -25,7 +25,14 @@ export function Rise({
   );
 }
 
-/** Nadpis a text slidu. Stejný rytmus na každém, ať se neskáče. */
+/**
+ * Nadpis a text slidu.
+ *
+ * Text pod nadpisem je serifem jako nadpis, jen tenčím řezem, a skoro
+ * černý. Šedý odstavec systémovým písmem pod serifovým titulkem je vzorec
+ * z každé druhé šablony — a šedá navíc říká „tohle nemusíš číst", což
+ * u věty, která vysvětluje celý slide, neplatí.
+ */
 export function SlideHeading({
   title,
   children,
@@ -36,18 +43,33 @@ export function SlideHeading({
   return (
     <>
       <Rise i={0}>
-        <h1 className="font-display text-[30px] font-bold leading-[1.1] tracking-tight text-ink text-balance">
+        <h1 className="font-display text-[32px] font-bold leading-[1.05] tracking-tight text-ink text-balance">
           {title}
         </h1>
       </Rise>
       {children && (
         <Rise i={1}>
-          <p className="mt-3 text-[16px] leading-relaxed text-ink-600">
+          <p className="mt-3.5 font-display text-[19px] font-normal leading-[1.45] text-ink/75 text-pretty">
             {children}
           </p>
         </Rise>
       )}
     </>
+  );
+}
+
+/**
+ * Zvýraznění klíčové fráze — jako žlutým zvýrazňovačem v sešitě.
+ *
+ * Jedno na slide, víc ne: když je zvýrazněné všechno, není nic. Barva je
+ * žlutá značky; v tmavém režimu tlumená, stejně jako vize.
+ * box-decoration-clone drží podtržení na každém řádku, když se fráze zalomí.
+ */
+export function Mark({ children }: { children: React.ReactNode }) {
+  return (
+    <mark className="box-decoration-clone bg-transparent bg-[linear-gradient(transparent_56%,var(--color-sun-surface)_56%)] px-0.5 text-ink [-webkit-box-decoration-break:clone] -mx-0.5">
+      {children}
+    </mark>
   );
 }
 

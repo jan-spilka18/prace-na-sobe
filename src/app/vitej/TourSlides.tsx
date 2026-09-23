@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 import { WELCOME_TEXT } from "@/lib/config";
-import { Rise, SlideHeading, TryHint } from "./parts";
+import { Mark, Rise, SlideHeading, TryHint } from "./parts";
 
 /*
   Představení aplikace. Každý slide ukazuje jednu část a má ukázku, na
@@ -54,7 +54,9 @@ export function WelcomeSlide() {
         </button>
       </Rise>
 
-      <SlideHeading title="Vítej">{WELCOME_TEXT}</SlideHeading>
+      <SlideHeading title="Vítej">
+        <WelcomeText />
+      </SlideHeading>
 
       <Rise i={2}>
         <p className="mt-5 font-display text-[17px] font-semibold text-ink">
@@ -69,6 +71,21 @@ export function WelcomeSlide() {
         </p>
       </Rise>
     </div>
+  );
+}
+
+const WELCOME_PROMISE = "přesně toho, co si vytyčíš";
+
+function WelcomeText() {
+  const at = WELCOME_TEXT.indexOf(WELCOME_PROMISE);
+  if (at < 0) return <>{WELCOME_TEXT}</>;
+
+  return (
+    <>
+      {WELCOME_TEXT.slice(0, at)}
+      <Mark>{WELCOME_PROMISE}</Mark>
+      {WELCOME_TEXT.slice(at + WELCOME_PROMISE.length)}
+    </>
   );
 }
 
@@ -88,7 +105,7 @@ export function HabitsSlide() {
   return (
     <div>
       <SlideHeading title="Každý den pár vteřin">
-        Na obrazovce Dnes odškrtneš, co máš hotové. Jedno klepnutí na kolečko
+        Na obrazovce Dnes odškrtneš, co máš hotové. <Mark>Jedno klepnutí</Mark>{" "}
         a je to.
       </SlideHeading>
 
@@ -206,8 +223,8 @@ export function OverviewSlide() {
   return (
     <div>
       <SlideHeading title="Celá cesta na jednom místě">
-        V Přehledu uvidíš všech 90 dní, jak ti jde který návyk a kolik toho
-        máš za sebou.
+        V Přehledu uvidíš <Mark>všech 90 dní</Mark>, jak ti jde který návyk
+        a kolik toho máš za sebou.
       </SlideHeading>
 
       <Rise i={2} className="mt-7">
@@ -303,8 +320,8 @@ export function VisionSlide() {
   return (
     <div>
       <SlideHeading title="Kam jdeš a proč">
-        Napíšeš si svoji vizi. Každý den ji uvidíš pod návyky — ve chvílích,
-        kdy se nechce, ti připomene, proč to děláš.
+        Vize, kterou si napíšeš, tě bude čekat pod návyky. Ve chvílích, kdy
+        se nechce, ti <Mark>připomene, proč to děláš</Mark>.
       </SlideHeading>
 
       <Rise i={2} className="mt-7">
@@ -348,8 +365,8 @@ export function SessionsSlide() {
   return (
     <div>
       <SlideHeading title="Po každém setkání zápis">
-        Napíšu ti, co jsme probrali a co tě do příště čeká. A ty mi tu
-        necháš zpětnou vazbu — jak se po sezení cítíš a co sis odnesl/a.
+        Co jsme probrali a <Mark>co tě do příště čeká</Mark>. A místo, kde
+        mi napíšeš, jak to vnímáš ty.
       </SlideHeading>
 
       <Rise i={2} className="mt-7">
