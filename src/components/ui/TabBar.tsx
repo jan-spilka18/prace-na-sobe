@@ -62,7 +62,10 @@ export function TabBar() {
                 href={tab.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
+                  // Stisk je vidět okamžitě, ještě než se obrazovka načte —
+                  // jinak klepnutí působí, jako by se nic nestalo.
                   "flex min-h-[49px] flex-col items-center justify-center gap-1 py-1.5",
+                  "transition-[opacity,transform] duration-100 active:scale-95 active:opacity-60",
                   active ? "text-turquoise-700" : "text-ink-500",
                 )}
               >

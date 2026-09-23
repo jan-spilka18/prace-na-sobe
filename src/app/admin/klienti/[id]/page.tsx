@@ -33,26 +33,29 @@ export default async function ClientDetailPage({
 
   const supabase = await createClient();
 
-  const { data: client } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
+  // Dvě vlny místo deseti dotazů za sebou: nejdřív co zná jen id klienta,
+  // pak co potřebuje program nebo seznam návyků.
+  const [{ data: client }, program, allClientHabits, sessions] =
+    await Promise.all([
+      supabase.from("profiles").select("*").eq("id", id).maybeSingle(),
+      activeProgram(supabase, id),
+      allHabits(supabase, id),
+      sessionsFor(supabase, id),
+    ]);
 
   if (!client) notFound();
 
-  const program = await activeProgram(supabase, id);
-  const habits = (await allHabits(supabase, id)).filter(
-    (habit) => !habit.archived_at,
-  );
-  const targets = await habitTargets(
-    supabase,
-    habits.map((habit) => habit.id),
-  );
-  const days = program ? await programGrid(supabase, id, program) : [];
-  const stats = program ? await habitStatsFor(supabase, id, program) : [];
-  const vision = program ? await visionFor(supabase, program.id) : "";
-  const sessionCount = (await sessionsFor(supabase, id)).length;
+  const habits = allClientHabits.filter((habit) => !habit.archived_at);
+  const [targets, days, stats, vision] = await Promise.all([
+    habitTargets(
+      supabase,
+      habits.map((habit) => habit.id),
+    ),
+    program ? programGrid(supabase, id, program) : Promise.resolve([]),
+    program ? habitStatsFor(supabase, id, program) : Promise.resolve([]),
+    program ? visionFor(supabase, program.id) : Promise.resolve(""),
+  ]);
+  const sessionCount = sessions.length;
 
   const today = todayISO();
   const day = program

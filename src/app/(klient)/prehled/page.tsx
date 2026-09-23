@@ -32,9 +32,12 @@ export default async function OverviewPage() {
     );
   }
 
-  const days = await programGrid(supabase, profile.id, program);
-  const vision = await visionFor(supabase, program.id);
-  const stats = await habitStatsFor(supabase, profile.id, program);
+  // Nezávislé dotazy najednou — čeká se jen na ten nejpomalejší.
+  const [days, vision, stats] = await Promise.all([
+    programGrid(supabase, profile.id, program),
+    visionFor(supabase, program.id),
+    habitStatsFor(supabase, profile.id, program),
+  ]);
   const today = todayISO();
   const dayNumber = clampedProgramDay(
     program.start_date,

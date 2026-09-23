@@ -10,6 +10,7 @@ import {
 } from "@/lib/habits";
 import { saveEntry } from "@/app/actions/habits";
 import { useCelebration } from "./Celebration";
+import { useDayState } from "./DayState";
 import type { EntryStatus } from "@/lib/database.types";
 
 /**
@@ -39,8 +40,12 @@ export function HabitRow({
     Boolean(habit.entry?.note || habit.entry?.actual_value),
   );
   const [error, setError] = useState<string>();
-  const [pending, startTransition] = useTransition();
+  // Stav čekání se schválně nikde neukazuje. Kolečko se přepne hned při
+  // klepnutí a ukládání běží na pozadí; ztlumený řádek by říkal „počkej",
+  // i když není na co čekat.
+  const [, startTransition] = useTransition();
   const celebrate = useCelebration();
+  const day = useDayState();
 
   const targetLabel = formatTarget(habit.type, habit.target);
   /*
@@ -59,6 +64,7 @@ export function HabitRow({
   function persist(
     next: { status: EntryStatus | null; actual: string; note: string },
     announceCompletion = false,
+    rollback?: { status: EntryStatus | null },
   ) {
     setError(undefined);
     startTransition(async () => {
@@ -71,7 +77,18 @@ export function HabitRow({
         note: next.note,
       });
 
-      if (result.error) return setError(result.error);
+      if (result.error) {
+        /*
+          Kolečko se přepnulo dřív, než server odpověděl. Když se uložení
+          nepovede, musí se vrátit zpátky — jinak by ukazovalo odškrtnutý
+          návyk, který v databázi odškrtnutý není.
+        */
+        if (rollback) {
+          setStatus(rollback.status);
+          day?.setStatus(habit.id, rollback.status);
+        }
+        return setError(result.error);
+      }
       if (announceCompletion && result.dayComplete) {
         celebrate(result.streak ?? 1);
       }
@@ -79,9 +96,13 @@ export function HabitRow({
   }
 
   function choose(value: EntryStatus) {
+    const previous = status;
     const next = status === value ? null : value;
     setStatus(next);
-    persist({ status: next, actual, note }, next === "done");
+    day?.setStatus(habit.id, next);
+    persist({ status: next, actual, note }, next === "done", {
+      status: previous,
+    });
   }
 
   return (
@@ -91,7 +112,6 @@ export function HabitRow({
         status === "done"
           ? "border-turquoise-200 bg-turquoise-50"
           : "border-hairline bg-surface",
-        pending && "opacity-70",
       )}
     >
       <div className="flex items-center gap-3 py-3.5 pl-3 pr-1.5">

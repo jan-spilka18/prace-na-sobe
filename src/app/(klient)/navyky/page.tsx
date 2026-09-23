@@ -11,7 +11,11 @@ export const metadata = { title: "Návyky" };
 export default async function HabitsPage() {
   const profile = await requireProfile();
   const supabase = await createClient();
-  const program = await activeProgram(supabase, profile.id);
+  // Návyky na programu nezávisí, takže se načítají souběžně s ním.
+  const [program, habits] = await Promise.all([
+    activeProgram(supabase, profile.id),
+    allHabits(supabase, profile.id),
+  ]);
 
   if (!program) {
     return (
@@ -24,7 +28,6 @@ export default async function HabitsPage() {
     );
   }
 
-  const habits = await allHabits(supabase, profile.id);
   const targets = await habitTargets(
     supabase,
     habits.map((habit) => habit.id),

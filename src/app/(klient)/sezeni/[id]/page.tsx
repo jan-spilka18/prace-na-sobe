@@ -19,20 +19,22 @@ export default async function ClientSessionPage({
   const supabase = await createClient();
 
   // Koncept se sem nedostane — politika v databázi ho klientovi nevydá.
-  const { data: session } = await supabase
-    .from("sessions")
-    .select("*")
-    .eq("id", id)
-    .eq("client_id", profile.id)
-    .maybeSingle();
+  // Zpětná vazba se načítá souběžně se zápisem; obojí zná jen id z adresy.
+  const [{ data: session }, { data: feedback }] = await Promise.all([
+    supabase
+      .from("sessions")
+      .select("*")
+      .eq("id", id)
+      .eq("client_id", profile.id)
+      .maybeSingle(),
+    supabase
+      .from("session_feedback")
+      .select("*")
+      .eq("session_id", id)
+      .maybeSingle(),
+  ]);
 
   if (!session) notFound();
-
-  const { data: feedback } = await supabase
-    .from("session_feedback")
-    .select("*")
-    .eq("session_id", id)
-    .maybeSingle();
 
   const sections = filledSections(session.content ?? {});
 

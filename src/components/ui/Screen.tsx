@@ -13,7 +13,8 @@ export function Screen({
   children,
   className,
 }: {
-  title: string;
+  /** Text, nebo při načítání kostra místo něj. */
+  title: React.ReactNode;
   subtitle?: React.ReactNode;
   back?: { href: string; label: string };
   action?: React.ReactNode;

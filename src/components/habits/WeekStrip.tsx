@@ -1,8 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { addDays, formatCzechDate, weekdayIndex } from "@/lib/date";
 import { DAY_STATUS_LABELS, WEEKDAY_SHORT } from "@/lib/habits";
 import type { GridDay } from "@/lib/queries";
+import { liveDayStatus, useDayState } from "./DayState";
 
 /**
  * Týden nad denní obrazovkou.
@@ -15,19 +18,31 @@ export function WeekStrip({
   days,
   selected,
   today,
-  hrefFor,
+  hrefPrefix,
 }: {
   days: GridDay[];
   selected: string;
   today: string;
-  hrefFor: (date: string) => string;
+  /** Začátek odkazu, za který se připojí datum. Funkci server předat neumí. */
+  hrefPrefix: string;
 }) {
+  const live = useDayState();
   // Pondělí týdne, do kterého vybraný den spadá. Pevné okno Po–Ne se drží
   // stejného rastru jako mřížka v Přehledu, takže si je člověk spojí.
   const monday = addDays(selected, -weekdayIndex(selected));
   const week = Array.from({ length: 7 }, (_, index) => addDays(monday, index));
 
   const byDate = new Map(days.map((day) => [day.date, day]));
+
+  // Vybraný den bere stav z toho, co je právě odškrtnuté — kolečko v pásu
+  // zezelená ve chvíli, kdy člověk odškrtne poslední návyk.
+  const selectedDay = byDate.get(selected);
+  if (live && selectedDay) {
+    byDate.set(selected, {
+      ...selectedDay,
+      status: liveDayStatus(live.statuses, selectedDay.status),
+    });
+  }
 
   return (
     <nav aria-label="Dny v týdnu">
@@ -39,7 +54,7 @@ export function WeekStrip({
             day={byDate.get(date)}
             isSelected={date === selected}
             isToday={date === today}
-            hrefFor={hrefFor}
+            href={`${hrefPrefix}${date}`}
           />
         ))}
       </ol>
@@ -52,13 +67,13 @@ function Day({
   day,
   isSelected,
   isToday,
-  hrefFor,
+  href,
 }: {
   date: string;
   day?: GridDay;
   isSelected: boolean;
   isToday: boolean;
-  hrefFor: (date: string) => string;
+  href: string;
 }) {
   const dayOfMonth = Number(date.slice(8, 10));
   const weekday = WEEKDAY_SHORT[weekdayIndex(date)];
@@ -128,7 +143,7 @@ function Day({
   return (
     <li className="flex flex-1">
       <Link
-        href={hrefFor(date)}
+        href={href}
         aria-current={isSelected ? "date" : undefined}
         className={cn(shell, "rounded-card active:opacity-60")}
       >

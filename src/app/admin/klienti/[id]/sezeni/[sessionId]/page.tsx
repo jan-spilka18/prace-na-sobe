@@ -15,27 +15,28 @@ export default async function AdminSessionPage({
 
   const supabase = await createClient();
 
-  const { data: session } = await supabase
-    .from("sessions")
-    .select("*")
-    .eq("id", sessionId)
-    .eq("client_id", id)
-    .maybeSingle();
+  const [{ data: session }, { data: prep }, { data: feedback }] =
+    await Promise.all([
+      supabase
+        .from("sessions")
+        .select("*")
+        .eq("id", sessionId)
+        .eq("client_id", id)
+        .maybeSingle(),
+      supabase
+        .from("session_preps")
+        .select("content")
+        .eq("session_id", sessionId)
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("session_feedback")
+        .select("*")
+        .eq("session_id", sessionId)
+        .maybeSingle(),
+    ]);
 
   if (!session) notFound();
-
-  const { data: prep } = await supabase
-    .from("session_preps")
-    .select("content")
-    .eq("session_id", sessionId)
-    .limit(1)
-    .maybeSingle();
-
-  const { data: feedback } = await supabase
-    .from("session_feedback")
-    .select("*")
-    .eq("session_id", sessionId)
-    .maybeSingle();
 
   return (
     <Screen

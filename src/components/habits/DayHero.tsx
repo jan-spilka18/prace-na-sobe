@@ -1,5 +1,9 @@
+"use client";
+
 import { cn } from "@/lib/cn";
 import { dayStatus, type HabitForDay } from "@/lib/habits";
+import { useDayState } from "./DayState";
+import type { EntryStatus } from "@/lib/database.types";
 
 /**
  * Karta dne.
@@ -11,7 +15,7 @@ import { dayStatus, type HabitForDay } from "@/lib/habits";
 export function DayHero({
   dayNumber,
   durationDays,
-  habits,
+  habits: serverHabits,
   streak,
   notStarted = false,
 }: {
@@ -21,6 +25,11 @@ export function DayHero({
   streak: number;
   notStarted?: boolean;
 }) {
+  // Uvnitř DayStateProvider bere stav z toho, co je právě odškrtnuté,
+  // takže se „1 ze 3" změní hned při klepnutí, ne až po odpovědi serveru.
+  const day = useDayState();
+  const habits = day ? withLiveStatus(serverHabits, day.statuses) : serverHabits;
+
   const status = dayStatus(habits);
   const done = habits.filter((habit) => habit.entry?.status === "done").length;
   const complete = status === "complete" && habits.length > 0;
@@ -109,4 +118,18 @@ function Segments({
       ))}
     </div>
   );
+}
+
+function withLiveStatus(
+  habits: HabitForDay[],
+  statuses: Record<string, EntryStatus | null>,
+): HabitForDay[] {
+  return habits.map((habit) => {
+    if (!(habit.id in statuses)) return habit;
+    const status = statuses[habit.id];
+    return {
+      ...habit,
+      entry: status === null ? null : { ...habit.entry!, status },
+    };
+  });
 }
