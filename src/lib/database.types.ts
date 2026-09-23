@@ -27,6 +27,15 @@ export type Profile = Timestamps & {
   email: string;
   timezone: string;
   onboarded_at: string | null;
+  /*
+    Sloupce z migrace 0007. Nepovinné schválně: kód se nasadí dřív, než
+    se v Supabase pustí SQL, a v tu chvíli v odpovědi chybí. Typ tak nutí
+    každé místo počítat s undefined a nespadnout.
+  */
+  phone?: string | null;
+  birth_day?: number | null;
+  birth_month?: number | null;
+  onboarding_pending?: boolean;
 };
 
 export type Program = Timestamps & {

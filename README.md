@@ -151,7 +151,24 @@ Kód na připomínky klientům i na souhrn e-mailem v projektu zůstal
 (`src/app/api/cron/`). Bez plánovače se ale nikdy nespustí. Kdybys to někdy
 chtěl zapnout, je to popsáno níž v části *Kdybys notifikace chtěl*.
 
-## 10. Zkouška na telefonu
+## 10. Úvodní průvodce pro nové klienty
+
+Každý klient, kterého založíš po spuštění migrace `0007`, uvidí po prvním
+přihlášení průvodce: představení aplikace (slidy s ukázkami, na které jde
+klepnout) a nastavení profilu, vlastního hesla, vize a návyků. Všechno jde
+přeskočit nebo zavřít křížkem; přeskočené si klient doplní v Nastavení.
+
+Stávající klienti ho neuvidí. Kdybys chtěl, aby ho někdo prošel znovu —
+nebo si ho chceš vyzkoušet sám na zkušebním klientovi — v detailu klienta
+je **Ukázat průvodce znovu**.
+
+Z profilu vidíš v detailu klienta telefon a narozeniny. Narozeniny se
+ukládají jen jako den a měsíc; v ranním přehledu se objeví den předem
+(„Zítra má narozeniny…") a v ten den.
+
+Uvítací text je v `src/lib/config.ts` jako `WELCOME_TEXT`.
+
+## 11. Zkouška na telefonu
 
 Adresu z Vercelu otevři v mobilu a přidej si ji na plochu — v aplikaci to
 najdeš pod **Nastavení → Appka na plochu**.

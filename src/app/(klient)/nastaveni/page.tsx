@@ -7,6 +7,7 @@ import { NotificationSettings } from "@/components/NotificationSettings";
 import { publicVapidKey } from "@/lib/push";
 import { cookies } from "next/headers";
 import { ThemePicker } from "@/components/ThemePicker";
+import { ProfileForm } from "@/components/ProfileForm";
 import { THEME_COOKIE, parseTheme } from "@/lib/theme";
 
 export const metadata = { title: "Nastavení" };
@@ -38,6 +39,25 @@ export default async function SettingsPage() {
           než žádný — klient neřeší, co se děje na serveru.
         */}
         {vapidKey !== "" && <NotificationSettings publicKey={vapidKey} />}
+
+        {/*
+          Tady si klient doplní, co v průvodci přeskočil. Stejný formulář
+          jako v průvodci, ať se nemusí učit dva.
+        */}
+        <section className="space-y-2">
+          <h2 className="px-4 text-[13px] font-semibold uppercase tracking-wide text-ink-500">
+            O tobě
+          </h2>
+          <ProfileForm
+            initial={{
+              fullName: profile.full_name,
+              phone: profile.phone ?? "",
+              birthDay: profile.birth_day ?? null,
+              birthMonth: profile.birth_month ?? null,
+            }}
+            submitLabel="Uložit"
+          />
+        </section>
 
         <ThemePicker initial={theme} />
 

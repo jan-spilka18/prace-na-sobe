@@ -14,6 +14,7 @@ import {
   type ClientRow,
 } from "@/lib/adminOverview";
 import { describeOutcome, isRestDay } from "@/lib/summary";
+import { upcomingBirthdays } from "@/lib/profile";
 import { cookies } from "next/headers";
 import { ThemePicker } from "@/components/ThemePicker";
 import { THEME_COOKIE, parseTheme } from "@/lib/theme";
@@ -28,7 +29,9 @@ export default async function AdminPage() {
 
   const { data: clients } = await supabase
     .from("profiles")
-    .select("id, full_name, email")
+    // Hvězdička, ne výčet sloupců: narozeniny přibyly migrací 0007 a výčet
+    // by před jejím spuštěním spadl na neexistujícím sloupci.
+    .select("*")
     .eq("role", "client")
     .order("full_name");
 
@@ -56,6 +59,8 @@ export default async function AdminPage() {
             .gte("entry_date", addDays(today, -(HISTORY_DAYS - 1)))
             .lte("entry_date", today),
         ]);
+
+  const birthdays = upcomingBirthdays(clients ?? [], today);
 
   const rows = buildOverview({
     clients: clients ?? [],
@@ -93,6 +98,23 @@ export default async function AdminPage() {
               nic nemá, a kdyby tu svítila nula ze tří, vypadalo by to jako
               průšvih každé ráno.
             */}
+            {birthdays.length > 0 && (
+              <section className="rounded-group bg-sun-surface px-4 py-3.5">
+                {birthdays.map((birthday) => (
+                  <p
+                    key={birthday.name + birthday.when}
+                    className="text-[15px] leading-relaxed text-ink"
+                  >
+                    <span className="font-semibold">
+                      {birthday.when === "dnes" ? "Dnes" : "Zítra"}
+                    </span>{" "}
+                    má narozeniny{" "}
+                    <span className="font-display font-semibold">{birthday.name}</span>
+                  </p>
+                ))}
+              </section>
+            )}
+
             <section className="rounded-group bg-night p-4 text-white">
               <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-white/55">
                 Včera · {formatCzechDate(yesterday)}

@@ -178,3 +178,59 @@ select {
     transition-duration: 0.01ms !important;
   }
 }
+
+/*
+  Animace úvodního průvodce.
+
+  Přechod mezi slidy je krátký posun s náběhem, ne otočka ani zoom — má
+  říct „jdeš dál", ne předvádět efekt. Prvky uvnitř slidu naskočí
+  s malým zpožděním za sebou, aby oko vedly shora dolů.
+
+  Kdo má v telefonu omezené animace, dostane všechno rovnou bez pohybu.
+*/
+@keyframes onb-in-forward {
+  from { opacity: 0; transform: translateX(28px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes onb-in-back {
+  from { opacity: 0; transform: translateX(-28px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes onb-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes onb-grow {
+  from { transform: scaleY(0.12); }
+  to { transform: scaleY(1); }
+}
+@keyframes onb-pop {
+  0% { transform: scale(0.55); }
+  60% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+@utility onb-forward {
+  animation: onb-in-forward 380ms var(--ease-ios) both;
+}
+@utility onb-back {
+  animation: onb-in-back 380ms var(--ease-ios) both;
+}
+/* Zpoždění se nastavuje přes --onb-delay u každého prvku zvlášť. */
+@utility onb-rise {
+  animation: onb-rise 460ms var(--ease-ios) both;
+  animation-delay: var(--onb-delay, 0ms);
+}
+@utility onb-pop {
+  animation: onb-pop 320ms var(--ease-ios) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onb-forward,
+  .onb-back,
+  .onb-rise,
+  .onb-pop,
+  .onb-grow-bar {
+    animation: none !important;
+  }
+}

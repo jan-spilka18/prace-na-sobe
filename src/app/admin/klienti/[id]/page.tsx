@@ -23,6 +23,8 @@ import {
 } from "@/lib/queries";
 import { ProgramForm } from "./ProgramForm";
 import { DangerZone } from "./DangerZone";
+import { ResetOnboarding } from "./ResetOnboarding";
+import { formatBirthday } from "@/lib/profile";
 import { HabitStatsList } from "@/components/HabitStatsList";
 
 export default async function ClientDetailPage({
@@ -96,9 +98,38 @@ export default async function ClientDetailPage({
             trailing={formatCzechDate(client.created_at.slice(0, 10))}
           />
           <ListRow
-            title="Návod na plochu"
-            trailing={client.onboarded_at ? "Prošel" : "Zatím ne"}
+            title="Telefon"
+            trailing={
+              client.phone ? (
+                <a href={`tel:${client.phone.replace(/\s/g, "")}`} className="text-turquoise-700">
+                  {client.phone}
+                </a>
+              ) : (
+                "Nevyplněno"
+              )
+            }
           />
+          <ListRow
+            title="Narozeniny"
+            trailing={
+              client.birth_day && client.birth_month
+                ? formatBirthday(client.birth_day, client.birth_month)
+                : "Nevyplněno"
+            }
+          />
+          <ListRow
+            title="Úvodní průvodce"
+            trailing={
+              client.onboarding_pending === true
+                ? "Čeká na něj"
+                : client.onboarded_at
+                  ? `Prošel ${formatCzechDate(client.onboarded_at.slice(0, 10))}`
+                  : "Neviděl"
+            }
+          />
+          {client.onboarding_pending !== true && (
+            <ResetOnboarding clientId={client.id} />
+          )}
         </ListGroup>
 
         {program ? (

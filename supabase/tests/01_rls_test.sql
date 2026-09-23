@@ -301,3 +301,99 @@ select pg_temp.check_eq((select count(*)::int from public.session_preps), 0, 'zb
 select pg_temp.check_eq((select count(*)::int from public.client_notes), 0, 'zbylé poznámky');
 select pg_temp.check_eq((select count(*)::int from public.visions), 0, 'zbylé vize');
 select pg_temp.check_eq((select count(*)::int from public.notification_settings), 2, 'zbylá nastavení');
+
+\echo ''
+\echo '=== Úvodní průvodce: stávající účty ho nedostanou, nové ano ==='
+/*
+  V testu vznikají všechny profily až po schématu, takže by měly průvodce
+  všechny. Tady se proto přehraje skutečná situace v produkci: sloupec
+  zmizí a přidá se znovu nad tabulkou, ve které už účty jsou.
+*/
+alter table public.profiles drop column onboarding_pending;
+alter table public.profiles
+  add column if not exists onboarding_pending boolean not null default false;
+alter table public.profiles
+  alter column onboarding_pending set default true;
+
+select pg_temp.check_eq(
+  (select onboarding_pending from public.profiles where email = 'klient-b@example.com'),
+  false, 'stávající klient průvodce nedostane');
+
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('44444444-4444-4444-4444-444444444444', 'klient-c@example.com',
+   '{"full_name":"Klient C"}'::jsonb);
+
+select pg_temp.check_eq(
+  (select onboarding_pending from public.profiles where email = 'klient-c@example.com'),
+  true, 'nový klient průvodce dostane');
+
+-- Schéma se po každé aktualizaci pouští znovu. Nesmí nic přepnout.
+alter table public.profiles
+  add column if not exists onboarding_pending boolean not null default false;
+alter table public.profiles
+  alter column onboarding_pending set default true;
+select pg_temp.check_eq(
+  (select onboarding_pending from public.profiles where email = 'klient-b@example.com'),
+  false, 'opakované spuštění stávajícího nepřepne');
+select pg_temp.check_eq(
+  (select onboarding_pending from public.profiles where email = 'klient-c@example.com'),
+  true, 'opakované spuštění nového nepřepne');
+
+\echo ''
+\echo '=== Profil: klient upravuje jen sebe ==='
+select pg_temp.login('44444444-4444-4444-4444-444444444444');
+
+update public.profiles
+set phone = '+420 777 123 456', birth_day = 15, birth_month = 3,
+    onboarding_pending = false, onboarded_at = now()
+where id = '44444444-4444-4444-4444-444444444444';
+select pg_temp.check_eq(
+  (select phone from public.profiles where id = '44444444-4444-4444-4444-444444444444'),
+  '+420 777 123 456', 'vlastní telefon');
+select pg_temp.check_eq(
+  (select onboarding_pending from public.profiles where id = '44444444-4444-4444-4444-444444444444'),
+  false, 'vlastní průvodce dokončen');
+
+-- Cizí profil: UPDATE nevyhodí chybu, jen nezasáhne žádný řádek.
+do $$
+declare affected int;
+begin
+  update public.profiles set phone = '+420 000 000 000'
+  where id = '33333333-3333-3333-3333-333333333333';
+  get diagnostics affected = row_count;
+  raise notice '%', pg_temp.check_eq(affected, 0, 'cizí telefon nepřepíše');
+end $$;
+
+select pg_temp.check_eq(
+  (select count(*)::int from public.profiles where id = '33333333-3333-3333-3333-333333333333'),
+  0, 'cizí profil nevidí');
+
+select pg_temp.must_fail(
+  $q$update public.profiles set birth_day = 31, birth_month = 2
+     where id = '44444444-4444-4444-4444-444444444444'$q$,
+  '31. února neprojde');
+select pg_temp.must_fail(
+  $q$update public.profiles set birth_day = 15, birth_month = null
+     where id = '44444444-4444-4444-4444-444444444444'$q$,
+  'den bez měsíce neprojde');
+
+update public.profiles set birth_day = 29, birth_month = 2
+where id = '44444444-4444-4444-4444-444444444444';
+select pg_temp.check_eq(
+  (select birth_day from public.profiles where id = '44444444-4444-4444-4444-444444444444')::int,
+  29, '29. února projde');
+
+select pg_temp.logout();
+
+\echo ''
+\echo '=== Admin: vidí telefon a umí průvodce ukázat znovu ==='
+select pg_temp.login('11111111-1111-1111-1111-111111111111');
+select pg_temp.check_eq(
+  (select phone from public.profiles where id = '44444444-4444-4444-4444-444444444444'),
+  '+420 777 123 456', 'admin vidí telefon');
+update public.profiles set onboarding_pending = true
+where id = '44444444-4444-4444-4444-444444444444';
+select pg_temp.check_eq(
+  (select onboarding_pending from public.profiles where id = '44444444-4444-4444-4444-444444444444'),
+  true, 'admin ukáže průvodce znovu');
+select pg_temp.logout();
