@@ -33,18 +33,39 @@ export async function GET(request: NextRequest) {
   const date = todayISO();
   const nowMinutes = minutesSinceMidnight();
 
-  // Jen lidé, kteří push chtějí a mají aspoň jedno zařízení.
-  const { data: subscriptions } = await supabase
+  /*
+    Chyba dotazu se nesmí tvářit jako prázdný výsledek.
+
+    Kdyby se `error` přešel a pokračovalo se s prázdným polem, výpadek
+    databáze by skončil odpovědí „nikdo neodebírá" a stavem 200 — tedy
+    tichem. U notifikací je tiché selhání to nejhorší: nikdo se nedozví,
+    že celý den nic neodešlo.
+  */
+  const { data: subscriptions, error: subsError } = await supabase
     .from("push_subscriptions")
     .select("*");
+
+  if (subsError) {
+    return NextResponse.json(
+      { error: `Odběry se nepodařilo načíst: ${subsError.message}` },
+      { status: 500 },
+    );
+  }
 
   if (!subscriptions || subscriptions.length === 0) {
     return NextResponse.json({ sent: 0, reason: "Nikdo neodebírá." });
   }
 
-  const { data: settings } = await supabase
+  const { data: settings, error: settingsError } = await supabase
     .from("notification_settings")
     .select("user_id, push_enabled");
+
+  if (settingsError) {
+    return NextResponse.json(
+      { error: `Nastavení se nepodařilo načíst: ${settingsError.message}` },
+      { status: 500 },
+    );
+  }
 
   const pushOff = new Set(
     (settings ?? [])
@@ -63,21 +84,37 @@ export async function GET(request: NextRequest) {
   let sent = 0;
   let skipped = 0;
 
+  const failures: string[] = [];
+
   for (const [userId, devices] of byUser) {
-    const { data: habits } = await supabase
+    const { data: habits, error: habitsError } = await supabase
       .from("habits")
       .select("id, title, weekdays, reminder_enabled, reminder_time, archived_at")
       .eq("client_id", userId)
       .eq("reminder_enabled", true);
 
+    if (habitsError) {
+      // Jeden klient navíc neshodí zbytek fronty, ale selhání se nesmí ztratit.
+      failures.push(`${userId}: ${habitsError.message}`);
+      continue;
+    }
     if (!habits || habits.length === 0) continue;
 
     // Co už je na dnešek vyplněné, se nepřipomíná.
-    const { data: entries } = await supabase
+    const { data: entries, error: entriesError } = await supabase
       .from("habit_entries")
       .select("habit_id")
       .eq("client_id", userId)
       .eq("entry_date", date);
+
+    if (entriesError) {
+      /*
+        Bez záznamů by se každý návyk tvářil jako nevyplněný a klient by
+        dostal připomínku na něco, co má dávno hotové. Radši nic.
+      */
+      failures.push(`${userId}: ${entriesError.message}`);
+      continue;
+    }
 
     const filled = new Set((entries ?? []).map((entry) => entry.habit_id));
 
@@ -132,5 +169,8 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ date, nowMinutes, sent, skipped });
+  return NextResponse.json(
+    { date, nowMinutes, sent, skipped, failures },
+    { status: failures.length > 0 ? 500 : 200 },
+  );
 }

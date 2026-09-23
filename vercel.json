@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/pripominky",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/rano",
+      "schedule": "0 6,7 * * *"
     }
   ]
 }
