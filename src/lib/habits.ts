@@ -140,17 +140,22 @@ export function runningStreak(
 /**
  * Úspěšnost programu v procentech.
  *
+ * Počítají se jen uzavřené dny — do včerejška včetně. Dnešek ještě běží:
+ * kdyby se počítal, klient by ráno viděl procenta spadnout jen proto, že
+ * zatím nestihl odškrtat, a večer by se mu zase vrátila.
+ *
  * Dny volna se nepočítají ani do čitatele, ani do jmenovatele. Klient si
  * rozvrh nastavil sám, takže by bylo trestání za vlastní rozhodnutí, kdyby
  * mu víkend bez návyků srážel číslo dolů: kdo má návyky jen Po–Pá, by se
  * jinak nikdy nedostal výš než na 71 %, i kdyby nevynechal jediný den.
- *
- * Budoucí dny se neřeší — ještě nenastaly.
  */
 export function successRate(
-  days: Array<{ status: DayStatus; isFuture: boolean }>,
+  days: Array<{ date: string; status: DayStatus; isFuture: boolean }>,
+  today: string,
 ): number {
-  const counted = days.filter((day) => !day.isFuture && day.status !== "rest");
+  const counted = days.filter(
+    (day) => !day.isFuture && day.date < today && day.status !== "rest",
+  );
   if (counted.length === 0) return 0;
 
   const complete = counted.filter((day) => day.status === "complete").length;

@@ -4,7 +4,13 @@ import { Screen } from "@/components/ui/Screen";
 import { EmptyState } from "@/components/ui/List";
 import { DayGrid } from "@/components/DayGrid";
 import { VisionCard } from "@/components/VisionCard";
-import { activeProgram, programGrid, visionFor } from "@/lib/queries";
+import {
+  activeProgram,
+  habitStatsFor,
+  programGrid,
+  visionFor,
+} from "@/lib/queries";
+import { HabitStatsList } from "@/components/HabitStatsList";
 import { addDays, clampedProgramDay, formatShortDate, todayISO } from "@/lib/date";
 import { successRate } from "@/lib/habits";
 
@@ -28,6 +34,7 @@ export default async function OverviewPage() {
 
   const days = await programGrid(supabase, profile.id, program);
   const vision = await visionFor(supabase, program.id);
+  const stats = await habitStatsFor(supabase, profile.id, program);
   const today = todayISO();
   const dayNumber = clampedProgramDay(
     program.start_date,
@@ -35,7 +42,7 @@ export default async function OverviewPage() {
     today,
   );
 
-  const rate = successRate(days);
+  const rate = successRate(days, today);
   const lastDate = addDays(program.start_date, program.duration_days - 1);
 
   return (
@@ -61,6 +68,8 @@ export default async function OverviewPage() {
           range={`${formatShortDate(program.start_date)} – ${formatShortDate(lastDate)}`}
           hrefFor={(date) => `/?den=${date}`}
         />
+
+        <HabitStatsList stats={stats} title="Tvoje návyky" />
       </div>
     </Screen>
   );

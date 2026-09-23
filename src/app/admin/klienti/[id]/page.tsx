@@ -15,6 +15,7 @@ import {
 import {
   activeProgram,
   allHabits,
+  habitStatsFor,
   habitTargets,
   programGrid,
   sessionsFor,
@@ -22,6 +23,7 @@ import {
 } from "@/lib/queries";
 import { ProgramForm } from "./ProgramForm";
 import { DangerZone } from "./DangerZone";
+import { HabitStatsList } from "@/components/HabitStatsList";
 
 export default async function ClientDetailPage({
   params,
@@ -48,6 +50,7 @@ export default async function ClientDetailPage({
     habits.map((habit) => habit.id),
   );
   const days = program ? await programGrid(supabase, id, program) : [];
+  const stats = program ? await habitStatsFor(supabase, id, program) : [];
   const vision = program ? await visionFor(supabase, program.id) : "";
   const sessionCount = (await sessionsFor(supabase, id)).length;
 
@@ -169,6 +172,8 @@ export default async function ClientDetailPage({
             />
           </section>
         )}
+
+        <HabitStatsList stats={stats} title="Jak mu jdou návyky" />
 
         <DangerZone
           clientId={client.id}

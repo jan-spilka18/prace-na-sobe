@@ -325,18 +325,41 @@ describe("wasActiveOn", () => {
 });
 
 describe("successRate", () => {
-  function day(status: string, isFuture = false) {
-    return { status, isFuture } as Parameters<typeof successRate>[0][number];
+  const TODAY = "2026-02-01";
+
+  // Každý den dostane vlastní datum v minulosti, aby prošel filtrem
+  // „jen uzavřené dny".
+  let counter = 0;
+  function day(status: string, isFuture = false, date?: string) {
+    counter++;
+    const fallback = `2026-01-${String(counter % 28 + 1).padStart(2, "0")}`;
+    return {
+      status,
+      isFuture,
+      date: date ?? fallback,
+    } as Parameters<typeof successRate>[0][number];
   }
 
   it("vrátí nulu, když se ještě nedá co počítat", () => {
-    assert.equal(successRate([]), 0);
-    assert.equal(successRate([day("empty", true), day("complete", true)]), 0);
+    assert.equal(successRate([], TODAY), 0);
+    assert.equal(
+      successRate([day("empty", true), day("complete", true)], TODAY),
+      0,
+    );
   });
 
   it("počítá jen dny, které nastaly", () => {
     const days = [day("complete"), day("empty"), day("complete", true)];
-    assert.equal(successRate(days), 50);
+    assert.equal(successRate(days, TODAY), 50);
+  });
+
+  it("dnešek se nepočítá, dokud neskončí", () => {
+    // Včera splněno, dnes zatím nic: musí to být sto procent, ne padesát.
+    const days = [
+      day("complete", false, "2026-01-31"),
+      day("empty", false, TODAY),
+    ];
+    assert.equal(successRate(days, TODAY), 100);
   });
 
   it("volno nepočítá ani do čitatele, ani do jmenovatele", () => {
@@ -346,20 +369,20 @@ describe("successRate", () => {
       day("rest"),
       day("rest"),
     ];
-    assert.equal(successRate(week), 100);
+    assert.equal(successRate(week, TODAY), 100);
   });
 
   it("samé volno nedělí nulou", () => {
-    assert.equal(successRate([day("rest"), day("rest")]), 0);
+    assert.equal(successRate([day("rest"), day("rest")], TODAY), 0);
   });
 
   it("nesplněný i nevyplněný den srazí číslo stejně", () => {
-    assert.equal(successRate([day("complete"), day("incomplete")]), 50);
-    assert.equal(successRate([day("complete"), day("empty")]), 50);
+    assert.equal(successRate([day("complete"), day("incomplete")], TODAY), 50);
+    assert.equal(successRate([day("complete"), day("empty")], TODAY), 50);
   });
 
   it("zaokrouhluje na celá procenta", () => {
     const days = [day("complete"), day("complete"), day("empty")];
-    assert.equal(successRate(days), 67);
+    assert.equal(successRate(days, TODAY), 67);
   });
 });

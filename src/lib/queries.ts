@@ -10,6 +10,7 @@ import type {
 } from "@/lib/database.types";
 import { type HabitForDay, appliesOn, dayStatus, targetFor } from "@/lib/habits";
 import { addDays, todayISO } from "@/lib/date";
+import { habitStats, type HabitStat } from "@/lib/habitStats";
 import type { DayStatus } from "@/lib/database.types";
 
 type Client = SupabaseClient<Database>;
@@ -206,4 +207,31 @@ export async function allHabits(
     .order("position");
 
   return data ?? [];
+}
+
+/**
+ * Úspěšnost a součty po návycích za celý program.
+ *
+ * Načítá stejné dva balíky jako programGrid. Sdílet je by znamenalo měnit
+ * návratový typ mřížky kvůli jedné obrazovce; dva dotazy navíc u deseti
+ * klientů nikdo nepozná.
+ */
+export async function habitStatsFor(
+  supabase: Client,
+  clientId: string,
+  program: Program,
+): Promise<HabitStat[]> {
+  const lastDate = addDays(program.start_date, program.duration_days - 1);
+
+  const [{ data: habits }, { data: entries }] = await Promise.all([
+    supabase.from("habits").select("*").eq("client_id", clientId),
+    supabase
+      .from("habit_entries")
+      .select("habit_id, entry_date, status, actual_value, target_snapshot")
+      .eq("client_id", clientId)
+      .gte("entry_date", program.start_date)
+      .lte("entry_date", lastDate),
+  ]);
+
+  return habitStats(habits ?? [], entries ?? [], program, todayISO());
 }
