@@ -6,6 +6,7 @@ import {
   daysBetween,
   describeDay,
   formatCzechDate,
+  formatCzechDayMonth,
   formatCzechWeekday,
   minutesSinceMidnight,
   programDay,
@@ -115,5 +116,17 @@ describe("české formátování", () => {
     assert.equal(describeDay("2026-09-21", "2026-09-22"), "včera");
     assert.equal(describeDay("2026-09-20", "2026-09-22"), "předevčírem");
     assert.equal(describeDay("2026-09-15", "2026-09-22"), "15. září 2026");
+  });
+});
+
+describe("formatCzechDayMonth", () => {
+  it("vynechá rok", () => {
+    assert.equal(formatCzechDayMonth("2026-09-23"), "23. září");
+    assert.equal(formatCzechDayMonth("2026-01-01"), "1. ledna");
+    assert.equal(formatCzechDayMonth("2026-12-31"), "31. prosince");
+  });
+
+  it("nedoplňuje nulu před jednociferný den", () => {
+    assert.equal(formatCzechDayMonth("2026-05-07"), "7. května");
   });
 });

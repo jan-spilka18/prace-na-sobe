@@ -18,6 +18,7 @@ import {
   daysBetween,
   describeDay,
   formatCzechDate,
+  formatCzechDayMonth,
   formatCzechWeekday,
   todayISO,
 } from "@/lib/date";
@@ -79,10 +80,11 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
     <Screen
       title={capitalize(describeDay(date, today))}
       subtitle={
-        // Číslo dne nese karta pod tím, tady by se jen opakovalo.
-        notStarted
-          ? `Program začíná ${formatCzechDate(program.start_date)}`
-          : `${formatCzechWeekday(date)} ${formatCzechDate(date)}`
+        notStarted ? (
+          `Program začíná ${formatCzechDate(program.start_date)}`
+        ) : (
+          <DateLine date={date} titleIsDate={daysBack > 2} />
+        )
       }
       action={<SettingsLink alert={adminPassword} />}
     >
@@ -179,6 +181,44 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
 }
 
 
+
+/**
+ * Datum pod titulkem.
+ *
+ * Není to věta, ale složená linka: den s měsícem serifem, za ním verzálkami
+ * den v týdnu. Rok tu nikdo nehledá — devadesátidenní výzva se vejde do
+ * jednoho a v Přehledu stojí celý rozsah.
+ *
+ * U starších dnů nese datum už sám titulek, takže by se tu jen opakovalo
+ * a zbyde z něj den v týdnu.
+ */
+function DateLine({
+  date,
+  titleIsDate,
+}: {
+  date: string;
+  titleIsDate: boolean;
+}) {
+  const weekday = (
+    <span className="text-[12px] font-semibold uppercase tracking-[0.1em] text-ink-500">
+      {formatCzechWeekday(date)}
+    </span>
+  );
+
+  if (titleIsDate) return weekday;
+
+  return (
+    <span className="flex items-baseline gap-2">
+      <span className="font-display text-[17px] font-semibold text-ink">
+        {formatCzechDayMonth(date)}
+      </span>
+      <span aria-hidden className="text-ink-300">
+        ·
+      </span>
+      {weekday}
+    </span>
+  );
+}
 
 function clampToProgram(
   requested: string,

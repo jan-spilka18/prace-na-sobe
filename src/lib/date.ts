@@ -111,6 +111,12 @@ export function formatCzechWeekday(isoDate: string): string {
   return WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
 }
 
+/** „23. září" — bez roku. Do hlavičky, kde rok nic nepřidává. */
+export function formatCzechDayMonth(isoDate: string): string {
+  const [, m, d] = isoDate.split("-").map(Number);
+  return `${d}. ${MONTHS[m - 1]}`;
+}
+
 export function formatShortDate(isoDate: string): string {
   const [, m, d] = isoDate.split("-").map(Number);
   return `${d}. ${m}.`;
