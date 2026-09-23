@@ -25,8 +25,8 @@ import { HabitRow } from "@/components/habits/HabitRow";
 import { CelebrationProvider } from "@/components/habits/Celebration";
 import { DayHero } from "@/components/habits/DayHero";
 import { VisionQuote } from "@/components/VisionCard";
+import { WeekStrip } from "@/components/habits/WeekStrip";
 import { runningStreak } from "@/lib/habits";
-import { APP_SHORT_NAME } from "@/lib/config";
 
 export default async function TodayPage({ searchParams }: PageProps<"/">) {
   const profile = await requireProfile();
@@ -37,8 +37,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
   if (!program) {
     return (
       <Screen
-        eyebrow={APP_SHORT_NAME}
-        title="Práce na sobě"
+          title="Práce na sobě"
         action={<SettingsLink alert={adminPassword} />}
       >
         <EmptyState
@@ -74,13 +73,10 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
   );
   const notStarted = today < program.start_date;
 
-  const prev = date > program.start_date ? addDays(date, -1) : null;
-  const next = date < today && date < lastDate ? addDays(date, 1) : null;
   const daysBack = daysBetween(date, today);
 
   return (
     <Screen
-      eyebrow={APP_SHORT_NAME}
       title={capitalize(describeDay(date, today))}
       subtitle={
         // Číslo dne nese karta pod tím, tady by se jen opakovalo.
@@ -91,14 +87,21 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
       action={<SettingsLink alert={adminPassword} />}
     >
       <div className="space-y-4">
-        <nav className="flex items-center gap-2">
-          <DayStep href={prev ? `/?den=${prev}` : null} direction="prev" />
-          <span className="flex-1 text-center text-[14px] text-ink-500">
-            {daysBack === 1 && "Doplňuješ včerejšek"}
-            {daysBack > 1 && `Doplňuješ ${daysBack} dní zpět`}
-          </span>
-          <DayStep href={next ? `/?den=${next}` : null} direction="next" />
-        </nav>
+        <div className="space-y-1.5">
+          <WeekStrip
+            days={days}
+            selected={date}
+            today={today}
+            hrefFor={(day) => `/?den=${day}`}
+          />
+          {daysBack > 0 && (
+            <p className="text-center text-[13px] text-ink-500">
+              {daysBack === 1
+                ? "Doplňuješ včerejšek"
+                : `Doplňuješ ${daysBack} dní zpět`}
+            </p>
+          )}
+        </div>
 
         {habits.length === 0 && !hasHabits ? (
           <EmptyState
@@ -176,53 +179,6 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
 }
 
 
-
-function DayStep({
-  href,
-  direction,
-}: {
-  href: string | null;
-  direction: "prev" | "next";
-}) {
-  const label = direction === "prev" ? "Předchozí den" : "Další den";
-  const path = direction === "prev" ? "M15 4l-7 8 7 8" : "M9 4l7 8-7 8";
-
-  const icon = (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden
-      className="h-5 w-5"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d={path} />
-    </svg>
-  );
-
-  if (!href) {
-    return (
-      <span
-        aria-hidden
-        className="flex h-11 w-11 items-center justify-center rounded-card text-ink-400 opacity-30"
-      >
-        {icon}
-      </span>
-    );
-  }
-
-  return (
-    <Link
-      href={href}
-      aria-label={label}
-      className="flex h-11 w-11 items-center justify-center rounded-card bg-surface text-turquoise-700 active:bg-canvas"
-    >
-      {icon}
-    </Link>
-  );
-}
 
 function clampToProgram(
   requested: string,

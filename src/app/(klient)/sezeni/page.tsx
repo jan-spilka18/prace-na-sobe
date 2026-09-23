@@ -7,7 +7,6 @@ import { feedbackFor, sessionsFor } from "@/lib/queries";
 import { formatCzechDate, formatCzechWeekday } from "@/lib/date";
 import { SESSION_KIND_LABELS, filledSections } from "@/lib/sessionTemplate";
 import { plainText } from "@/lib/markdown";
-import { APP_SHORT_NAME } from "@/lib/config";
 
 export const metadata = { title: "Sezení" };
 
@@ -27,7 +26,6 @@ export default async function ClientSessionsPage() {
 
   return (
     <Screen
-      eyebrow={APP_SHORT_NAME}
       title="Sezení"
       subtitle="Zápisy z našich setkání"
     >

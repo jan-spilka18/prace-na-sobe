@@ -6,7 +6,6 @@ import { cn } from "@/lib/cn";
  * a velký titulek v obsahu pod ní.
  */
 export function Screen({
-  eyebrow,
   title,
   subtitle,
   back,
@@ -14,8 +13,6 @@ export function Screen({
   children,
   className,
 }: {
-  /** Drobný štítek nad titulkem — drží značku, když v liště není nic jiného. */
-  eyebrow?: string;
   title: string;
   subtitle?: React.ReactNode;
   back?: { href: string; label: string };
@@ -69,11 +66,6 @@ export function Screen({
         )}
       >
         <div className="mb-5">
-          {eyebrow && (
-            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-500">
-              {eyebrow}
-            </p>
-          )}
           <h1 className="font-display text-[34px] font-bold leading-tight tracking-tight text-ink">
             {title}
           </h1>
