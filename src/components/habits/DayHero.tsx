@@ -32,7 +32,7 @@ export function DayHero({
           : "bg-gradient-to-br from-ink to-[#2c2c2e]",
       )}
     >
-      <div className="flex items-end justify-between gap-4 px-5 pb-4 pt-5">
+      <div className="flex items-end justify-between gap-4 px-5 pb-3.5 pt-5">
         <div>
           <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-white/60">
             {notStarted ? "Začínáš" : "Den"}
@@ -69,6 +69,27 @@ export function DayHero({
           </p>
         )}
       </div>
+
+      {habits.length > 0 && (
+        // Tenký proužek místo čísla navíc: postup je vidět periferně,
+        // bez čtení. Šířku animujeme, aby odškrtnutí mělo odezvu.
+        <div
+          className="mx-5 mb-4 h-1.5 overflow-hidden rounded-full bg-white/15"
+          role="progressbar"
+          aria-valuenow={done}
+          aria-valuemin={0}
+          aria-valuemax={habits.length}
+          aria-label="Splněné návyky"
+        >
+          <div
+            className={cn(
+              "h-full rounded-full transition-[width] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
+              complete ? "bg-white" : "bg-turquoise",
+            )}
+            style={{ width: `${(done / habits.length) * 100}%` }}
+          />
+        </div>
+      )}
 
       <StreakStrip streak={streak} />
     </section>

@@ -121,10 +121,11 @@ export function VisionCard({
 }
 
 /**
- * Zkrácená vize pro denní obrazovku.
+ * Vize na denní obrazovce — sbalená do jednoho řádku.
  *
- * Zkrácená schválně: delší text by odsunul návyky pod okraj obrazovky
- * a z odškrtávání by se stalo scrollování. Klepnutím se rozbalí.
+ * Denní obrazovka má unést tři návyky bez scrollování, takže si vize
+ * nemůže vzít půl displeje. Jeden řádek stačí jako připomínka, že tam je;
+ * kdo si ji chce přečíst celou, klepne.
  */
 export function VisionQuote({ body }: { body: string }) {
   const [expanded, setExpanded] = useState(false);
@@ -136,27 +137,45 @@ export function VisionQuote({ body }: { body: string }) {
       type="button"
       onClick={() => setExpanded((value) => !value)}
       aria-expanded={expanded}
-      className="block w-full rounded-group border-l-4 border-sun bg-surface py-3 pl-4 pr-4 text-left"
+      aria-label="Moje vize"
+      className="flex w-full items-start gap-3 rounded-group border-l-4 border-sun bg-surface py-2.5 pl-3.5 pr-2.5 text-left"
     >
-      <span className="block text-[12px] font-semibold uppercase tracking-[0.1em] text-ink-500">
-        Moje vize
-      </span>
-      {/*
-        `line-clamp` si nastavuje vlastní display, takže se s `block`
-        perou o to, který vyhraje. Buď jedno, nebo druhé — nikdy obojí.
-      */}
-      <span
-        className={cn(
-          "mt-1 whitespace-pre-line font-display text-[16px] leading-relaxed text-ink",
-          expanded ? "block" : "line-clamp-3",
-        )}
-      >
-        {body}
+      <span className="min-w-0 flex-1">
+        <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">
+          Moje vize
+        </span>
+        {/*
+          `line-clamp` si nastavuje vlastní display, takže se s `block`
+          perou o to, který vyhraje. Buď jedno, nebo druhé — nikdy obojí.
+        */}
+        <span
+          className={cn(
+            "mt-0.5 whitespace-pre-line font-display text-[15px] leading-snug text-ink",
+            expanded ? "block" : "line-clamp-1",
+          )}
+        >
+          {body}
+        </span>
       </span>
 
-      {/* Tlačítko bez popisku vypadá jako obyčejný text a nikdo na něj neklepne. */}
-      <span className="mt-1.5 block text-[13px] text-turquoise-700">
-        {expanded ? "Sbalit" : "Číst celé"}
+      <span
+        aria-hidden
+        className="flex h-8 w-8 shrink-0 items-center justify-center text-ink-400"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className={cn(
+            "h-5 w-5 transition-transform duration-200",
+            expanded && "rotate-180",
+          )}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
       </span>
     </button>
   );

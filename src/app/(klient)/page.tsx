@@ -21,7 +21,7 @@ import {
   formatCzechWeekday,
   todayISO,
 } from "@/lib/date";
-import { HabitCard } from "@/components/habits/HabitCard";
+import { HabitRow } from "@/components/habits/HabitRow";
 import { CelebrationProvider } from "@/components/habits/Celebration";
 import { DayHero } from "@/components/habits/DayHero";
 import { VisionQuote } from "@/components/VisionCard";
@@ -130,9 +130,12 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
                 notStarted={notStarted}
               />
               <VisionQuote body={vision} />
-              {habits.map((habit) => (
-                <HabitCard key={habit.id} habit={habit} date={date} />
-              ))}
+              {/* Užší mezery než mezi kartami — řádky patří k sobě. */}
+              <div className="space-y-2">
+                {habits.map((habit) => (
+                  <HabitRow key={habit.id} habit={habit} date={date} />
+                ))}
+              </div>
             </div>
           </CelebrationProvider>
         )}
