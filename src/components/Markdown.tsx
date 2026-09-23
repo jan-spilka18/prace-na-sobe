@@ -20,8 +20,12 @@ export function Markdown({
   const blocks = parseMarkdown(source);
   if (blocks.length === 0) return null;
 
+  /*
+    Odrážka je interpunkce, ne ozdoba. Tyrkysová z ní dělala další barevný
+    prvek na stránce a text se kvůli ní hůř četl jako souvislá úvaha.
+  */
   const marker =
-    tone === "sun" ? "bg-ink/50" : tone === "dark" ? "bg-sun" : "bg-turquoise";
+    tone === "sun" ? "bg-ink/50" : tone === "dark" ? "bg-sun" : "bg-ink/40";
   const counter =
     tone === "sun"
       ? "text-ink/60"

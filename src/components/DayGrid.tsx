@@ -24,10 +24,14 @@ const CELL: Record<GridDay["status"], string> = {
 export function DayGrid({
   days,
   today,
+  title,
+  range,
   hrefFor,
 }: {
   days: GridDay[];
   today?: string;
+  title?: string;
+  range?: string;
   hrefFor?: (date: string) => string;
 }) {
   if (days.length === 0) return null;
@@ -36,16 +40,33 @@ export function DayGrid({
 
   return (
     <div className="space-y-3">
-      <div className="rounded-group bg-surface p-3">
+      <div className="rounded-group bg-surface p-4">
+        {(title || range) && (
+          <div className="mb-3 flex items-baseline justify-between gap-3">
+            {title && (
+              <h2 className="truncate font-display text-[17px] font-bold text-ink">
+                {title}
+              </h2>
+            )}
+            {range && (
+              <span className="shrink-0 text-[12px] tabular-nums text-ink-500">
+                {range}
+              </span>
+            )}
+          </div>
+        )}
+
         {/*
-          Na tabletu by se čtverce bez omezení roztáhly na skoro sto pixelů
-          a číslo v nich by plavalo. Na telefonu se strop neuplatní.
+          Devadesát dní se má číst jako jeden blok, ne jako tabulka přes
+          celou obrazovku. Roztažené čtverce vypadaly jako kalendář na zeď
+          a většinu karty zabíraly prázdné budoucí dny. Menší buňka drží
+          celý program v jednom pohledu; 32 px pořád jde trefit prstem.
         */}
-        <div className="mx-auto grid max-w-[26rem] grid-cols-7 gap-1.5">
+        <div className="mx-auto grid max-w-[16rem] grid-cols-7 gap-1">
           {WEEKDAYS.map((day) => (
             <div
               key={day}
-              className="pb-1 text-center text-[11px] font-semibold text-ink-500"
+              className="pb-1 text-center text-[10px] font-semibold uppercase tracking-wide text-ink-400"
             >
               {day}
             </div>
@@ -85,7 +106,7 @@ function Cell({
   }${isToday ? " (dnes)" : ""}`;
 
   const className = cn(
-    "flex aspect-square items-center justify-center rounded-[0.5rem] text-[12px] font-semibold tabular-nums",
+    "flex aspect-square items-center justify-center rounded-[0.35rem] text-[10px] font-semibold tabular-nums",
     day.isFuture ? "bg-canvas/60 text-ink-400" : CELL[day.status],
     // Dnešek se obtáhne, ne vybarví — jinak by se pletl se stavem dne.
     isToday && "ring-2 ring-turquoise ring-offset-1 ring-offset-surface",
@@ -136,7 +157,7 @@ function Legend({ days }: { days: GridDay[] }) {
 
   return (
     <div className="space-y-2">
-      <dl className="flex flex-wrap gap-x-5 gap-y-2 px-1">
+      <dl className="flex flex-wrap gap-x-4 gap-y-2 px-1">
         {shown.map((status) => (
           <div key={status} className="flex items-center gap-2">
             <span
@@ -152,10 +173,10 @@ function Legend({ days }: { days: GridDay[] }) {
                 <span className="h-px w-2.5 rounded-full bg-ink-400" />
               )}
             </span>
-            <dt className="text-[13px] text-ink-600">
+            <dt className="text-[12px] text-ink-600">
               {DAY_STATUS_LABELS[status]}
             </dt>
-            <dd className="text-[13px] font-semibold tabular-nums text-ink">
+            <dd className="text-[12px] font-semibold tabular-nums text-ink">
               {counts[status]}
             </dd>
           </div>
@@ -166,11 +187,15 @@ function Legend({ days }: { days: GridDay[] }) {
         Bez téhle věty vypadá volno jako propadlý den. Píše se jen tam,
         kde nějaké volno je — jinak by odpovídala na otázku, která nevznikla.
       */}
-      {counts.rest > 0 && (
-        <p className="px-1 text-[13px] text-ink-500">
-          Volno se do úspěšnosti nepočítá.
-        </p>
-      )}
+      <p className="px-1 text-[12px] leading-relaxed text-ink-500">
+        Rámeček = dnes · tečka = budoucí den
+        {counts.rest > 0 && (
+          <>
+            <br />
+            Volno se do úspěšnosti nepočítá.
+          </>
+        )}
+      </p>
     </div>
   );
 }

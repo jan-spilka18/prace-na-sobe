@@ -26,6 +26,7 @@ import { CelebrationProvider } from "@/components/habits/Celebration";
 import { DayHero } from "@/components/habits/DayHero";
 import { VisionQuote } from "@/components/VisionCard";
 import { runningStreak } from "@/lib/habits";
+import { APP_SHORT_NAME } from "@/lib/config";
 
 export default async function TodayPage({ searchParams }: PageProps<"/">) {
   const profile = await requireProfile();
@@ -35,7 +36,11 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
 
   if (!program) {
     return (
-      <Screen title="Práce na sobě" action={<SettingsLink alert={adminPassword} />}>
+      <Screen
+        eyebrow={APP_SHORT_NAME}
+        title="Práce na sobě"
+        action={<SettingsLink alert={adminPassword} />}
+      >
         <EmptyState
           title="Zatím tu nic není"
           description="Honza ti výzvu založí před začátkem programu. Až bude připravená, objeví se tady."
@@ -75,6 +80,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
 
   return (
     <Screen
+      eyebrow={APP_SHORT_NAME}
       title={capitalize(describeDay(date, today))}
       subtitle={
         // Číslo dne nese karta pod tím, tady by se jen opakovalo.
@@ -130,12 +136,32 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
                 streak={streak}
                 notStarted={notStarted}
               />
-              {/* Užší mezery než mezi kartami — řádky patří k sobě. */}
-              <div className="space-y-2">
-                {habits.map((habit) => (
-                  <HabitRow key={habit.id} habit={habit} date={date} />
-                ))}
-              </div>
+              <section className="space-y-2.5">
+                <div className="flex items-baseline justify-between gap-3 px-1">
+                  <h2 className="font-display text-[21px] font-bold tracking-tight text-ink">
+                    Tvoje dnešní kroky
+                  </h2>
+                  <span className="shrink-0 text-[14px] text-ink-500">
+                    {habits.length}{" "}
+                    {habits.length === 1
+                      ? "návyk"
+                      : habits.length < 5
+                        ? "návyky"
+                        : "návyků"}
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  {habits.map((habit) => (
+                    <HabitRow key={habit.id} habit={habit} date={date} />
+                  ))}
+                </div>
+
+                <p className="px-1 pt-0.5 text-[14px] text-ink-500">
+                  Každý krok se počítá.
+                </p>
+              </section>
+
               {/*
                 Vize je pod návyky schválně. Odškrtnutí je jediná věc, kvůli
                 které sem člověk denně chodí — nemá kvůli ní nic přeskakovat.

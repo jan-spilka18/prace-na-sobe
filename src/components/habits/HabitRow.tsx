@@ -2,7 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { cn } from "@/lib/cn";
-import { actualValueLabel, formatTarget, type HabitForDay } from "@/lib/habits";
+import {
+  actualValueLabel,
+  describeWeekdays,
+  formatTarget,
+  type HabitForDay,
+} from "@/lib/habits";
 import { saveEntry } from "@/app/actions/habits";
 import { useCelebration } from "./Celebration";
 import type { EntryStatus } from "@/lib/database.types";
@@ -38,6 +43,16 @@ export function HabitRow({
   const celebrate = useCelebration();
 
   const targetLabel = formatTarget(habit.type, habit.target);
+  /*
+    U návyku bez cíle (ano/ne) by řádek zůstal bez podtitulu a v seznamu
+    by vyčníval. Rozvrh je tam užitečnější než prázdno — klient hned vidí,
+    proč mu ten návyk v sobotu nevyskočil.
+  */
+  const scheduleLabel =
+    habit.weekdays && habit.weekdays.length < 7
+      ? describeWeekdays(habit.weekdays)
+      : null;
+  const subtitle = targetLabel || scheduleLabel;
   const needsValue = habit.type !== "boolean";
   const hasDetail = Boolean(habit.description || habit.link_url) || needsValue;
 
@@ -72,12 +87,14 @@ export function HabitRow({
   return (
     <article
       className={cn(
-        "overflow-hidden rounded-group transition-colors duration-200",
-        status === "done" ? "bg-turquoise-50" : "bg-surface",
+        "overflow-hidden rounded-group border transition-colors duration-200",
+        status === "done"
+          ? "border-turquoise-200 bg-turquoise-50"
+          : "border-hairline bg-surface",
         pending && "opacity-70",
       )}
     >
-      <div className="flex items-center gap-3 py-2.5 pl-2.5 pr-1.5">
+      <div className="flex items-center gap-3 py-3.5 pl-3 pr-1.5">
         <Tick
           status={status}
           onClick={() => choose("done")}
@@ -87,16 +104,16 @@ export function HabitRow({
         <div className="min-w-0 flex-1">
           <h3
             className={cn(
-              "truncate text-[16px] font-semibold leading-snug transition-colors",
+              "truncate text-[17px] font-semibold leading-snug transition-colors",
               status === "missed" ? "text-ink-500 line-through" : "text-ink",
             )}
           >
             {habit.title}
           </h3>
-          {(targetLabel || status === "missed") && (
-            <p className="mt-0.5 text-[13px] text-ink-500">
-              {status === "missed" ? "Nesplněno" : targetLabel}
-              {status === "missed" && targetLabel && ` · ${targetLabel}`}
+          {(subtitle || status === "missed") && (
+            <p className="mt-0.5 text-[14px] text-ink-500">
+              {status === "missed" ? "Nesplněno" : subtitle}
+              {status === "missed" && subtitle && ` · ${subtitle}`}
             </p>
           )}
         </div>
@@ -223,7 +240,7 @@ function Tick({
     >
       <span
         className={cn(
-          "flex h-8 w-8 items-center justify-center rounded-full border-2",
+          "flex h-9 w-9 items-center justify-center rounded-full border-2",
           "transition-all duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
           "group-active:scale-90",
           status === "done" && "scale-105 border-turquoise bg-turquoise text-white",
@@ -234,7 +251,7 @@ function Tick({
         <svg
           viewBox="0 0 24 24"
           aria-hidden
-          className="h-4 w-4"
+          className="h-[18px] w-[18px]"
           fill="none"
           stroke="currentColor"
           strokeWidth="3.5"

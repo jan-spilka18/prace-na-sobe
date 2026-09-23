@@ -50,51 +50,42 @@ export default async function ClientSessionPage({
         ) : (
           <>
             {/*
-              Zkratka dolů. Zápis může být dlouhý a zpětná vazba je jediná
-              věc, kterou tu klient dělá — nemá ji hledat scrollováním.
-            */}
-            <a
-              href="#zpetna-vazba"
-              className="flex items-center gap-1.5 px-1 text-[15px] text-turquoise-700"
-            >
-              Přejít na tvoji zpětnou vazbu
-              <svg
-                viewBox="0 0 24 24"
-                aria-hidden
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 5v14M6 13l6 6 6-6" />
-              </svg>
-            </a>
-
-            {/*
               Jeden souvislý text s mezinadpisy, ne pět samostatných karet.
               Zápis je souvislá úvaha o jednom sezení; rozřezaný na kartičky
               se četl jako formulář.
             */}
             <article className="space-y-5 rounded-group bg-surface p-5">
-              {sections.map((section) =>
+              {sections.map((section, index) =>
                 section.key === HIGHLIGHT_SECTION ? (
                   <section
                     key={section.key}
                     className="rounded-card bg-sun px-4 py-3.5"
                   >
-                    <h2 className="font-display text-[19px] font-semibold text-ink">
+                    <h2 className="font-display text-[19px] font-bold tracking-tight text-ink">
                       {section.title}
                     </h2>
                     <Markdown source={section.body} className="mt-2" tone="sun" />
                   </section>
                 ) : (
                   <section key={section.key}>
-                    <h2 className="font-display text-[19px] font-semibold text-ink">
+                    <h2 className="font-display text-[21px] font-bold tracking-tight text-ink">
                       {section.title}
                     </h2>
                     <Markdown source={section.body} className="mt-2" />
+
+                    {/*
+                      Zkratka dolů sedí až pod prvním odstavcem, ne nad ním.
+                      Nabízet skok na konec dřív, než klient přečte shrnutí,
+                      by znamenalo pobízet ho, ať zápis přeskočí.
+                    */}
+                    {index === 0 && (
+                      <a
+                        href="#zpetna-vazba"
+                        className="mt-3 inline-block text-[15px] text-turquoise-700 underline underline-offset-4"
+                      >
+                        Přejít na tvoji zpětnou vazbu ↓
+                      </a>
+                    )}
                   </section>
                 ),
               )}

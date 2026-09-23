@@ -1,11 +1,11 @@
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Screen } from "@/components/ui/Screen";
-import { Card, EmptyState } from "@/components/ui/List";
+import { EmptyState } from "@/components/ui/List";
 import { DayGrid } from "@/components/DayGrid";
 import { VisionCard } from "@/components/VisionCard";
 import { activeProgram, programGrid, visionFor } from "@/lib/queries";
-import { clampedProgramDay, todayISO } from "@/lib/date";
+import { addDays, clampedProgramDay, formatShortDate, todayISO } from "@/lib/date";
 import { successRate } from "@/lib/habits";
 
 export const metadata = { title: "Přehled" };
@@ -36,6 +36,7 @@ export default async function OverviewPage() {
   );
 
   const rate = successRate(days);
+  const lastDate = addDays(program.start_date, program.duration_days - 1);
 
   return (
     <Screen title="Přehled" subtitle={program.title}>
@@ -43,52 +44,46 @@ export default async function OverviewPage() {
         <VisionCard programId={program.id} body={vision} />
 
         {/*
-          Dvě čísla v jedné kartě, oddělená linkou. Dvě samostatné dlaždice
-          vypadaly jako statistický panel — tohle se čte jako jedna věta.
+          Čísla stojí přímo na pozadí, ne v kartě. Karta z nich dělala
+          další objekt k přečtení; takhle se čtou jako nadpis k mřížce,
+          která je pod nimi.
         */}
-        <Card className="flex items-stretch gap-4">
-          <Stat label="Den">
-            {dayNumber}
-            <StatUnit>z {program.duration_days}</StatUnit>
-          </Stat>
-
+        <div className="flex items-stretch gap-5 px-1">
+          <Stat value={dayNumber} unit={`z ${program.duration_days}`} label="den výzvy" />
           <div aria-hidden className="w-px shrink-0 bg-hairline" />
+          <Stat value={rate} unit="%" label="splněných uzavřených dní" />
+        </div>
 
-          <Stat label="Úspěšnost">
-            {rate}
-            <StatUnit>%</StatUnit>
-          </Stat>
-        </Card>
-
-        <DayGrid days={days} today={today} hrefFor={(date) => `/?den=${date}`} />
+        <DayGrid
+          days={days}
+          today={today}
+          title={program.title}
+          range={`${formatShortDate(program.start_date)} – ${formatShortDate(lastDate)}`}
+          hrefFor={(date) => `/?den=${date}`}
+        />
       </div>
     </Screen>
   );
 }
 
 function Stat({
+  value,
+  unit,
   label,
-  children,
 }: {
+  value: number;
+  unit: string;
   label: string;
-  children: React.ReactNode;
 }) {
   return (
     <div className="min-w-0 flex-1">
-      <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-ink-500">
-        {label}
+      <p className="flex items-baseline gap-1 font-display">
+        <span className="text-[38px] font-bold leading-none tracking-tight tabular-nums text-ink">
+          {value}
+        </span>
+        <span className="text-[14px] font-semibold text-ink-500">{unit}</span>
       </p>
-      <p className="mt-1.5 font-display text-[32px] font-bold leading-none tabular-nums text-ink">
-        {children}
-      </p>
+      <p className="mt-1.5 text-[13px] leading-snug text-ink-500">{label}</p>
     </div>
-  );
-}
-
-function StatUnit({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="ml-1 text-[15px] font-semibold text-ink-500">
-      {children}
-    </span>
   );
 }

@@ -102,7 +102,7 @@ export function VisionCard({
   return (
     <section className="rounded-group bg-surface p-5">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="font-display text-[19px] font-semibold text-ink">
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-500">
           Moje vize
         </h2>
         {canEdit && (
@@ -115,17 +115,17 @@ export function VisionCard({
           </button>
         )}
       </div>
-      <VisionText body={saved} className="mt-3" />
+      <VisionText body={saved} className="mt-2" />
     </section>
   );
 }
 
 /**
- * Vize na denní obrazovce — sbalená do jednoho řádku.
+ * Vize na denní obrazovce.
  *
- * Denní obrazovka má unést tři návyky bez scrollování, takže si vize
- * nemůže vzít půl displeje. Jeden řádek stačí jako připomínka, že tam je;
- * kdo si ji chce přečíst celou, klepne.
+ * Ne karta, ale patička pod seznamem: vodorovná linka, drobný nadpisek
+ * a jedna věta serifem. Odškrtávání je hlavní děj obrazovky a vize k němu
+ * má být tichá připomínka, ne další blok, který si říká o pozornost.
  */
 export function VisionQuote({ body }: { body: string }) {
   const [expanded, setExpanded] = useState(false);
@@ -133,55 +133,62 @@ export function VisionQuote({ body }: { body: string }) {
   if (body.trim() === "") return null;
 
   return (
-    <button
-      type="button"
-      onClick={() => setExpanded((value) => !value)}
-      aria-expanded={expanded}
-      aria-label="Moje vize"
-      className="flex w-full items-start gap-3 rounded-group border-l-4 border-sun bg-surface py-2.5 pl-3.5 pr-2.5 text-left"
-    >
-      <span className="min-w-0 flex-1">
-        <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">
-          Moje vize
-        </span>
-        {/*
-          `line-clamp` si nastavuje vlastní display, takže se s `block`
-          perou o to, který vyhraje. Buď jedno, nebo druhé — nikdy obojí.
-        */}
-        <span
-          className={cn(
-            "mt-0.5 whitespace-pre-line font-display text-[15px] leading-snug text-ink",
-            expanded ? "block" : "line-clamp-1",
-          )}
-        >
-          {body}
-        </span>
-      </span>
-
-      <span
-        aria-hidden
-        className="flex h-8 w-8 shrink-0 items-center justify-center text-ink-400"
+    <div className="border-t border-hairline pt-4">
+      <button
+        type="button"
+        onClick={() => setExpanded((value) => !value)}
+        aria-expanded={expanded}
+        className="flex w-full items-start gap-3 text-left"
       >
-        <svg
-          viewBox="0 0 24 24"
-          className={cn(
-            "h-5 w-5 transition-transform duration-200",
-            expanded && "rotate-180",
-          )}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+        <span className="min-w-0 flex-1">
+          <span className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-500">
+            Připomeň si proč
+          </span>
+          {/*
+            `line-clamp` si nastavuje vlastní display, takže se s `block`
+            perou o to, který vyhraje. Buď jedno, nebo druhé — nikdy obojí.
+          */}
+          <span
+            className={cn(
+              "mt-1.5 whitespace-pre-line font-display text-[17px] font-semibold leading-snug text-ink",
+              expanded ? "block" : "line-clamp-2",
+            )}
+          >
+            {body}
+          </span>
+        </span>
+
+        <span
+          aria-hidden
+          className="-mr-1 flex h-7 w-7 shrink-0 items-center justify-center text-ink-400"
         >
-          <path d="M6 9l6 6 6-6" />
-        </svg>
-      </span>
-    </button>
+          <svg
+            viewBox="0 0 24 24"
+            className={cn(
+              "h-5 w-5 transition-transform duration-200",
+              expanded && "rotate-180",
+            )}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </span>
+      </button>
+    </div>
   );
 }
 
-/** Vlastní slova klienta — serifem, aby se četla jako text, ne jako údaj. */
+/**
+ * Vlastní slova klienta.
+ *
+ * První odstavec nese větu, kterou si člověk napsal jako hlavní — proto
+ * serifem a tučně. Co dopsal pod ni, je vysvětlení, a to má být tišší,
+ * jinak by se obojí přetahovalo o pozornost.
+ */
 export function VisionText({
   body,
   className,
@@ -189,12 +196,19 @@ export function VisionText({
   body: string;
   className?: string;
 }) {
+  const paragraphs = body.split(/\n{2,}/);
+
   return (
     <div className={className}>
-      {body.split(/\n{2,}/).map((paragraph, index) => (
+      {paragraphs.map((paragraph, index) => (
         <p
           key={index}
-          className="mb-3 whitespace-pre-line font-display text-[17px] leading-relaxed text-ink last:mb-0"
+          className={cn(
+            "mb-3 whitespace-pre-line last:mb-0",
+            index === 0
+              ? "font-display text-[19px] font-semibold leading-snug text-ink"
+              : "text-[15px] leading-relaxed text-ink-600",
+          )}
         >
           {paragraph}
         </p>
