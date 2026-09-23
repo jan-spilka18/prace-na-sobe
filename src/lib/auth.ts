@@ -31,3 +31,19 @@ export async function requireAdmin(): Promise<Profile> {
   if (profile.role !== "admin") redirect("/");
   return profile;
 }
+
+/**
+ * Klient pořád používá heslo, které mu vygeneroval admin.
+ *
+ * Příznak žije v user_metadata, ne v tabulce profiles — nastavuje ho jediné
+ * místo (založení účtu a reset hesla) a maže ho jediné místo (změna hesla),
+ * takže kvůli němu nemusela vzniknout migrace.
+ */
+export async function usesAdminPassword(): Promise<boolean> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return user?.user_metadata?.password_set_by_admin === true;
+}

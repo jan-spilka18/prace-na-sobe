@@ -81,6 +81,10 @@ export default async function AdminPage() {
             </Link>
           </>
         )}
+
+        <ListGroup title="Můj účet">
+          <ListRow title="Změnit heslo" href="/zmena-hesla" />
+        </ListGroup>
       </div>
     </Screen>
   );

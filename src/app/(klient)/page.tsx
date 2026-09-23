@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { requireProfile } from "@/lib/auth";
+import { requireProfile, usesAdminPassword } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Screen } from "@/components/ui/Screen";
 import { EmptyState } from "@/components/ui/List";
 import { Button } from "@/components/ui/Button";
-import { SignOutButton } from "@/components/SignOutButton";
+import { SettingsLink } from "@/components/SettingsLink";
 import {
   activeProgram,
   allHabits,
@@ -29,12 +29,13 @@ import { runningStreak } from "@/lib/habits";
 
 export default async function TodayPage({ searchParams }: PageProps<"/">) {
   const profile = await requireProfile();
+  const adminPassword = await usesAdminPassword();
   const supabase = await createClient();
   const program = await activeProgram(supabase, profile.id);
 
   if (!program) {
     return (
-      <Screen title="Práce na sobě" action={<SignOutButton />}>
+      <Screen title="Práce na sobě" action={<SettingsLink alert={adminPassword} />}>
         <EmptyState
           title="Zatím tu nic není"
           description="Honza ti výzvu založí před začátkem programu. Až bude připravená, objeví se tady."
@@ -81,7 +82,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
           ? `Program začíná ${formatCzechDate(program.start_date)}`
           : `${formatCzechWeekday(date)} ${formatCzechDate(date)}`
       }
-      action={<SignOutButton />}
+      action={<SettingsLink alert={adminPassword} />}
     >
       <div className="space-y-4">
         <nav className="flex items-center gap-2">

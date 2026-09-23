@@ -13,3 +13,6 @@ export const DEFAULT_PROGRAM_TITLE = "90denní výzva";
 
 /** Kolik návyků nabídne průvodce při zakládání výzvy. Klient si může přidat další. */
 export const SUGGESTED_HABIT_COUNT = 3;
+
+/** Kratší heslo než tohle nemá u účtu, který drží deník klienta, co dělat. */
+export const MIN_PASSWORD_LENGTH = 10;

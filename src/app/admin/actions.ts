@@ -43,7 +43,13 @@ export async function createClientAccount(
     email,
     password,
     email_confirm: true,
-    user_metadata: { full_name: fullName, role: "client" },
+    // password_set_by_admin drží varování v klientově nastavení. Zhasne ho
+    // až chvíle, kdy si klient nastaví vlastní heslo.
+    user_metadata: {
+      full_name: fullName,
+      role: "client",
+      password_set_by_admin: true,
+    },
   });
 
   if (createError || !created.user) {
@@ -87,7 +93,17 @@ export async function resetClientPassword(
   const admin = createAdminClient();
   const password = generatePassword();
 
-  const { error } = await admin.auth.admin.updateUserById(clientId, { password });
+  // user_metadata se posílá celá, takže se stávající klíče musí vzít s sebou —
+  // jinak by resetem hesla zmizelo jméno i role.
+  const { data: existing } = await admin.auth.admin.getUserById(clientId);
+
+  const { error } = await admin.auth.admin.updateUserById(clientId, {
+    password,
+    user_metadata: {
+      ...(existing?.user?.user_metadata ?? {}),
+      password_set_by_admin: true,
+    },
+  });
   if (error) return { error: `Heslo se nepodařilo změnit: ${error.message}` };
 
   return { password };

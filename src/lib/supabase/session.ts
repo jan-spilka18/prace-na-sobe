@@ -4,7 +4,7 @@ import type { Database } from "@/lib/database.types";
 import { supabaseAnonKey, supabaseUrl } from "./env";
 
 /** Stránky dostupné bez přihlášení. */
-const PUBLIC_PATHS = ["/prihlaseni", "/zmena-hesla"];
+const PUBLIC_PATHS = ["/prihlaseni"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
