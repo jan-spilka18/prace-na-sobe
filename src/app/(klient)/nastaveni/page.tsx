@@ -28,7 +28,12 @@ export default async function SettingsPage() {
           </div>
         )}
 
-        <NotificationSettings publicKey={vapidKey} />
+        {/*
+          Dokud na serveru nejsou klíče, notifikace nikdo zapnout nemůže.
+          Mrtvý přepínač s vysvětlivkou, proč nejde zmáčknout, je horší
+          než žádný — klient neřeší, co se děje na serveru.
+        */}
+        {vapidKey !== "" && <NotificationSettings publicKey={vapidKey} />}
 
         <ListGroup title="Účet">
           <ListRow title="E-mail" trailing={profile.email} />

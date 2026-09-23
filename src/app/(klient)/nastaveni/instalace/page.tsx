@@ -25,15 +25,15 @@ export default async function InstallPage() {
   return (
     <Screen
       title="Appka na plochu"
-      subtitle="Pár klepnutí, a chová se jako běžná aplikace"
+      subtitle="Pár klepnutí a chová se jako běžná aplikace"
       back={{ href: "/nastaveni", label: "Nastavení" }}
     >
       <div className="space-y-5">
         <div className="rounded-group border-l-4 border-sun bg-surface py-3.5 pl-3.5 pr-4">
           <p className="text-[15px] leading-relaxed text-ink">
-            Bez tohohle kroku ti iPhone nepošle žádnou připomínku. Notifikace
-            pouští jen aplikacím, které jsou na ploše — ne stránkám otevřeným
-            v prohlížeči.
+            Vyplatí se to. Appka bude mít vlastní ikonu, otevře se na jedno
+            klepnutí a nebude kolem ní adresní řádek ani panely prohlížeče —
+            odškrtnutí návyků je pak otázka pár vteřin.
           </p>
         </div>
 
