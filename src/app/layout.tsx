@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
 import { Fraunces } from "next/font/google";
+import { THEME_COOKIE, parseTheme } from "@/lib/theme";
 import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME } from "@/lib/config";
 import "./globals.css";
 
@@ -40,9 +42,17 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Ruční volba vzhledu. „Podle telefonu" atribut nenastaví a o barvách
+  // rozhodne prefers-color-scheme v globals.css.
+  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
+
   return (
-    <html lang="cs" className={`${fraunces.variable} h-full antialiased`}>
+    <html
+      lang="cs"
+      data-theme={theme === "auto" ? undefined : theme}
+      className={`${fraunces.variable} h-full antialiased`}
+    >
       <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );

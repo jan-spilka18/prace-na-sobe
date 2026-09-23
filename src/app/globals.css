@@ -71,16 +71,22 @@ html {
 }
 
 /*
-  Tmavý režim podle nastavení telefonu.
+  Tmavý režim.
 
   Přepisují se jen hodnoty tokenů — komponenty zůstávají beze změny.
-  Klient appku otevírá večer v posteli a bílá plocha by na něj svítila.
-
   Tyrkysová a jasná žlutá se nemění: jsou to barvy značky a na tmavém
   pozadí fungují stejně dobře. Mění se neutrály a světlé podklady.
+
+  Tři stavy podle atributu data-theme na <html>:
+  - bez atributu: podle telefonu (výchozí),
+  - "dark": vždycky tmavý,
+  - "light": vždycky světlý, i když má telefon tmavý režim.
+
+  Tokeny jsou tu dvakrát schválně. Pravidlo uvnitř @media a pravidlo mimo
+  něj nejde v CSS spojit do jednoho výběru.
 */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     color-scheme: dark;
 
     --color-turquoise-50: #102426;
@@ -109,6 +115,36 @@ html {
 
     --color-danger: #ff6961;
   }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-turquoise-50: #102426;
+  --color-turquoise-100: #143034;
+  --color-turquoise-200: #1d454a;
+  --color-turquoise-700: #7fd4dd;
+
+  --color-sun-100: #2a2616;
+  --color-sun-700: #efe0a0;
+  --color-sun-surface: #3a3520;
+
+  --color-ink: #f2f2f7;
+  --color-ink-600: #aeaeb2;
+  --color-ink-500: #8e8e93;
+  --color-ink-400: #636366;
+  --color-ink-300: #48484a;
+  --color-on-ink: #0b0b0d;
+
+  /* Tmavá karta musí jít od pozadí poznat, proto je o stupeň světlejší. */
+  --color-night: #232529;
+  --color-night-2: #2e3035;
+
+  --color-canvas: #0b0b0d;
+  --color-surface: #1c1c1e;
+  --color-hairline: #2c2c2e;
+
+  --color-danger: #ff6961;
 }
 
 body {

@@ -5,6 +5,9 @@ import { SignOutButton } from "@/components/SignOutButton";
 import { APP_NAME } from "@/lib/config";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { publicVapidKey } from "@/lib/push";
+import { cookies } from "next/headers";
+import { ThemePicker } from "@/components/ThemePicker";
+import { THEME_COOKIE, parseTheme } from "@/lib/theme";
 
 export const metadata = { title: "Nastavení" };
 
@@ -12,6 +15,7 @@ export default async function SettingsPage() {
   const profile = await requireProfile();
   const adminPassword = await usesAdminPassword();
   const vapidKey = publicVapidKey();
+  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
 
   return (
     <Screen title="Nastavení" subtitle={profile.full_name || profile.email}>
@@ -34,6 +38,8 @@ export default async function SettingsPage() {
           než žádný — klient neřeší, co se děje na serveru.
         */}
         {vapidKey !== "" && <NotificationSettings publicKey={vapidKey} />}
+
+        <ThemePicker initial={theme} />
 
         <ListGroup title="Účet">
           <ListRow title="E-mail" trailing={profile.email} />

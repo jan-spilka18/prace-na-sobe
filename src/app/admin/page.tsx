@@ -14,6 +14,9 @@ import {
   type ClientRow,
 } from "@/lib/adminOverview";
 import { describeOutcome, isRestDay } from "@/lib/summary";
+import { cookies } from "next/headers";
+import { ThemePicker } from "@/components/ThemePicker";
+import { THEME_COOKIE, parseTheme } from "@/lib/theme";
 
 export const metadata = { title: "Klienti" };
 
@@ -21,6 +24,7 @@ export default async function AdminPage() {
   await requireAdmin();
   const supabase = await createClient();
   const today = todayISO();
+  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
 
   const { data: clients } = await supabase
     .from("profiles")
@@ -127,6 +131,8 @@ export default async function AdminPage() {
             </Link>
           </>
         )}
+
+        <ThemePicker initial={theme} />
 
         <ListGroup title="Můj účet">
           <ListRow title="Změnit heslo" href="/zmena-hesla" />
