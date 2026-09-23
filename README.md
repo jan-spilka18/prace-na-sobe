@@ -8,17 +8,18 @@ Celé rozhraní je česky, časové pásmo Europe/Prague.
 
 ## Stav
 
-Hotové jsou **etapy 1 a 2**: účty a role, 90denní výzva s odškrtáváním,
-mřížka průběhu, vize klienta a admin pohled na všechno z toho.
+Hotové je **všechno**: účty a role, 90denní výzva s odškrtáváním, mřížka
+průběhu, vize, zápisy ze sezení, PWA s připomínkami, ranní souhrn
+a soukromý prostor kouče.
 
 | Etapa | Obsah | Stav |
 |---|---|---|
 | 1 | Projekt, Supabase, přihlášení, role, založení klienta | hotovo |
 | 2 | 90denní výzva: typy návyků, zpětné vyplňování, poznámky, vize | hotovo |
-| 3 | PWA, web push, připomínky návyků | připravuje se |
-| 4 | Ranní vyhodnocení v 8:00: push, e-mail, vzorce | |
-| 5 | Zápisy ze sezení a zpětná vazba klienta | |
-| 6 | Admin: přípravy, soukromé poznámky, odkazy | |
+| 3 | PWA, web push, připomínky návyků | hotovo |
+| 4 | Ranní vyhodnocení v 8:00: push, e-mail, vzorce | hotovo |
+| 5 | Zápisy ze sezení a zpětná vazba klienta | hotovo |
+| 6 | Admin: přípravy, soukromé poznámky, odkazy | hotovo |
 
 > **Po aktualizaci aplikace znovu spusť `supabase/schema.sql`** v SQL Editoru.
 > Dá se pustit opakovaně a nic nesmaže — dorovná jen to, co v databázi chybí.
@@ -134,10 +135,53 @@ Repozitář ať je **privátní** — jde o data z osobního rozvoje.
 5. Odhlas se a zkus se přihlásit jako ten klient. Měl bys vidět kartu
    „Den X z 90" a nic z admina.
 
-## Zkouška na telefonu
+## 9. Zapni notifikace
 
-Adresu z Vercelu otevři v mobilu. Zatím se chová jako běžná stránka —
-instalace na plochu a notifikace přijdou v etapě 3.
+Tohle je potřeba jen jednou a bez toho nepřijde žádná připomínka.
+
+1. V aplikaci otevři **Klienti → Notifikace**.
+2. Klepni na **Vygenerovat**. Ukážou se čtyři hodnoty — zkopíruj je hned,
+   podruhé se neukážou.
+3. Ve Vercelu je vlož do **Settings → Environment Variables**, každou zvlášť
+   pod jménem, které u ní svítí.
+4. U `VAPID_SUBJECT` nahraď adresu svým e-mailem.
+5. **Deployments → tři tečky u nejnovějšího → Redeploy.** Bez toho se nové
+   hodnoty nenačtou.
+6. Vrať se na **Notifikace**. Nahoře musí svítit obojí zeleně.
+
+Volitelně e-mail se souhrnem: založ si účet na `resend.com`, vytvoř API klíč
+a přidej ve Vercelu `RESEND_API_KEY` a `EMAIL_FROM` (odesílatel musí být
+adresa na ověřené doméně). Bez nich souhrn chodí jen jako push.
+
+| Proměnná | K čemu |
+|---|---|
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | push — veřejná část, smí do prohlížeče |
+| `VAPID_PRIVATE_KEY` | push — **nikdy nikam kromě Vercelu** |
+| `VAPID_SUBJECT` | tvůj e-mail ve tvaru `mailto:…` |
+| `CRON_SECRET` | chrání naplánované úlohy před cizím spuštěním |
+| `RESEND_API_KEY` | e-mail se souhrnem, nepovinné |
+| `EMAIL_FROM` | odesílatel souhrnu, nepovinné |
+| `NEXT_PUBLIC_APP_URL` | adresa v odkazu v e-mailu, nepovinné |
+
+### Kdy se úlohy spouštějí
+
+V `vercel.json` jsou dvě: připomínky každou hodinu a ranní souhrn v 6 a 7 UTC.
+Souhrn si sám ohlídá, že je v Praze osm, a přes `notification_log` se pojistí,
+aby ani při dvou spuštěních neodešel dvakrát.
+
+**Vercel na tarifu Hobby spouští cron jen jednou denně**, takže připomínky
+v přesný čas potřebují tarif Pro. Levnější cesta: na `cron-job.org` si zdarma
+nastav volání
+`https://tvoje-adresa.vercel.app/api/cron/pripominky?klic=TVUJ_CRON_SECRET`
+každých patnáct minut. Stejně tak pro `/api/cron/rano`.
+
+## 10. Zkouška na telefonu
+
+Adresu z Vercelu otevři v mobilu a přidej si ji na plochu — v aplikaci to
+najdeš pod **Nastavení → Appka na plochu**.
+
+**iPhone notifikace pouští jen aplikacím spuštěným z plochy.** Dokud appku
+otevíráš v Safari, zůstane přepínač notifikací schovaný.
 
 Co se vyplatí projít:
 
@@ -152,7 +196,7 @@ Co se vyplatí projít:
 
 ```bash
 npm install
-cp .env.example .env.local   # doplň tři hodnoty z kroku 5
+cp .env.example .env.local   # doplň hodnoty z kroku 5
 npm run dev                  # http://localhost:3000
 ```
 
@@ -205,12 +249,23 @@ supabase/
 platí od). Díky tomu změna cíle platí jen do budoucna a starší dny si drží
 původní hodnotu. Nikdy do ní nepiš `update`, vždy přidej nový řádek.
 
-**Servisní klíč obchází Row Level Security.** Používá se jen v
-`src/app/admin/actions.ts` a každá taková funkce si na prvním řádku ověří,
-že ji spustil admin.
+**Servisní klíč obchází Row Level Security.** Používá se v
+`src/app/admin/actions.ts` a v naplánovaných úlohách pod `src/app/api/cron/`.
+Adminské akce si na prvním řádku ověří roli, úlohy se prokazují `CRON_SECRET`.
+
+**Naplánované úlohy nesmí polykat chyby.** Když dotaz do databáze selže,
+odpověď musí být 500 s popisem — ne prázdný výsledek. Tiché selhání znamená,
+že celý den nic neodejde a nikdo se to nedozví.
+
+**`/api/cron/` je vyjmuté z proxy** v `src/proxy.ts`. Bez té výjimky by
+naplánovanou úlohu proxy přesměrovala na přihlášení.
 
 ## Tarify
 
 Supabase zdarma projekt **po týdnu bez provozu pozastaví** a s ním i
 naplánované úlohy. Na ostrý provoz s klienty počítej s tarifem Pro
-(25 $ měsíčně). Vercel na tarifu Hobby stačí.
+(25 $ měsíčně).
+
+Vercel na tarifu Hobby utáhne všechno kromě častého cronu — ten běží jen
+jednou denně. Buď Pro (20 $ měsíčně), nebo bezplatný externí plánovač,
+jak je popsáno v kroku 9.
