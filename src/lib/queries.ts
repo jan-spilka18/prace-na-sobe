@@ -1,5 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database, Habit, HabitEntry, HabitTarget, Program } from "@/lib/database.types";
+import type {
+  Database,
+  Habit,
+  HabitEntry,
+  HabitTarget,
+  Program,
+  SessionFeedback,
+  SessionRecord,
+} from "@/lib/database.types";
 import { type HabitForDay, appliesOn, dayStatus, targetFor } from "@/lib/habits";
 import { addDays, todayISO } from "@/lib/date";
 import type { DayStatus } from "@/lib/database.types";
@@ -144,6 +152,33 @@ export async function visionFor(
     .maybeSingle();
 
   return data?.body ?? "";
+}
+
+export async function sessionsFor(
+  supabase: Client,
+  clientId: string,
+): Promise<SessionRecord[]> {
+  const { data } = await supabase
+    .from("sessions")
+    .select("*")
+    .eq("client_id", clientId)
+    .order("session_date", { ascending: false });
+
+  return data ?? [];
+}
+
+export async function feedbackFor(
+  supabase: Client,
+  sessionIds: string[],
+): Promise<Map<string, SessionFeedback>> {
+  if (sessionIds.length === 0) return new Map();
+
+  const { data } = await supabase
+    .from("session_feedback")
+    .select("*")
+    .in("session_id", sessionIds);
+
+  return new Map((data ?? []).map((row) => [row.session_id, row]));
 }
 
 export async function habitTargets(

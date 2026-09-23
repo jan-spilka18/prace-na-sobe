@@ -17,6 +17,7 @@ import {
   allHabits,
   habitTargets,
   programGrid,
+  sessionsFor,
   visionFor,
 } from "@/lib/queries";
 import { ProgramForm } from "./ProgramForm";
@@ -48,6 +49,7 @@ export default async function ClientDetailPage({
   );
   const days = program ? await programGrid(supabase, id, program) : [];
   const vision = program ? await visionFor(supabase, program.id) : "";
+  const sessionCount = (await sessionsFor(supabase, id)).length;
 
   const today = todayISO();
   const day = program
@@ -131,6 +133,22 @@ export default async function ClientDetailPage({
               habits.length === 0 ? "Předvyplnit návyky" : "Upravit návyky"
             }
             className="text-turquoise-700"
+          />
+        </ListGroup>
+
+        <ListGroup
+          title="Sezení"
+          footer={
+            sessionCount === 0
+              ? "Zápisy ze sezení. Klient uvidí jen ty publikované."
+              : undefined
+          }
+        >
+          <ListRow
+            href={`/admin/klienti/${id}/sezeni`}
+            title={sessionCount === 0 ? "Založit první sezení" : "Zápisy ze sezení"}
+            trailing={sessionCount > 0 ? String(sessionCount) : undefined}
+            className={sessionCount === 0 ? "text-turquoise-700" : undefined}
           />
         </ListGroup>
 

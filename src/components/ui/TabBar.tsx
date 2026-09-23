@@ -27,6 +27,15 @@ const TABS: Tab[] = [
     ),
   },
   {
+    href: "/sezeni",
+    label: "Sezení",
+    icon: (
+      <>
+        <path d="M4 5.5A1.5 1.5 0 015.5 4h13A1.5 1.5 0 0120 5.5v9A1.5 1.5 0 0118.5 16H9l-5 4z" />
+      </>
+    ),
+  },
+  {
     href: "/navyky",
     label: "Návyky",
     icon: (
