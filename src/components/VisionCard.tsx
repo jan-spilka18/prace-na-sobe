@@ -123,9 +123,9 @@ export function VisionCard({
 /**
  * Vize na denní obrazovce.
  *
- * Ne karta, ale patička pod seznamem: vodorovná linka, drobný nadpisek
- * a jedna věta serifem. Odškrtávání je hlavní děj obrazovky a vize k němu
- * má být tichá připomínka, ne další blok, který si říká o pozornost.
+ * Žlutá je v aplikaci vyhrazená věcem, které si má člověk vzít s sebou —
+ * stejně jako Úkoly do příště v zápisu ze sezení. Vize mezi ně patří,
+ * a rámeček ji zároveň odděluje od odškrtávání nad ní líp než linka.
  */
 export function VisionQuote({ body }: { body: string }) {
   const [expanded, setExpanded] = useState(false);
@@ -133,52 +133,50 @@ export function VisionQuote({ body }: { body: string }) {
   if (body.trim() === "") return null;
 
   return (
-    <div className="border-t border-hairline pt-4">
-      <button
-        type="button"
-        onClick={() => setExpanded((value) => !value)}
-        aria-expanded={expanded}
-        className="flex w-full items-start gap-3 text-left"
-      >
-        <span className="min-w-0 flex-1">
-          <span className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-500">
-            Připomeň si proč
-          </span>
-          {/*
-            `line-clamp` si nastavuje vlastní display, takže se s `block`
-            perou o to, který vyhraje. Buď jedno, nebo druhé — nikdy obojí.
-          */}
-          <span
-            className={cn(
-              "mt-1.5 whitespace-pre-line font-display text-[17px] font-semibold leading-snug text-ink",
-              expanded ? "block" : "line-clamp-2",
-            )}
-          >
-            {body}
-          </span>
+    <button
+      type="button"
+      onClick={() => setExpanded((value) => !value)}
+      aria-expanded={expanded}
+      className="mt-2 flex w-full items-start gap-3 rounded-group bg-sun px-4 py-3.5 text-left"
+    >
+      <span className="min-w-0 flex-1">
+        <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink/55">
+          Připomeň si vizi a důvod proč
         </span>
-
+        {/*
+          `line-clamp` si nastavuje vlastní display, takže se s `block`
+          perou o to, který vyhraje. Buď jedno, nebo druhé — nikdy obojí.
+        */}
         <span
-          aria-hidden
-          className="-mr-1 flex h-7 w-7 shrink-0 items-center justify-center text-ink-400"
+          className={cn(
+            "mt-1.5 whitespace-pre-line font-display text-[17px] font-semibold leading-snug text-ink",
+            expanded ? "block" : "line-clamp-2",
+          )}
         >
-          <svg
-            viewBox="0 0 24 24"
-            className={cn(
-              "h-5 w-5 transition-transform duration-200",
-              expanded && "rotate-180",
-            )}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M6 9l6 6 6-6" />
-          </svg>
+          {body}
         </span>
-      </button>
-    </div>
+      </span>
+
+      <span
+        aria-hidden
+        className="-mr-1 flex h-7 w-7 shrink-0 items-center justify-center text-ink/45"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className={cn(
+            "h-5 w-5 transition-transform duration-200",
+            expanded && "rotate-180",
+          )}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </span>
+    </button>
   );
 }
 
