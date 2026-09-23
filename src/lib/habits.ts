@@ -143,8 +143,17 @@ export function wasActiveOn(habit: Habit, onDate: string): boolean {
   return habit.archived_at.slice(0, 10) > onDate;
 }
 
-/** Návyk připadá na tenhle den v týdnu. */
+/**
+ * Návyk připadá na tenhle den v týdnu.
+ *
+ * Sloupec `weekdays` může chybět, když je databáze o krok pozadu za nasazeným
+ * kódem — migrace se pouští ručně, takže mezi nasazením a spuštěním schématu
+ * je okno, kdy tam ještě není. Návyk se v tu chvíli bere jako každodenní.
+ * Pád celé aplikace kvůli chybějícímu sloupci je horší než na chvíli
+ * ignorovaný rozvrh.
+ */
 export function scheduledOn(habit: Habit, onDate: string): boolean {
+  if (!Array.isArray(habit.weekdays) || habit.weekdays.length === 0) return true;
   return habit.weekdays.includes(isoWeekday(onDate));
 }
 
@@ -160,6 +169,8 @@ export const WORKDAYS = [1, 2, 3, 4, 5];
 
 /** Popis rozvrhu do seznamu návyků: „Každý den", „Po–Pá", „Po, St, Pá". */
 export function describeWeekdays(weekdays: number[]): string {
+  if (!Array.isArray(weekdays) || weekdays.length === 0) return "Každý den";
+
   const sorted = [...weekdays].sort((a, b) => a - b);
 
   if (sorted.length === 7) return "Každý den";

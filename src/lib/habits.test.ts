@@ -179,6 +179,14 @@ describe("scheduledOn a appliesOn", () => {
     assert.equal(scheduledOn(monWedFri, "2026-09-23"), true);
   });
 
+  it("chybějící rozvrh bere jako každý den", () => {
+    // Nastane, když je databáze o krok pozadu za nasazeným kódem.
+    // Aplikace kvůli tomu nesmí spadnout.
+    const missing = { ...base, weekdays: undefined as unknown as number[] };
+    assert.equal(scheduledOn(missing, "2026-09-26"), true);
+    assert.equal(describeWeekdays(undefined as unknown as number[]), "Každý den");
+  });
+
   it("archivovaný návyk nepřipadá ani na svůj den", () => {
     const archived = { ...workdaysOnly, archived_at: "2026-09-22T10:00:00Z" };
     assert.equal(scheduledOn(archived, "2026-09-23"), true);
