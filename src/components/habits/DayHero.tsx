@@ -4,6 +4,9 @@ import { dayStatus, type HabitForDay } from "@/lib/habits";
 /**
  * Karta dne. Záměrně těžší než všechno ostatní na obrazovce — je to
  * jediná věc, kterou má člověk vidět dřív, než začne číst.
+ *
+ * Drží se na dvou řádcích. Každý pixel, který si tahle karta vezme,
+ * chybí dole návykům, a ty se mají vejít bez scrollování.
  */
 export function DayHero({
   dayNumber,
@@ -25,107 +28,111 @@ export function DayHero({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-sheet text-white",
+        "rounded-sheet px-4 py-3.5 text-white",
         // Přechod dává ploše hloubku, aby karta nevypadala jako výplň.
         complete
           ? "bg-gradient-to-br from-turquoise to-turquoise-700"
           : "bg-gradient-to-br from-ink to-[#2c2c2e]",
       )}
     >
-      <div className="flex items-end justify-between gap-4 px-5 pb-3.5 pt-5">
-        <div>
-          <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-white/60">
+      <div className="flex items-center justify-between gap-3">
+        <p className="flex items-baseline gap-1.5 font-display">
+          <span className="text-[15px] font-semibold text-white/60">
             {notStarted ? "Začínáš" : "Den"}
-          </p>
-          <p className="mt-1 flex items-baseline gap-1.5 font-display">
-            <span className="text-[56px] font-bold leading-[0.85] tracking-tight tabular-nums">
-              {dayNumber}
-            </span>
-            <span className="text-[19px] font-semibold text-white/70">
-              z {durationDays}
-            </span>
-          </p>
-        </div>
+          </span>
+          <span className="text-[31px] font-bold leading-none tracking-tight tabular-nums">
+            {dayNumber}
+          </span>
+          <span className="text-[15px] font-semibold text-white/60">
+            z {durationDays}
+          </span>
+        </p>
 
-        {habits.length > 0 ? (
-          <div className="pb-1 text-right">
-            <p className="text-[28px] font-bold leading-none tabular-nums">
-              {done}
-              <span className="text-[17px] font-semibold text-white/60">
-                /{habits.length}
-              </span>
-            </p>
-            {/*
-              Zlomek sám říká, jak den stojí. Stav dne pod ním by to jen
-              zopakoval jinými slovy — „1/3 nevyplněno" se navíc čte divně.
-            */}
-            <p className="mt-1 text-[13px] text-white/70">
-              {complete ? "hotovo" : "splněno"}
-            </p>
-          </div>
-        ) : (
-          <p className="pb-2 text-right text-[17px] font-semibold text-white/80">
-            Volno
-          </p>
-        )}
+        <StreakChip streak={streak} onLight={complete} />
       </div>
 
-      {habits.length > 0 && (
-        // Tenký proužek místo čísla navíc: postup je vidět periferně,
-        // bez čtení. Šířku animujeme, aby odškrtnutí mělo odezvu.
-        <div
-          className="mx-5 mb-4 h-1.5 overflow-hidden rounded-full bg-white/15"
-          role="progressbar"
-          aria-valuenow={done}
-          aria-valuemin={0}
-          aria-valuemax={habits.length}
-          aria-label="Splněné návyky"
-        >
-          <div
-            className={cn(
-              "h-full rounded-full transition-[width] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
-              complete ? "bg-white" : "bg-turquoise",
-            )}
-            style={{ width: `${(done / habits.length) * 100}%` }}
-          />
-        </div>
-      )}
-
-      <StreakStrip streak={streak} />
+      <div className="mt-2.5 flex items-center justify-between gap-3">
+        {habits.length > 0 ? (
+          <>
+            <Dots habits={habits} onLight={complete} />
+            <p className="shrink-0 text-[13px] tabular-nums text-white/70">
+              {done} z {habits.length} splněno
+            </p>
+          </>
+        ) : (
+          <p className="text-[14px] text-white/70">Volno</p>
+        )}
+      </div>
     </section>
   );
 }
 
 /**
- * Žlutý pruh se sérií. Je to jediné místo, kde se v aplikaci objeví
- * velká žlutá plocha — má nést radost, ne informaci navíc.
+ * Postup jako tečky, ne proužek. Tři návyky = tři tečky, takže se dá
+ * přečíst „kolik zbývá" jedním pohledem, bez počítání ze šířky.
  */
-function StreakStrip({ streak }: { streak: number }) {
-  if (streak < 2) {
+function Dots({
+  habits,
+  onLight,
+}: {
+  habits: HabitForDay[];
+  onLight: boolean;
+}) {
+  return (
+    // Číselný zlomek vedle nese totéž pro čtečku — tečky jsou jen obraz.
+    <div aria-hidden className="flex min-w-0 flex-wrap items-center gap-1.5">
+      {habits.map((habit) => (
+        <span
+          key={habit.id}
+          className={cn(
+            "h-2 w-2 rounded-full transition-colors duration-300",
+            habit.entry?.status === "done"
+              ? onLight
+                ? "bg-white"
+                : "bg-turquoise"
+              : habit.entry?.status === "missed"
+                ? "bg-white/25"
+                : "ring-1 ring-inset ring-white/40",
+          )}
+        />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Série jako drobný štítek v rohu karty.
+ *
+ * Dřív to byl žlutý pruh přes celou šířku. Nesl ale míň informace než
+ * cokoli kolem a bral nejvíc místa — série je odměna, ne hlavní údaj.
+ */
+function StreakChip({ streak, onLight }: { streak: number; onLight: boolean }) {
+  if (streak < 1) return null;
+
+  if (streak === 1) {
     return (
-      <div className="border-t border-white/10 px-5 py-2.5">
-        <p className="text-[13px] text-white/60">
-          {streak === 1
-            ? "První den série. Zítra na ni navážeš."
-            : "Sérii nastartuješ prvním splněným dnem."}
-        </p>
-      </div>
+      <span className="shrink-0 rounded-full bg-white/12 px-2.5 py-1 text-[12px] font-semibold text-white/75">
+        1. den série
+      </span>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 bg-sun px-5 py-2.5 text-ink">
+    <span
+      className={cn(
+        "flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-semibold",
+        onLight ? "bg-white text-turquoise-700" : "bg-sun text-ink",
+      )}
+    >
       <svg
         viewBox="0 0 24 24"
         aria-hidden
-        className="h-4 w-4 shrink-0"
+        className="h-3.5 w-3.5 shrink-0"
         fill="currentColor"
       >
         <path d="M13.5 2c.3 3-1.2 4.5-2.7 6C9 9.7 7.5 11.3 7.5 14a4.5 4.5 0 009 0c0-1.4-.5-2.4-1.2-3.4.9.4 1.7 1 2.3 1.9A6.9 6.9 0 0119 16.3 7 7 0 015 16c0-3.5 2-5.4 3.8-7.2C10.6 7 12.2 5.4 13.5 2z" />
       </svg>
-      <span className="text-[14px] font-semibold">
-        {streak} {streak < 5 ? "dny" : "dní"} v řadě
-      </span>
-    </div>
+      {streak} {streak < 5 ? "dny" : "dní"} v řadě
+    </span>
   );
 }

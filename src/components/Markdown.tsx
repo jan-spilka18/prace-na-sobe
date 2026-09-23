@@ -10,12 +10,18 @@ import { cn } from "@/lib/cn";
 export function Markdown({
   source,
   className,
+  tone = "default",
 }: {
   source: string;
   className?: string;
+  /** Na žlutém podkladu je tyrkysová odrážka skoro neviditelná. */
+  tone?: "default" | "sun";
 }) {
   const blocks = parseMarkdown(source);
   if (blocks.length === 0) return null;
+
+  const marker = tone === "sun" ? "bg-ink/50" : "bg-turquoise";
+  const counter = tone === "sun" ? "text-ink/60" : "text-turquoise-700";
 
   return (
     <div className={cn("space-y-3 text-[16px] leading-relaxed text-ink", className)}>
@@ -25,7 +31,13 @@ export function Markdown({
             <ul key={index} className="space-y-1.5 pl-1">
               {block.items.map((item, itemIndex) => (
                 <li key={itemIndex} className="flex gap-2.5">
-                  <span aria-hidden className="mt-[0.55em] h-1.5 w-1.5 shrink-0 rounded-full bg-turquoise" />
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "mt-[0.55em] h-1.5 w-1.5 shrink-0 rounded-full",
+                      marker,
+                    )}
+                  />
                   <span className="min-w-0 flex-1">
                     <Inline tokens={item} />
                   </span>
@@ -42,7 +54,10 @@ export function Markdown({
                 <li key={itemIndex} className="flex gap-2.5">
                   <span
                     aria-hidden
-                    className="shrink-0 text-[15px] font-semibold tabular-nums text-turquoise-700"
+                    className={cn(
+                      "shrink-0 text-[15px] font-semibold tabular-nums",
+                      counter,
+                    )}
                   >
                     {itemIndex + 1}.
                   </span>

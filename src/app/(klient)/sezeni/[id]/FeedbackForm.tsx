@@ -37,7 +37,11 @@ export function FeedbackForm({
   }
 
   return (
-    <section className="space-y-4 rounded-group bg-surface p-4">
+    <section
+      id="zpetna-vazba"
+      // Odsazení pro kotvu: bez něj skok schová nadpis pod lepivou lištu.
+      className="scroll-mt-16 space-y-4 rounded-group bg-surface p-4"
+    >
       <div>
         <h2 className="font-display text-[19px] font-semibold text-ink">
           Tvoje zpětná vazba

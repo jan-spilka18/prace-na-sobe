@@ -113,11 +113,11 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
               streak={streak}
               notStarted={notStarted}
             />
-            <VisionQuote body={vision} />
             <EmptyState
               title="Dneska máš volno"
               description="Na tenhle den sis žádný návyk nenaplánoval. Sérii ti to nezlomí."
             />
+            <VisionQuote body={vision} />
           </>
         ) : (
           <CelebrationProvider>
@@ -129,13 +129,17 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
                 streak={streak}
                 notStarted={notStarted}
               />
-              <VisionQuote body={vision} />
               {/* Užší mezery než mezi kartami — řádky patří k sobě. */}
               <div className="space-y-2">
                 {habits.map((habit) => (
                   <HabitRow key={habit.id} habit={habit} date={date} />
                 ))}
               </div>
+              {/*
+                Vize je pod návyky schválně. Odškrtnutí je jediná věc, kvůli
+                které sem člověk denně chodí — nemá kvůli ní nic přeskakovat.
+              */}
+              <VisionQuote body={vision} />
             </div>
           </CelebrationProvider>
         )}

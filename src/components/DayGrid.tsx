@@ -23,9 +23,11 @@ const CELL: Record<GridDay["status"], string> = {
  */
 export function DayGrid({
   days,
+  today,
   hrefFor,
 }: {
   days: GridDay[];
+  today?: string;
   hrefFor?: (date: string) => string;
 }) {
   if (days.length === 0) return null;
@@ -54,7 +56,12 @@ export function DayGrid({
           ))}
 
           {days.map((day) => (
-            <Cell key={day.date} day={day} hrefFor={hrefFor} />
+            <Cell
+              key={day.date}
+              day={day}
+              isToday={day.date === today}
+              hrefFor={hrefFor}
+            />
           ))}
         </div>
       </div>
@@ -66,21 +73,34 @@ export function DayGrid({
 
 function Cell({
   day,
+  isToday,
   hrefFor,
 }: {
   day: GridDay;
+  isToday?: boolean;
   hrefFor?: (date: string) => string;
 }) {
   const label = `Den ${day.dayNumber}, ${formatCzechDate(day.date)} — ${
     day.isFuture ? "zatím nebyl" : DAY_STATUS_LABELS[day.status]
-  }`;
+  }${isToday ? " (dnes)" : ""}`;
 
   const className = cn(
     "flex aspect-square items-center justify-center rounded-[0.5rem] text-[12px] font-semibold tabular-nums",
     day.isFuture ? "bg-canvas/60 text-ink-400" : CELL[day.status],
+    // Dnešek se obtáhne, ne vybarví — jinak by se pletl se stavem dne.
+    isToday && "ring-2 ring-turquoise ring-offset-1 ring-offset-surface",
   );
 
-  const content = <span aria-hidden>{day.dayNumber}</span>;
+  // Devadesát čísel pod sebou je šum. Číslo si nechají jen dny, které se
+  // počítají; volno dostane čárku a budoucnost tečku, aby bylo na první
+  // pohled vidět, kde program teprve začne.
+  const content = day.isFuture ? (
+    <span aria-hidden className="h-1 w-1 rounded-full bg-current opacity-70" />
+  ) : day.status === "rest" ? (
+    <span aria-hidden className="h-px w-2.5 rounded-full bg-current" />
+  ) : (
+    <span aria-hidden>{day.dayNumber}</span>
+  );
 
   if (day.isFuture || !hrefFor) {
     return (
@@ -121,13 +141,16 @@ function Legend({ days }: { days: GridDay[] }) {
           <span
             aria-hidden
             className={cn(
-              "h-3.5 w-3.5 rounded-[0.25rem]",
+              "flex h-3.5 w-3.5 items-center justify-center rounded-[0.25rem]",
               status === "complete" && "bg-turquoise",
               status === "incomplete" && "bg-ink",
               status === "empty" && "bg-canvas ring-1 ring-inset ring-hairline",
-              status === "rest" && "ring-1 ring-inset ring-hairline",
             )}
-          />
+          >
+            {status === "rest" && (
+              <span className="h-px w-2.5 rounded-full bg-ink-400" />
+            )}
+          </span>
           <dt className="text-[13px] text-ink-600">
             {DAY_STATUS_LABELS[status]}
           </dt>

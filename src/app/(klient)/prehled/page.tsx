@@ -43,30 +43,53 @@ export default async function OverviewPage() {
       <div className="space-y-5">
         <VisionCard programId={program.id} body={vision} />
 
-        <div className="grid grid-cols-2 gap-3">
-          <Card className="bg-turquoise text-white">
-            <p className="text-[14px] opacity-90">Den</p>
-            <p className="mt-1 text-[32px] font-bold leading-none tabular-nums">
-              {dayNumber}
-              <span className="ml-1 text-[17px] font-semibold opacity-80">
-                z {program.duration_days}
-              </span>
-            </p>
-          </Card>
+        {/*
+          Dvě čísla v jedné kartě, oddělená linkou. Dvě samostatné dlaždice
+          vypadaly jako statistický panel — tohle se čte jako jedna věta.
+        */}
+        <Card className="flex items-stretch gap-4">
+          <Stat label="Den">
+            {dayNumber}
+            <StatUnit>z {program.duration_days}</StatUnit>
+          </Stat>
 
-          <Card>
-            <p className="text-[14px] text-ink-600">Úspěšnost</p>
-            <p className="mt-1 text-[32px] font-bold leading-none tabular-nums text-ink">
-              {rate}
-              <span className="ml-0.5 text-[17px] font-semibold text-ink-500">
-                %
-              </span>
-            </p>
-          </Card>
-        </div>
+          <div aria-hidden className="w-px shrink-0 bg-hairline" />
 
-        <DayGrid days={days} hrefFor={(date) => `/?den=${date}`} />
+          <Stat label="Úspěšnost">
+            {rate}
+            <StatUnit>%</StatUnit>
+          </Stat>
+        </Card>
+
+        <DayGrid days={days} today={today} hrefFor={(date) => `/?den=${date}`} />
       </div>
     </Screen>
+  );
+}
+
+function Stat({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-w-0 flex-1">
+      <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-ink-500">
+        {label}
+      </p>
+      <p className="mt-1.5 font-display text-[32px] font-bold leading-none tabular-nums text-ink">
+        {children}
+      </p>
+    </div>
+  );
+}
+
+function StatUnit({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="ml-1 text-[15px] font-semibold text-ink-500">
+      {children}
+    </span>
   );
 }

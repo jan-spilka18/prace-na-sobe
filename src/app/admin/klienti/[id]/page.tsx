@@ -159,6 +159,7 @@ export default async function ClientDetailPage({
             </h2>
             <DayGrid
               days={days}
+              today={today}
               hrefFor={(date) => `/admin/klienti/${id}/den/${date}`}
             />
           </section>
