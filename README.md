@@ -17,7 +17,7 @@ a soukromý prostor kouče.
 | 1 | Projekt, Supabase, přihlášení, role, založení klienta | hotovo |
 | 2 | 90denní výzva: typy návyků, zpětné vyplňování, poznámky, vize | hotovo |
 | 3 | PWA, web push, připomínky návyků | hotovo |
-| 4 | Ranní vyhodnocení v 8:00: push, e-mail, vzorce | hotovo |
+| 4 | Ranní vyhodnocení: přehled v adminu, vzorce | hotovo |
 | 5 | Zápisy ze sezení a zpětná vazba klienta | hotovo |
 | 6 | Admin: přípravy, soukromé poznámky, odkazy | hotovo |
 
@@ -135,50 +135,57 @@ Repozitář ať je **privátní** — jde o data z osobního rozvoje.
 5. Odhlas se a zkus se přihlásit jako ten klient. Měl bys vidět kartu
    „Den X z 90" a nic z admina.
 
-## 9. Zapni notifikace
+## 9. Ranní přehled
 
-Tohle je potřeba jen jednou a bez toho nepřijde žádná připomínka.
+Nic nastavovat nemusíš a nic navíc to nestojí. Otevři **Klienti** a nahoře
+uvidíš, kolik jich včera splnilo všechno, pod tím upozornění (kdo tři dny nic
+nevyplnil, komu nevychází pořád stejný den v týdnu) a pak seznam s dnešním
+stavem u každého. Počítá se to ve chvíli, kdy se podíváš.
 
-1. V aplikaci otevři **Klienti → Notifikace**.
-2. Klepni na **Vygenerovat**. Ukážou se čtyři hodnoty — zkopíruj je hned,
-   podruhé se neukážou.
-3. Ve Vercelu je vlož do **Settings → Environment Variables**, každou zvlášť
-   pod jménem, které u ní svítí.
-4. U `VAPID_SUBJECT` nahraď adresu svým e-mailem.
-5. **Deployments → tři tečky u nejnovějšího → Redeploy.** Bez toho se nové
-   hodnoty nenačtou.
-6. Vrať se na **Notifikace**. Nahoře musí svítit obojí zeleně.
+### Notifikace jsou vypnuté
 
-Volitelně e-mail se souhrnem: založ si účet na `resend.com`, vytvoř API klíč
-a přidej ve Vercelu `RESEND_API_KEY` a `EMAIL_FROM` (odesílatel musí být
-adresa na ověřené doméně). Bez nich souhrn chodí jen jako push.
+V projektu není `vercel.json`, takže **neběží žádná naplánovaná úloha** —
+nic se neodesílá a nic se neplatí. Vercel Hobby a Supabase zdarma stačí.
+
+Kód na připomínky klientům i na souhrn e-mailem v projektu zůstal
+(`src/app/api/cron/`). Bez plánovače se ale nikdy nespustí. Kdybys to někdy
+chtěl zapnout, je to popsáno níž v části *Kdybys notifikace chtěl*.
+
+## 10. Zkouška na telefonu
+
+Adresu z Vercelu otevři v mobilu a přidej si ji na plochu — v aplikaci to
+najdeš pod **Nastavení → Appka na plochu**.
+
+Na plochu se vyplatí appku dát i bez notifikací — otevírá se rychleji a
+nemá kolem sebe prohlížeč.
+
+---
+
+# Kdybys notifikace chtěl
+
+Zatím vypnuté. Zapnout je znamená mít plánovač, který zavolá adresu
+`/api/cron/…`. Ten je ta placená část.
+
+1. V aplikaci **Klienti → Notifikace → Vygenerovat**. Ukážou se čtyři
+   hodnoty, zkopíruj je hned.
+2. Ve Vercelu je vlož do **Settings → Environment Variables**, u
+   `VAPID_SUBJECT` dej svůj e-mail. Pak **Deployments → Redeploy**.
+3. Plánovač — jedna ze dvou cest:
+   - **Zdarma:** na `cron-job.org` si nastav volání
+     `https://tvoje-adresa.vercel.app/api/cron/pripominky?klic=TVUJ_CRON_SECRET`
+     každých patnáct minut a `…/api/cron/rano?klic=…` jednou ráno.
+   - **Za peníze:** vrať do projektu `vercel.json` s bloky `crons` a přejdi
+     na Vercel Pro (20 $ měsíčně). Hobby spouští cron jen jednou denně.
 
 | Proměnná | K čemu |
 |---|---|
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | push — veřejná část, smí do prohlížeče |
 | `VAPID_PRIVATE_KEY` | push — **nikdy nikam kromě Vercelu** |
 | `VAPID_SUBJECT` | tvůj e-mail ve tvaru `mailto:…` |
-| `CRON_SECRET` | chrání naplánované úlohy před cizím spuštěním |
+| `CRON_SECRET` | chrání `/api/cron/*` před cizím spuštěním |
 | `RESEND_API_KEY` | e-mail se souhrnem, nepovinné |
 | `EMAIL_FROM` | odesílatel souhrnu, nepovinné |
 | `NEXT_PUBLIC_APP_URL` | adresa v odkazu v e-mailu, nepovinné |
-
-### Kdy se úlohy spouštějí
-
-V `vercel.json` jsou dvě: připomínky každou hodinu a ranní souhrn v 6 a 7 UTC.
-Souhrn si sám ohlídá, že je v Praze osm, a přes `notification_log` se pojistí,
-aby ani při dvou spuštěních neodešel dvakrát.
-
-**Vercel na tarifu Hobby spouští cron jen jednou denně**, takže připomínky
-v přesný čas potřebují tarif Pro. Levnější cesta: na `cron-job.org` si zdarma
-nastav volání
-`https://tvoje-adresa.vercel.app/api/cron/pripominky?klic=TVUJ_CRON_SECRET`
-každých patnáct minut. Stejně tak pro `/api/cron/rano`.
-
-## 10. Zkouška na telefonu
-
-Adresu z Vercelu otevři v mobilu a přidej si ji na plochu — v aplikaci to
-najdeš pod **Nastavení → Appka na plochu**.
 
 **iPhone notifikace pouští jen aplikacím spuštěným z plochy.** Dokud appku
 otevíráš v Safari, zůstane přepínač notifikací schovaný.
@@ -266,6 +273,6 @@ Supabase zdarma projekt **po týdnu bez provozu pozastaví** a s ním i
 naplánované úlohy. Na ostrý provoz s klienty počítej s tarifem Pro
 (25 $ měsíčně).
 
-Vercel na tarifu Hobby utáhne všechno kromě častého cronu — ten běží jen
-jednou denně. Buď Pro (20 $ měsíčně), nebo bezplatný externí plánovač,
-jak je popsáno v kroku 9.
+**Vercel Hobby stačí.** Placený tarif by byl potřeba jen na časté spouštění
+naplánovaných úloh — ty jsou vypnuté a ranní přehled se počítá při otevření
+aplikace, takže žádný cron nepotřebuje.
