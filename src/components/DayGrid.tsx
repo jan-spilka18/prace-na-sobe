@@ -135,30 +135,42 @@ function Legend({ days }: { days: GridDay[] }) {
   );
 
   return (
-    <dl className="flex flex-wrap gap-x-5 gap-y-2 px-1">
-      {shown.map((status) => (
-        <div key={status} className="flex items-center gap-2">
-          <span
-            aria-hidden
-            className={cn(
-              "flex h-3.5 w-3.5 items-center justify-center rounded-[0.25rem]",
-              status === "complete" && "bg-turquoise",
-              status === "incomplete" && "bg-ink",
-              status === "empty" && "bg-canvas ring-1 ring-inset ring-hairline",
-            )}
-          >
-            {status === "rest" && (
-              <span className="h-px w-2.5 rounded-full bg-ink-400" />
-            )}
-          </span>
-          <dt className="text-[13px] text-ink-600">
-            {DAY_STATUS_LABELS[status]}
-          </dt>
-          <dd className="text-[13px] font-semibold tabular-nums text-ink">
-            {counts[status]}
-          </dd>
-        </div>
-      ))}
-    </dl>
+    <div className="space-y-2">
+      <dl className="flex flex-wrap gap-x-5 gap-y-2 px-1">
+        {shown.map((status) => (
+          <div key={status} className="flex items-center gap-2">
+            <span
+              aria-hidden
+              className={cn(
+                "flex h-3.5 w-3.5 items-center justify-center rounded-[0.25rem]",
+                status === "complete" && "bg-turquoise",
+                status === "incomplete" && "bg-ink",
+                status === "empty" && "bg-canvas ring-1 ring-inset ring-hairline",
+              )}
+            >
+              {status === "rest" && (
+                <span className="h-px w-2.5 rounded-full bg-ink-400" />
+              )}
+            </span>
+            <dt className="text-[13px] text-ink-600">
+              {DAY_STATUS_LABELS[status]}
+            </dt>
+            <dd className="text-[13px] font-semibold tabular-nums text-ink">
+              {counts[status]}
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      {/*
+        Bez téhle věty vypadá volno jako propadlý den. Píše se jen tam,
+        kde nějaké volno je — jinak by odpovídala na otázku, která nevznikla.
+      */}
+      {counts.rest > 0 && (
+        <p className="px-1 text-[13px] text-ink-500">
+          Volno se do úspěšnosti nepočítá.
+        </p>
+      )}
+    </div>
   );
 }

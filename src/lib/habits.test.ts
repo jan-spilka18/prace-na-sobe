@@ -9,6 +9,7 @@ import {
   runningStreak,
   scheduledOn,
   streakEndingAt,
+  successRate,
   targetFor,
   wasActiveOn,
 } from "./habits";
@@ -320,5 +321,45 @@ describe("wasActiveOn", () => {
     // V den archivace už se nevyplňuje.
     assert.equal(wasActiveOn(archived, "2026-03-10"), false);
     assert.equal(wasActiveOn(archived, "2026-03-11"), false);
+  });
+});
+
+describe("successRate", () => {
+  function day(status: string, isFuture = false) {
+    return { status, isFuture } as Parameters<typeof successRate>[0][number];
+  }
+
+  it("vrátí nulu, když se ještě nedá co počítat", () => {
+    assert.equal(successRate([]), 0);
+    assert.equal(successRate([day("empty", true), day("complete", true)]), 0);
+  });
+
+  it("počítá jen dny, které nastaly", () => {
+    const days = [day("complete"), day("empty"), day("complete", true)];
+    assert.equal(successRate(days), 50);
+  });
+
+  it("volno nepočítá ani do čitatele, ani do jmenovatele", () => {
+    // Po–Pá splněno, víkend volno: musí vyjít sto procent, ne 71.
+    const week = [
+      ...Array.from({ length: 5 }, () => day("complete")),
+      day("rest"),
+      day("rest"),
+    ];
+    assert.equal(successRate(week), 100);
+  });
+
+  it("samé volno nedělí nulou", () => {
+    assert.equal(successRate([day("rest"), day("rest")]), 0);
+  });
+
+  it("nesplněný i nevyplněný den srazí číslo stejně", () => {
+    assert.equal(successRate([day("complete"), day("incomplete")]), 50);
+    assert.equal(successRate([day("complete"), day("empty")]), 50);
+  });
+
+  it("zaokrouhluje na celá procenta", () => {
+    const days = [day("complete"), day("complete"), day("empty")];
+    assert.equal(successRate(days), 67);
   });
 });

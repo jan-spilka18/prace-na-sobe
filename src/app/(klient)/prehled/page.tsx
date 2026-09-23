@@ -6,6 +6,7 @@ import { DayGrid } from "@/components/DayGrid";
 import { VisionCard } from "@/components/VisionCard";
 import { activeProgram, programGrid, visionFor } from "@/lib/queries";
 import { clampedProgramDay, todayISO } from "@/lib/date";
+import { successRate } from "@/lib/habits";
 
 export const metadata = { title: "Přehled" };
 
@@ -34,9 +35,7 @@ export default async function OverviewPage() {
     today,
   );
 
-  const past = days.filter((day) => !day.isFuture);
-  const complete = past.filter((day) => day.status === "complete").length;
-  const rate = past.length === 0 ? 0 : Math.round((complete / past.length) * 100);
+  const rate = successRate(days);
 
   return (
     <Screen title="Přehled" subtitle={program.title}>

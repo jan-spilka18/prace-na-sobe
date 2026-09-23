@@ -137,6 +137,26 @@ export function runningStreak(
   return withToday > 0 ? withToday : streakEndingAt(days, yesterday);
 }
 
+/**
+ * Úspěšnost programu v procentech.
+ *
+ * Dny volna se nepočítají ani do čitatele, ani do jmenovatele. Klient si
+ * rozvrh nastavil sám, takže by bylo trestání za vlastní rozhodnutí, kdyby
+ * mu víkend bez návyků srážel číslo dolů: kdo má návyky jen Po–Pá, by se
+ * jinak nikdy nedostal výš než na 71 %, i kdyby nevynechal jediný den.
+ *
+ * Budoucí dny se neřeší — ještě nenastaly.
+ */
+export function successRate(
+  days: Array<{ status: DayStatus; isFuture: boolean }>,
+): number {
+  const counted = days.filter((day) => !day.isFuture && day.status !== "rest");
+  if (counted.length === 0) return 0;
+
+  const complete = counted.filter((day) => day.status === "complete").length;
+  return Math.round((complete / counted.length) * 100);
+}
+
 /** Návyk ještě nebyl archivovaný — po archivaci se nenabízí k vyplnění. */
 export function wasActiveOn(habit: Habit, onDate: string): boolean {
   if (!habit.archived_at) return true;
