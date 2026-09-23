@@ -14,17 +14,27 @@ export function Markdown({
 }: {
   source: string;
   className?: string;
-  /** Na žlutém podkladu je tyrkysová odrážka skoro neviditelná. */
-  tone?: "default" | "sun";
+  /** Na žlutém ani na tmavém podkladu není tyrkysová odrážka vidět. */
+  tone?: "default" | "sun" | "dark";
 }) {
   const blocks = parseMarkdown(source);
   if (blocks.length === 0) return null;
 
-  const marker = tone === "sun" ? "bg-ink/50" : "bg-turquoise";
-  const counter = tone === "sun" ? "text-ink/60" : "text-turquoise-700";
+  const marker =
+    tone === "sun" ? "bg-ink/50" : tone === "dark" ? "bg-sun" : "bg-turquoise";
+  const counter =
+    tone === "sun"
+      ? "text-ink/60"
+      : tone === "dark"
+        ? "text-sun"
+        : "text-turquoise-700";
+  // Barva textu patří sem, ne do className volajícího: cn() třídy jen
+  // slepuje, takže by se text-ink a text-white přebíjely podle pořadí
+  // v CSS, ne podle pořadí v zápisu.
+  const text = tone === "dark" ? "text-white" : "text-ink";
 
   return (
-    <div className={cn("space-y-3 text-[16px] leading-relaxed text-ink", className)}>
+    <div className={cn("space-y-3 text-[16px] leading-relaxed", text, className)}>
       {blocks.map((block, index) => {
         if (block.kind === "bullets") {
           return (

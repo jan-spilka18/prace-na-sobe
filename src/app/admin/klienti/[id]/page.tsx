@@ -150,6 +150,11 @@ export default async function ClientDetailPage({
             trailing={sessionCount > 0 ? String(sessionCount) : undefined}
             className={sessionCount === 0 ? "text-turquoise-700" : undefined}
           />
+          <ListRow
+            href={`/admin/klienti/${id}/soukrome`}
+            title="Soukromé"
+            subtitle="Poznámky a odkazy, které klient nevidí"
+          />
         </ListGroup>
 
         {program && days.length > 0 && (

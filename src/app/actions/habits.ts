@@ -6,6 +6,7 @@ import { requireProfile } from "@/lib/auth";
 import { activeProgram, programGrid } from "@/lib/queries";
 import { streakEndingAt } from "@/lib/habits";
 import type { EntryStatus, HabitType } from "@/lib/database.types";
+import { safeUrl } from "@/lib/url";
 
 export type ActionResult = { error?: string };
 
@@ -135,7 +136,7 @@ export async function createHabit(input: HabitInput): Promise<ActionResult> {
       title,
       type: input.type,
       description: input.description.trim() || null,
-      link_url: input.linkUrl.trim() || null,
+      link_url: safeUrl(input.linkUrl),
       position: (last?.position ?? 0) + 1,
       weekdays,
       created_by: profile.id,
@@ -188,7 +189,7 @@ export async function updateHabit(input: {
     .update({
       title,
       description: input.description.trim() || null,
-      link_url: input.linkUrl.trim() || null,
+      link_url: safeUrl(input.linkUrl),
       weekdays,
     })
     .eq("id", input.habitId);

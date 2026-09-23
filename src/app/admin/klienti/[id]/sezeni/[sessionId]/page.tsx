@@ -5,6 +5,7 @@ import { Screen } from "@/components/ui/Screen";
 import { formatCzechDate } from "@/lib/date";
 import { SESSION_KIND_LABELS } from "@/lib/sessionTemplate";
 import { SessionEditor } from "./SessionEditor";
+import { PrepEditor } from "./PrepEditor";
 
 export default async function AdminSessionPage({
   params,
@@ -23,6 +24,13 @@ export default async function AdminSessionPage({
 
   if (!session) notFound();
 
+  const { data: prep } = await supabase
+    .from("session_preps")
+    .select("content")
+    .eq("session_id", sessionId)
+    .limit(1)
+    .maybeSingle();
+
   const { data: feedback } = await supabase
     .from("session_feedback")
     .select("*")
@@ -35,11 +43,16 @@ export default async function AdminSessionPage({
       subtitle={SESSION_KIND_LABELS[session.kind]}
       back={{ href: `/admin/klienti/${id}/sezeni`, label: "Sezení" }}
     >
-      <SessionEditor
-        session={session}
-        feedback={feedback ?? null}
-        clientId={id}
-      />
+      <div className="space-y-5">
+        {/* Nad zápisem schválně: připravuje se dřív, než se píše. */}
+        <PrepEditor sessionId={sessionId} initial={prep?.content ?? ""} />
+
+        <SessionEditor
+          session={session}
+          feedback={feedback ?? null}
+          clientId={id}
+        />
+      </div>
     </Screen>
   );
 }
