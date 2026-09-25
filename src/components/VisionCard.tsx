@@ -184,7 +184,7 @@ export function VisionQuote({ body }: { body: string }) {
  * Vlastní slova klienta.
  *
  * První odstavec nese větu, kterou si člověk napsal jako hlavní — proto
- * serifem a tučně. Co dopsal pod ni, je vysvětlení, a to má být tišší,
+ * výrazným písmem a tučně. Co dopsal pod ni, je vysvětlení, a to má být tišší,
  * jinak by se obojí přetahovalo o pozornost.
  */
 export function VisionText({

@@ -206,7 +206,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
 /**
  * Datum pod titulkem.
  *
- * Není to věta, ale složená linka: den s měsícem serifem, za ním verzálkami
+ * Není to věta, ale složená linka: den s měsícem výrazným písmem, za ním verzálkami
  * den v týdnu. Rok tu nikdo nehledá — devadesátidenní výzva se vejde do
  * jednoho a v Přehledu stojí celý rozsah.
  *

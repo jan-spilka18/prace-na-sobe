@@ -119,7 +119,7 @@ export function upcomingBirthdays(
  * Vize složená z odpovědí na tři otázky průvodce.
  *
  * Každá odpověď je vlastní odstavec. První se na Přehledu vykreslí velkým
- * serifem, takže odpověď na „Kde chceš být za 90 dní?" se stane hlavní
+ * výrazným písmem, takže odpověď na „Kde chceš být za 90 dní?" se stane hlavní
  * větou vize a zbytek ji vysvětluje.
  */
 export function composeVision(answers: string[]): string {

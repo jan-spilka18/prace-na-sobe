@@ -1,21 +1,22 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
-import { Fraunces } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import { THEME_COOKIE, parseTheme } from "@/lib/theme";
 import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME } from "@/lib/config";
 import "./globals.css";
 
 /*
-  Fraunces nese nadpisy a velká čísla. Běžný text zůstává systémový —
-  na iOS je to SF Pro, které se čte rychle a nepůsobí jako web.
-  Serif jen na místech, kde má aplikace promluvit.
+  Montserrat nese nadpisy, velká čísla a texty, kterými aplikace mluví
+  (vize, úvodní průvodce). Běžný text v seznamech a tlačítkách zůstává
+  systémový — na iOS je to SF Pro, které se v malých velikostech čte
+  rychleji a nepůsobí jako web.
 
   latin-ext je kvůli české diakritice; bez něj by ě, š, ř spadly na
   náhradní písmo a nadpis by se rozpadl.
 */
-const fraunces = Fraunces({
+const montserrat = Montserrat({
   subsets: ["latin", "latin-ext"],
-  variable: "--font-fraunces",
+  variable: "--font-montserrat",
   display: "swap",
 });
 
@@ -51,7 +52,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="cs"
       data-theme={theme === "auto" ? undefined : theme}
-      className={`${fraunces.variable} h-full antialiased`}
+      className={`${montserrat.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">{children}</body>
     </html>

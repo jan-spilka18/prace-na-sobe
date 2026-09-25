@@ -28,8 +28,9 @@ export function Rise({
 /**
  * Nadpis a text slidu.
  *
- * Text pod nadpisem je serifem jako nadpis, jen tenčím řezem, a skoro
- * černý. Šedý odstavec systémovým písmem pod serifovým titulkem je vzorec
+ * Text pod nadpisem je stejným písmem jako nadpis, jen tenčím řezem, a
+ * skoro černý. 17 px, ne víc: Montserrat je široký a ve větší velikosti
+ * by odstavec působil hlučně. Šedý odstavec systémovým písmem pod výrazným titulkem je vzorec
  * z každé druhé šablony — a šedá navíc říká „tohle nemusíš číst", což
  * u věty, která vysvětluje celý slide, neplatí.
  */
@@ -49,7 +50,7 @@ export function SlideHeading({
       </Rise>
       {children && (
         <Rise i={1}>
-          <p className="mt-3.5 font-display text-[19px] font-normal leading-[1.45] text-ink/75 text-pretty">
+          <p className="mt-3.5 font-display text-[17px] font-normal leading-[1.55] text-ink/75 text-pretty">
             {children}
           </p>
         </Rise>

@@ -54,7 +54,7 @@
     "Helvetica Neue", Arial, sans-serif;
 
   /* Nadpisy a velká čísla. Běžný text zůstává systémový. */
-  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-display: var(--font-montserrat), "Helvetica Neue", Arial, sans-serif;
 
   /* iOS poloměry: karty 16, listy 20, sheet 28 */
   --radius-card: 1rem;
