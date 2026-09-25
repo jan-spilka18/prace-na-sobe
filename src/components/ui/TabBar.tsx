@@ -60,6 +60,8 @@ export function TabBar() {
             <li key={tab.href} className="flex-1">
               <Link
                 href={tab.href}
+                // Záložky se načtou celé dopředu, takže přepnutí je okamžité.
+                prefetch={true}
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   // Stisk je vidět okamžitě, ještě než se obrazovka načte —

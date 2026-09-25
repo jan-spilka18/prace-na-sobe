@@ -30,11 +30,12 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // getUser() ověřuje token u Supabase. getSession() jen čte cookie,
-  // které se dá podvrhnout, proto se na něj tady spoléhat nedá.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims() ověří podpis tokenu přímo tady (veřejným klíčem projektu),
+  // takže každé klepnutí nečeká na dotaz do Supabase jako u getUser().
+  // Když projekt ještě používá starý sdílený klíč, sám sáhne po getUser().
+  // getSession() by jen četl cookie, které se dá podvrhnout.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims ?? null;
 
   const { pathname } = request.nextUrl;
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
