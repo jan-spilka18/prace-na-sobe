@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 import assert from "node:assert/strict";
-import { safeUrl } from "./url";
+import { internalPath, safeUrl } from "./url";
 
 describe("safeUrl", () => {
   it("prázdný vstup není odkaz", () => {
@@ -38,5 +38,20 @@ describe("safeUrl", () => {
   it("neplete si schéma s cestou", () => {
     // „mailto" není http, ale „meditace:ranni" je jen text bez schématu.
     assert.equal(safeUrl("mailto:honza@example.com"), null);
+  });
+});
+
+describe("internalPath", () => {
+  it("pustí cestu uvnitř aplikace", () => {
+    assert.equal(internalPath("/sezeni"), "/sezeni");
+    assert.equal(internalPath("/?den=2026-10-01"), "/?den=2026-10-01");
+  });
+
+  it("cizí adresu ani prázdno nepustí", () => {
+    assert.equal(internalPath("https://zly.web"), "/");
+    assert.equal(internalPath("//zly.web"), "/");
+    assert.equal(internalPath("/\\zly.web"), "/");
+    assert.equal(internalPath(""), "/");
+    assert.equal(internalPath(undefined), "/");
   });
 });

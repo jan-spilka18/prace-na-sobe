@@ -1,6 +1,9 @@
 import { APP_NAME } from "@/lib/config";
 import { AppMark } from "@/components/AppMark";
 import { SignInForm } from "./SignInForm";
+import { redirect } from "next/navigation";
+import { getProfile } from "@/lib/auth";
+import { internalPath } from "@/lib/url";
 
 export const metadata = { title: "Přihlášení" };
 
@@ -8,7 +11,11 @@ export default async function SignInPage({
   searchParams,
 }: PageProps<"/prihlaseni">) {
   const { dal } = await searchParams;
-  const next = typeof dal === "string" ? dal : "/";
+  const next = internalPath(typeof dal === "string" ? dal : "/");
+
+  // Kdo je přihlášený, nemá tu co dělat. Stejná kontrola jako v rozvržení
+  // aplikace, které sem posílá — proto se ty dvě nemůžou přehazovat dokola.
+  if (await getProfile()) redirect(next);
 
   return (
     <div className="flex min-h-dvh flex-col justify-center bg-canvas px-5 py-12">

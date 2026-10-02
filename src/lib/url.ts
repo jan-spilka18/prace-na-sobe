@@ -31,3 +31,15 @@ export function safeUrl(raw: string | null | undefined): string | null {
 
   return parsed.toString();
 }
+
+/**
+ * Cesta uvnitř aplikace, kam se po přihlášení vrátit. Cokoli jiného
+ * (cizí web, „//jiny.web", prázdno) skončí na úvodní obrazovce — jinak by
+ * odkaz na přihlášení mohl po zadání hesla přesměrovat na podvodnou stránku.
+ */
+export function internalPath(raw: string | null | undefined): string {
+  const path = (raw ?? "").trim();
+  const external =
+    !path.startsWith("/") || path.startsWith("//") || path.startsWith("/\\");
+  return external ? "/" : path;
+}

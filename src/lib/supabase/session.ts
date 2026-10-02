@@ -30,12 +30,18 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // getClaims() ověří podpis tokenu přímo tady (veřejným klíčem projektu),
-  // takže každé klepnutí nečeká na dotaz do Supabase jako u getUser().
-  // Když projekt ještě používá starý sdílený klíč, sám sáhne po getUser().
-  // getSession() by jen četl cookie, které se dá podvrhnout.
-  const { data } = await supabase.auth.getClaims();
-  const user = data?.claims ?? null;
+  /*
+    getUser() se ptá Supabase po síti — stejně jako stránky za proxy.
+    Musí to být stejná otázka: getClaims() věřil podepsanému tokenu
+    z cookie, který po odhlášení na jiném zařízení ještě hodinu platí,
+    zatímco Supabase už přihlášení zrušila. Proxy pak klienta pustila dál,
+    stránka ho poslala na přihlášení, proxy zpátky — a Safari skončilo
+    hláškou „too many redirects". getSession() by jen četl cookie, které
+    se dá podvrhnout.
+  */
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
@@ -47,12 +53,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && pathname === "/prihlaseni") {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    url.search = "";
-    return NextResponse.redirect(url);
-  }
+  // Přihlášeného z přihlašovací stránky přesměrovává až stránka sama,
+  // podle stejné kontroly jako zbytek aplikace (getProfile). Kdyby to
+  // dělala proxy, stačí jediný rozdíl mezi oběma kontrolami a vznikne
+  // smyčka: stránka posílá na přihlášení, proxy z něj pryč.
 
   return response;
 }

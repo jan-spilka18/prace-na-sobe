@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { internalPath } from "@/lib/url";
 
 export type SignInState = { error?: string };
 
@@ -27,7 +28,7 @@ export async function signIn(
 
   revalidatePath("/", "layout");
   // Otevřený redirect: povolíme jen cestu v rámci aplikace.
-  redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/");
+  redirect(internalPath(next));
 }
 
 /*
