@@ -96,6 +96,25 @@ export function weekdayIndex(isoDate: string): number {
   return (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;
 }
 
+/** Pondělí týdne, do kterého den spadá. */
+export function mondayOf(isoDate: string): string {
+  return addDays(isoDate, -weekdayIndex(isoDate));
+}
+
+/**
+ * Pondělky všech týdnů, které se dotýkají rozmezí — od týdne s prvním dnem
+ * po týden s posledním, oba včetně.
+ */
+export function weekStarts(fromISO: string, toISO: string): string[] {
+  const first = mondayOf(fromISO);
+  const last = mondayOf(toISO);
+  const weeks: string[] = [];
+  for (let monday = first; monday <= last; monday = addDays(monday, 7)) {
+    weeks.push(monday);
+  }
+  return weeks;
+}
+
 /**
  * Den v týdnu podle ISO: 1 = pondělí … 7 = neděle.
  *

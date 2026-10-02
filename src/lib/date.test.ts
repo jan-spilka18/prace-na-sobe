@@ -9,8 +9,10 @@ import {
   formatCzechDayMonth,
   formatCzechWeekday,
   minutesSinceMidnight,
+  mondayOf,
   programDay,
   todayISO,
+  weekStarts,
 } from "./date";
 
 describe("todayISO", () => {
@@ -128,5 +130,31 @@ describe("formatCzechDayMonth", () => {
 
   it("nedoplňuje nulu před jednociferný den", () => {
     assert.equal(formatCzechDayMonth("2026-05-07"), "7. května");
+  });
+});
+
+describe("mondayOf", () => {
+  it("vrací pondělí stejného týdne", () => {
+    assert.equal(mondayOf("2026-10-02"), "2026-09-28"); // pátek
+    assert.equal(mondayOf("2026-09-28"), "2026-09-28"); // pondělí
+    assert.equal(mondayOf("2026-10-04"), "2026-09-28"); // neděle
+  });
+
+  it("přechází přes konec roku", () => {
+    assert.equal(mondayOf("2027-01-01"), "2026-12-28");
+  });
+});
+
+describe("weekStarts", () => {
+  it("pokryje celý devadesátidenní program po týdnech", () => {
+    // Program od středy 2. 9. 2026, poslední den 30. 11. (pondělí).
+    const weeks = weekStarts("2026-09-02", addDays("2026-09-02", 89));
+    assert.equal(weeks[0], "2026-08-31");
+    assert.equal(weeks.at(-1), "2026-11-30");
+    assert.equal(weeks.length, 14);
+  });
+
+  it("jeden týden, když rozmezí leží uvnitř něj", () => {
+    assert.deepEqual(weekStarts("2026-09-29", "2026-10-01"), ["2026-09-28"]);
   });
 });
