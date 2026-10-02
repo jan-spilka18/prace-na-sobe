@@ -182,6 +182,29 @@ export async function feedbackFor(
   return new Map((data ?? []).map((row) => [row.session_id, row]));
 }
 
+/**
+ * Kolik sezení ještě čeká na klientovu zpětnou vazbu.
+ *
+ * Klient vidí jen publikovaná sezení (hlídá to databáze), takže koncept,
+ * na kterém Honza teprve pracuje, se do počtu nepřimíchá. Oba dotazy jdou
+ * najednou — počítá se to v rozvržení, tedy při každém otevření aplikace.
+ */
+export async function waitingFeedbackCount(
+  supabase: Client,
+  clientId: string,
+): Promise<number> {
+  const [{ data: sessions }, { data: feedback }] = await Promise.all([
+    supabase.from("sessions").select("id").eq("client_id", clientId),
+    supabase
+      .from("session_feedback")
+      .select("session_id")
+      .eq("client_id", clientId),
+  ]);
+
+  const answered = new Set((feedback ?? []).map((row) => row.session_id));
+  return (sessions ?? []).filter((session) => !answered.has(session.id)).length;
+}
+
 export async function habitTargets(
   supabase: Client,
   habitIds: string[],
