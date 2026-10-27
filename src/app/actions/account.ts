@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireProfile } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { MIN_PASSWORD_LENGTH } from "@/lib/config";
 
@@ -11,7 +11,9 @@ export async function changePassword(
   _prev: ChangePasswordState,
   formData: FormData,
 ): Promise<ChangePasswordState> {
-  const profile = await requireProfile();
+  // Klienti si heslo nemění — nastavuje jim ho admin. Kontrola musí být
+  // tady, ne jen na stránce: akci jde zavolat i bez ní.
+  const profile = await requireAdmin();
 
   const current = String(formData.get("current") ?? "");
   const next = String(formData.get("next") ?? "");
@@ -40,9 +42,6 @@ export async function changePassword(
 
   const { error } = await supabase.auth.updateUser({
     password: next,
-    // Shodí varování „pořád máš heslo od Honzy". Nikde jinde se nenastavuje,
-    // takže ho zpátky zapne jen admin resetem hesla.
-    data: { password_set_by_admin: false },
   });
 
   if (error) {

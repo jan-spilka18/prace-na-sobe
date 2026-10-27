@@ -3,13 +3,11 @@
 import { useState, useTransition } from "react";
 import { cn } from "@/lib/cn";
 import { Field, FormError, TextArea, TextInput } from "@/components/ui/Field";
-import { MIN_PASSWORD_LENGTH } from "@/lib/config";
 import { composeVision } from "@/lib/profile";
 import { ProfileForm, type ProfileDraft } from "@/components/ProfileForm";
 
 export type { ProfileDraft };
 import { EVERY_DAY, WORKDAYS } from "@/lib/habits";
-import { changePassword } from "@/app/actions/account";
 import { saveVision } from "@/app/actions/vision";
 import { createHabit } from "@/app/actions/habits";
 import { Mark, PrimaryButton, Rise, SlideHeading } from "./parts";
@@ -33,71 +31,10 @@ export function ProfileStep({
   return (
     <div>
       <SlideHeading title="Pár slov o tobě">
-        Ať se ti můžu ozvat a <Mark>nezapomenu ti popřát</Mark> k narozeninám.
+        Ať vím, jak ti říkat, a <Mark>nezapomenu ti popřát</Mark> k narozeninám.
       </SlideHeading>
       <Rise i={2} className="mt-6">
         <ProfileForm initial={initial} submitLabel="Uložit a dál" onSaved={onDone} />
-      </Rise>
-    </div>
-  );
-}
-
-// ─── Heslo ────────────────────────────────────────────────────────────────
-
-export function PasswordStep({ onDone }: { onDone: () => void }) {
-  const [error, setError] = useState<string>();
-  const [pending, startTransition] = useTransition();
-
-  function submit(formData: FormData) {
-    setError(undefined);
-    startTransition(async () => {
-      const result = await changePassword({}, formData);
-      if (result.error) return setError(result.error);
-      onDone();
-    });
-  }
-
-  return (
-    <div>
-      <SlideHeading title="Vlastní heslo">
-        Teď máš heslo ode mě. Nastav si vlastní, ať ho <Mark>znáš jen ty</Mark>.
-      </SlideHeading>
-
-      <Rise i={2} className="mt-6">
-        <form action={submit} className="space-y-4">
-          <div className="space-y-4 rounded-group bg-surface p-4">
-            <Field label="Heslo, které máš ode mě">
-              <TextInput name="current" type="password" autoComplete="current-password" required />
-            </Field>
-            <Field
-              label="Nové heslo"
-              hint={`Aspoň ${MIN_PASSWORD_LENGTH} znaků. Klidně celá věta.`}
-            >
-              <TextInput
-                name="next"
-                type="password"
-                autoComplete="new-password"
-                minLength={MIN_PASSWORD_LENGTH}
-                required
-              />
-            </Field>
-            <Field label="Nové heslo ještě jednou">
-              <TextInput
-                name="confirm"
-                type="password"
-                autoComplete="new-password"
-                minLength={MIN_PASSWORD_LENGTH}
-                required
-              />
-            </Field>
-          </div>
-
-          <FormError>{error}</FormError>
-
-          <PrimaryButton type="submit" disabled={pending}>
-            {pending ? "Měním…" : "Nastavit heslo"}
-          </PrimaryButton>
-        </form>
       </Rise>
     </div>
   );

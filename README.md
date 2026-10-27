@@ -131,7 +131,8 @@ Repozitář ať je **privátní** — jde o data z osobního rozvoje.
 2. Měl bys vidět obrazovku **Klienti**.
 3. **Nový klient** → vyplň jméno, e-mail a začátek programu.
 4. Aplikace ti ukáže vygenerované heslo. **Zobrazí se jen jednou** — zkopíruj
-   si ho hned. Kdyby se ztratilo, v detailu klienta vygeneruješ nové.
+   si ho hned. Kdyby se ztratilo, v detailu klienta nastavíš nové
+   (**Změnit e-mail, telefon nebo heslo**).
 5. Odhlas se a zkus se přihlásit jako ten klient. Měl bys vidět kartu
    „Den X z 90" a nic z admina.
 
@@ -155,7 +156,7 @@ chtěl zapnout, je to popsáno níž v části *Kdybys notifikace chtěl*.
 
 Každý klient, kterého založíš po spuštění migrace `0007`, uvidí po prvním
 přihlášení průvodce: představení aplikace (slidy s ukázkami, na které jde
-klepnout) a nastavení profilu, vlastního hesla, vize a návyků. Všechno jde
+klepnout) a nastavení profilu (jméno, narozeniny), vize a návyků. Všechno jde
 přeskočit nebo zavřít křížkem; přeskočené si klient doplní v Nastavení.
 
 Stávající klienti ho neuvidí. Kdybys chtěl, aby ho někdo prošel znovu —
@@ -165,6 +166,10 @@ je **Ukázat průvodce znovu**.
 Z profilu vidíš v detailu klienta telefon a narozeniny. Narozeniny se
 ukládají jen jako den a měsíc; v ranním přehledu se objeví den předem
 („Zítra má narozeniny…") a v ten den.
+
+Přihlašovací e-mail, telefon a heslo klienta spravuješ jen ty: v detailu
+klienta **Změnit e-mail, telefon nebo heslo**. Klient je v Nastavení vidí,
+ale změnit je nemůže (od migrace `0008` to nepustí ani databáze).
 
 Uvítací text je v `src/lib/config.ts` jako `WELCOME_TEXT`.
 

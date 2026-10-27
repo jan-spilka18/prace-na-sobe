@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requireProfile, usesAdminPassword } from "@/lib/auth";
+import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { activeProgram, allHabits, visionFor } from "@/lib/queries";
 import { Onboarding } from "./Onboarding";
@@ -18,10 +18,9 @@ export default async function WelcomePage() {
   if (profile.onboarding_pending !== true) redirect("/");
 
   const supabase = await createClient();
-  const [program, habits, needsPassword] = await Promise.all([
+  const [program, habits] = await Promise.all([
     activeProgram(supabase, profile.id),
     allHabits(supabase, profile.id),
-    usesAdminPassword(),
   ]);
   const vision = program ? await visionFor(supabase, program.id) : "";
 
@@ -29,7 +28,6 @@ export default async function WelcomePage() {
     <Onboarding
       profile={{
         fullName: profile.full_name,
-        phone: profile.phone ?? "",
         birthDay: profile.birth_day ?? null,
         birthMonth: profile.birth_month ?? null,
       }}
@@ -38,7 +36,6 @@ export default async function WelcomePage() {
       existingHabits={habits
         .filter((habit) => !habit.archived_at)
         .map((habit) => habit.title)}
-      needsPassword={needsPassword}
     />
   );
 }

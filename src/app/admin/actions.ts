@@ -4,9 +4,11 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { generatePassword } from "@/lib/password";
+import { cleanPhone } from "@/lib/profile";
 import {
   DEFAULT_PROGRAM_DURATION_DAYS,
   DEFAULT_PROGRAM_TITLE,
+  MIN_PASSWORD_LENGTH,
 } from "@/lib/config";
 
 export type CreateClientState = {
@@ -43,13 +45,7 @@ export async function createClientAccount(
     email,
     password,
     email_confirm: true,
-    // password_set_by_admin drží varování v klientově nastavení. Zhasne ho
-    // až chvíle, kdy si klient nastaví vlastní heslo.
-    user_metadata: {
-      full_name: fullName,
-      role: "client",
-      password_set_by_admin: true,
-    },
+    user_metadata: { full_name: fullName, role: "client" },
   });
 
   if (createError || !created.user) {
@@ -79,34 +75,126 @@ export async function createClientAccount(
   return { created: { fullName, email, password } };
 }
 
-export type ResetPasswordState = { error?: string; password?: string };
+/*
+  Přihlašovací údaje a telefon klienta spravuje jen admin. Klient je vidí
+  v Nastavení, ale změnit je nemůže — databáze mu změnu e-mailu a telefonu
+  v profilu nepustí (migrace 0008) a heslo si měnit nemá kde.
 
-export async function resetClientPassword(
-  _prev: ResetPasswordState,
+  Obě akce sahají na servisní klíč, takže role se ověřuje jako první a cíl
+  musí být klient — admin si přes ně omylem nepřepíše vlastní účet.
+*/
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+async function clientProfile(clientId: string) {
+  if (!clientId) return null;
+  const { data } = await createAdminClient()
+    .from("profiles")
+    .select("id, role, email, phone")
+    .eq("id", clientId)
+    .single();
+  return data?.role === "client" ? data : null;
+}
+
+export type ContactState = { error?: string; saved?: boolean };
+
+export async function updateClientContact(
+  _prev: ContactState,
   formData: FormData,
-): Promise<ResetPasswordState> {
+): Promise<ContactState> {
   await requireAdmin();
 
-  const clientId = String(formData.get("client_id") ?? "");
-  if (!clientId) return { error: "Chybí klient." };
+  const client = await clientProfile(String(formData.get("client_id") ?? ""));
+  if (!client) return { error: "Klient nenalezen." };
+
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  if (!EMAIL.test(email)) return { error: "E-mail nevypadá platně." };
+
+  const phone = cleanPhone(String(formData.get("phone") ?? ""));
+  if (!phone.ok) return { error: phone.error };
 
   const admin = createAdminClient();
-  const password = generatePassword();
+  const emailChanged = email !== client.email;
 
-  // user_metadata se posílá celá, takže se stávající klíče musí vzít s sebou —
-  // jinak by resetem hesla zmizelo jméno i role.
-  const { data: existing } = await admin.auth.admin.getUserById(clientId);
+  // Přihlašovací e-mail žije v Supabase Auth, profil drží jeho kopii pro
+  // přehledy. Mění se oba, Auth první: když neprojde (e-mail už má jiný
+  // účet), profil zůstane, jak byl.
+  if (emailChanged) {
+    const { error } = await admin.auth.admin.updateUserById(client.id, {
+      email,
+      // Bez potvrzovacího e-mailu: změnu dělá admin, ne cizí člověk.
+      email_confirm: true,
+    });
+    if (error) return { error: describeAuthError(error, "E-mail") };
+  }
 
-  const { error } = await admin.auth.admin.updateUserById(clientId, {
-    password,
-    user_metadata: {
-      ...(existing?.user?.user_metadata ?? {}),
-      password_set_by_admin: true,
-    },
-  });
-  if (error) return { error: `Heslo se nepodařilo změnit: ${error.message}` };
+  const { error: profileError } = await admin
+    .from("profiles")
+    .update({ email, phone: phone.phone })
+    .eq("id", client.id);
+
+  if (profileError) {
+    // Ať se přihlašovací e-mail a ten v profilu nerozejdou.
+    if (emailChanged) {
+      await admin.auth.admin.updateUserById(client.id, {
+        email: client.email,
+        email_confirm: true,
+      });
+    }
+    return { error: `Uložení selhalo: ${profileError.message}` };
+  }
+
+  revalidatePath("/", "layout");
+  return { saved: true };
+}
+
+export type PasswordState = { error?: string; password?: string };
+
+/**
+ * Nastaví klientovi nové heslo — zadané, nebo vygenerované, když admin
+ * pole nechá prázdné. Staré heslo tím přestane platit.
+ */
+export async function setClientPassword(
+  _prev: PasswordState,
+  formData: FormData,
+): Promise<PasswordState> {
+  await requireAdmin();
+
+  const client = await clientProfile(String(formData.get("client_id") ?? ""));
+  if (!client) return { error: "Klient nenalezen." };
+
+  const typed = String(formData.get("password") ?? "").trim();
+  if (typed !== "" && typed.length < MIN_PASSWORD_LENGTH) {
+    return { error: `Heslo musí mít aspoň ${MIN_PASSWORD_LENGTH} znaků.` };
+  }
+  const password = typed || generatePassword();
+
+  const { error } = await createAdminClient().auth.admin.updateUserById(
+    client.id,
+    { password },
+  );
+  if (error) return { error: describeAuthError(error, "Heslo") };
 
   return { password };
+}
+
+function describeAuthError(
+  error: { code?: string; message: string },
+  what: "E-mail" | "Heslo",
+): string {
+  switch (error.code) {
+    case "email_exists":
+      return "Tenhle e-mail už má jiný účet.";
+    case "email_address_invalid":
+      return "Tenhle e-mail Supabase nepřijme.";
+    case "weak_password":
+      return "Tohle heslo je moc slabé. Zkus delší nebo míň obvyklé.";
+    default:
+      if (error.message.toLowerCase().includes("already")) {
+        return "Tenhle e-mail už má jiný účet.";
+      }
+      return `${what} se nepodařilo změnit: ${error.message}`;
+  }
 }
 
 export type DeleteClientState = { error?: string };

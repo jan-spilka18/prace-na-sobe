@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin, requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { cleanPhone, validBirthday } from "@/lib/profile";
+import { validBirthday } from "@/lib/profile";
 
 export type ProfileResult = { error?: string; ok?: boolean };
 
@@ -22,7 +22,6 @@ function describeDbError(error: { code?: string; message: string }): string {
 
 export async function saveProfile(input: {
   fullName: string;
-  phone: string;
   birthDay: number | null;
   birthMonth: number | null;
 }): Promise<ProfileResult> {
@@ -31,9 +30,6 @@ export async function saveProfile(input: {
   const fullName = input.fullName.trim().replace(/\s+/g, " ");
   if (fullName === "") return { error: "Vyplň své jméno." };
   if (fullName.length > 120) return { error: "Jméno je nějak dlouhé." };
-
-  const phone = cleanPhone(input.phone);
-  if (!phone.ok) return { error: phone.error };
 
   if (!validBirthday(input.birthDay, input.birthMonth)) {
     return { error: "Narozeniny potřebují den i měsíc, a ten den musí existovat." };
@@ -44,7 +40,6 @@ export async function saveProfile(input: {
     .from("profiles")
     .update({
       full_name: fullName,
-      phone: phone.phone,
       birth_day: input.birthDay,
       birth_month: input.birthMonth,
     })

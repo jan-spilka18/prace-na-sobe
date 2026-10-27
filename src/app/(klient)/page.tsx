@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireProfile, usesAdminPassword } from "@/lib/auth";
+import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Screen } from "@/components/ui/Screen";
 import { EmptyState } from "@/components/ui/List";
@@ -33,16 +33,13 @@ import { runningStreak } from "@/lib/habits";
 export default async function TodayPage({ searchParams }: PageProps<"/">) {
   const profile = await requireProfile();
   const supabase = await createClient();
-  const [program, adminPassword] = await Promise.all([
-    activeProgram(supabase, profile.id),
-    usesAdminPassword(),
-  ]);
+  const program = await activeProgram(supabase, profile.id);
 
   if (!program) {
     return (
       <Screen
         title="Práce na sobě"
-        action={<SettingsLink alert={adminPassword} />}
+        action={<SettingsLink />}
       >
         <EmptyState
           title="Zatím tu nic není"
@@ -95,7 +92,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
           <DateLine date={date} titleIsDate={daysBack > 2} />
         )
       }
-      action={<SettingsLink alert={adminPassword} />}
+      action={<SettingsLink />}
     >
       {/*
         key podle data: při přepnutí na jiný den se stav postaví znovu.

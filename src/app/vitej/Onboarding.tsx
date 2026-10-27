@@ -14,7 +14,6 @@ import {
 import {
   DoneStep,
   HabitsStep,
-  PasswordStep,
   ProfileStep,
   VisionStep,
   type ProfileDraft,
@@ -28,7 +27,6 @@ type StepId =
   | "tour-vision"
   | "tour-sessions"
   | "profile"
-  | "password"
   | "vision"
   | "habits"
   | "done";
@@ -53,29 +51,26 @@ export function Onboarding({
   programId,
   vision,
   existingHabits,
-  needsPassword,
 }: {
   profile: ProfileDraft;
   programId: string | null;
   vision: string;
   existingHabits: string[];
-  needsPassword: boolean;
 }) {
   const router = useRouter();
 
   /*
-    Seznam kroků se zafixuje při otevření a dál se nemění. Po změně hesla
-    server stránku přepočítá a needsPassword přijde jako false — kdyby se
-    seznam počítal znovu, krok s heslem by z něj vypadl, všechny další by
-    se posunuly o jedno místo a klient by přeskočil vizi, aniž by ji viděl.
+    Seznam kroků se zafixuje při otevření a dál se nemění, i když server
+    po uložení stránku přepočítá — jinak by se kroky mohly posunout a klient
+    by některý přeskočil, aniž by ho viděl. Heslo tu není: přihlašovací
+    údaje spravuje Honza v adminu.
   */
-  const [{ steps, askedForPassword }] = useState(() => {
+  const [steps] = useState(() => {
     const setup: StepId[] = ["profile"];
-    if (needsPassword) setup.push("password");
     // Bez programu se vize ani návyky nemají kam uložit.
     if (programId) setup.push("vision", "habits");
     setup.push("done");
-    return { steps: [...TOUR, ...setup], askedForPassword: needsPassword };
+    return [...TOUR, ...setup];
   });
 
   const [index, setIndex] = useState(0);
@@ -154,7 +149,6 @@ export function Onboarding({
 
   const checklist = [
     { label: "Profil", done: Boolean(completed.profile) },
-    ...(askedForPassword ? [{ label: "Vlastní heslo", done: Boolean(completed.password) }] : []),
     ...(programId
       ? [
           { label: "Vize", done: Boolean(completed.vision) },
@@ -232,7 +226,6 @@ export function Onboarding({
           {step === "profile" && (
             <ProfileStep initial={profile} onDone={() => complete("profile")} />
           )}
-          {step === "password" && <PasswordStep onDone={() => complete("password")} />}
           {step === "vision" && programId && (
             <VisionStep programId={programId} initial={vision} onDone={() => complete("vision")} />
           )}

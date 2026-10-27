@@ -5,12 +5,9 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Field, FormError, TextInput } from "@/components/ui/Field";
-import { CopyableSecret } from "@/components/CopyableSecret";
 import {
   deleteClientAccount,
-  resetClientPassword,
   type DeleteClientState,
-  type ResetPasswordState,
 } from "@/app/admin/actions";
 
 export function DangerZone({
@@ -20,55 +17,7 @@ export function DangerZone({
   clientId: string;
   clientName: string;
 }) {
-  return (
-    <div className="space-y-6">
-      <ResetPassword clientId={clientId} />
-      <DeleteClient clientId={clientId} clientName={clientName} />
-    </div>
-  );
-}
-
-function ResetPassword({ clientId }: { clientId: string }) {
-  const [state, formAction] = useActionState<ResetPasswordState, FormData>(
-    resetClientPassword,
-    {},
-  );
-
-  return (
-    <form action={formAction} className="space-y-3">
-      <h2 className="px-4 text-[13px] font-semibold uppercase tracking-wide text-ink-500">
-        Heslo
-      </h2>
-
-      <div className="space-y-3 rounded-group bg-surface p-4">
-        <input type="hidden" name="client_id" value={clientId} />
-
-        {state.password ? (
-          <>
-            <CopyableSecret label="Nové heslo" value={state.password} mono />
-            <p className="px-1 text-[13px] leading-snug text-ink-500">
-              Staré heslo přestalo platit. Předej klientovi tohle.
-            </p>
-          </>
-        ) : (
-          <p className="px-1 text-[15px] leading-relaxed text-ink-600">
-            Vygeneruje nové heslo a to staré zneplatní.
-          </p>
-        )}
-
-        <FormError>{state.error}</FormError>
-        <ResetButton hasPassword={Boolean(state.password)} />
-      </div>
-    </form>
-  );
-}
-
-function ResetButton({ hasPassword }: { hasPassword: boolean }) {
-  return (
-    <Button type="submit" variant="quiet" full>
-      {hasPassword ? "Vygenerovat znovu" : "Vygenerovat nové heslo"}
-    </Button>
-  );
+  return <DeleteClient clientId={clientId} clientName={clientName} />;
 }
 
 function DeleteClient({

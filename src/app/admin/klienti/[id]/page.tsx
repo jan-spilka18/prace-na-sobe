@@ -130,6 +130,10 @@ export default async function ClientDetailPage({
           {client.onboarding_pending !== true && (
             <ResetOnboarding clientId={client.id} />
           )}
+          <ListRow
+            title="Změnit e-mail, telefon nebo heslo"
+            href={`/admin/klienti/${client.id}/udaje`}
+          />
         </ListGroup>
 
         {program ? (

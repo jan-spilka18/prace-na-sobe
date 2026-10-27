@@ -8,14 +8,13 @@ import { Button } from "@/components/ui/Button";
 
 export type ProfileDraft = {
   fullName: string;
-  phone: string;
   birthDay: number | null;
   birthMonth: number | null;
 };
 
 /**
  * Formulář profilu. Stejný v průvodci i v Nastavení — kdo průvodce
- * přeskočí, doplní si údaje tam.
+ * přeskočí, doplní si údaje tam. Telefon tu není: ten spravuje admin.
  */
 export function ProfileForm({
   initial,
@@ -27,7 +26,6 @@ export function ProfileForm({
   onSaved?: () => void;
 }) {
   const [fullName, setFullName] = useState(initial.fullName);
-  const [phone, setPhone] = useState(initial.phone);
   const [day, setDay] = useState<number | null>(initial.birthDay);
   const [month, setMonth] = useState<number | null>(initial.birthMonth);
   const [error, setError] = useState<string>();
@@ -42,7 +40,6 @@ export function ProfileForm({
     startTransition(async () => {
       const result = await saveProfile({
         fullName,
-        phone,
         birthDay: day,
         birthMonth: month,
       });
@@ -60,17 +57,6 @@ export function ProfileForm({
             value={fullName}
             autoComplete="name"
             onChange={(event) => setFullName(event.target.value)}
-          />
-        </Field>
-
-        <Field label="Telefon" hint="Nepovinné.">
-          <TextInput
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            placeholder="+420 777 123 456"
-            value={phone}
-            onChange={(event) => setPhone(event.target.value)}
           />
         </Field>
 

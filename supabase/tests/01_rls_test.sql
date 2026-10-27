@@ -344,12 +344,26 @@ select pg_temp.check_eq(
 select pg_temp.login('44444444-4444-4444-4444-444444444444');
 
 update public.profiles
-set phone = '+420 777 123 456', birth_day = 15, birth_month = 3,
+set birth_day = 15, birth_month = 3,
     onboarding_pending = false, onboarded_at = now()
 where id = '44444444-4444-4444-4444-444444444444';
 select pg_temp.check_eq(
-  (select phone from public.profiles where id = '44444444-4444-4444-4444-444444444444'),
-  '+420 777 123 456', 'vlastní telefon');
+  (select birth_day from public.profiles where id = '44444444-4444-4444-4444-444444444444')::int,
+  15, 'vlastní narozeniny');
+
+-- Telefon a e-mail spravuje admin (migrace 0008).
+select pg_temp.must_fail(
+  $q$update public.profiles set phone = '+420 777 123 456'
+     where id = '44444444-4444-4444-4444-444444444444'$q$,
+  'vlastní telefon klient nezmění');
+select pg_temp.must_fail(
+  $q$update public.profiles set email = 'jiny@example.com'
+     where id = '44444444-4444-4444-4444-444444444444'$q$,
+  'vlastní e-mail klient nezmění');
+select pg_temp.must_fail(
+  $q$update public.profiles set role = 'admin'
+     where id = '44444444-4444-4444-4444-444444444444'$q$,
+  'roli klient pořád nezmění');
 select pg_temp.check_eq(
   (select onboarding_pending from public.profiles where id = '44444444-4444-4444-4444-444444444444'),
   false, 'vlastní průvodce dokončen');
@@ -388,6 +402,8 @@ select pg_temp.logout();
 \echo ''
 \echo '=== Admin: vidí telefon a umí průvodce ukázat znovu ==='
 select pg_temp.login('11111111-1111-1111-1111-111111111111');
+update public.profiles set phone = '+420 777 123 456'
+where id = '44444444-4444-4444-4444-444444444444';
 select pg_temp.check_eq(
   (select phone from public.profiles where id = '44444444-4444-4444-4444-444444444444'),
   '+420 777 123 456', 'admin vidí telefon');
