@@ -68,22 +68,6 @@ export function FeedbackView({
                 </div>
               </div>
 
-              {summary.topTopics.length > 0 && (
-                <div className="space-y-2 border-t border-white/12 pt-3.5">
-                  <p className="text-[13px] font-semibold text-white/60">Nejvíc baví</p>
-                  <div className="flex flex-wrap gap-2">
-                    {summary.topTopics.map((item) => (
-                      <span
-                        key={item.topic}
-                        className="rounded-full bg-sun px-3 py-1 text-[13px] font-semibold text-on-sun"
-                      >
-                        {item.topic}
-                        {item.count > 1 && ` · ${item.count}×`}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
             </section>
 
             {filterClients.length > 1 && (

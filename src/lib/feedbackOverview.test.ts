@@ -35,22 +35,6 @@ describe("summarizeFeedback", () => {
     );
     assert.equal(summary.lastWeek, 2);
   });
-
-  it("nejčastější témata bez ohledu na velikost písmen", () => {
-    const summary = summarizeFeedback(
-      [
-        { favorite_topic: "Spánek", created_at: TODAY },
-        { favorite_topic: "spánek", created_at: TODAY },
-        { favorite_topic: "Hranice v práci", created_at: TODAY },
-        { favorite_topic: "", created_at: TODAY },
-      ],
-      TODAY,
-    );
-    assert.deepEqual(summary.topTopics, [
-      { topic: "Spánek", count: 2 },
-      { topic: "Hranice v práci", count: 1 },
-    ]);
-  });
 });
 
 describe("formatRating", () => {

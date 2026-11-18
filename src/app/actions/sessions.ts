@@ -3,11 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin, requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import {
-  SESSION_SECTIONS,
-  TOPICS_KEY,
-  sessionTopics,
-} from "@/lib/sessionTemplate";
+import { SESSION_SECTIONS } from "@/lib/sessionTemplate";
+import { refineTasks } from "@/lib/sessionTasks";
 import type { SessionKind } from "@/lib/database.types";
 
 export type SessionResult = { error?: string; sessionId?: string };
@@ -26,17 +23,19 @@ function needsMigration(error: { code?: string; message: string }): boolean {
 const MIGRATION_HINT =
   "Databáze čeká na aktualizaci: v Supabase spusť znovu schema.sql (SQL Editor → Run).";
 
-/** Do obsahu pustí jen klíče ze šablony — nic jiného tam nemá co dělat. */
+/**
+ * Do obsahu pustí jen klíče ze šablony — nic jiného tam nemá co dělat.
+ * Úkoly se přitom znovu vyhodnotí: otázka nebo tip, které Honza dopsal
+ * do úkolů ručně, se uloží tam, kam patří.
+ */
 function cleanContent(content: Record<string, string>): Record<string, string> {
+  const refined = refineTasks(content);
   const cleaned: Record<string, string> = {};
 
   for (const section of SESSION_SECTIONS) {
-    const body = (content[section.key] ?? "").trim();
+    const body = (refined[section.key] ?? "").trim();
     if (body !== "") cleaned[section.key] = body;
   }
-
-  const topics = sessionTopics(content);
-  if (topics.length > 0) cleaned[TOPICS_KEY] = topics.join("\n");
 
   return cleaned;
 }
@@ -177,9 +176,9 @@ export async function saveFeedback(input: {
   if (rating !== null && !(rating >= 1 && rating <= 10)) {
     return { error: "Hodnocení musí být od 1 do 10." };
   }
-  const favoriteTopic = input.favoriteTopic.trim().replace(/\s+/g, " ");
-  if (favoriteTopic.length > 120) {
-    return { error: "Téma je nějak dlouhé. Zkus ho zkrátit." };
+  const favoriteTopic = input.favoriteTopic.trim();
+  if (favoriteTopic.length > 1000) {
+    return { error: "Odpověď na to, co tě bavilo, je moc dlouhá. Zkus ji zkrátit." };
   }
 
   const base = {
@@ -195,6 +194,18 @@ export async function saveFeedback(input: {
       { ...base, rating, favorite_topic: favoriteTopic },
       { onConflict: "session_id" },
     );
+
+  // Před migrací 0011 pustí databáze u odpovědi jen 120 znaků. Klient
+  // nemá vidět chybu kvůli tomu, že Honza ještě nespustil skript — uloží
+  // se zkrácená odpověď, po migraci už celá.
+  if (error?.code === "23514" && favoriteTopic.length > 120) {
+    ({ error } = await supabase
+      .from("session_feedback")
+      .upsert(
+        { ...base, rating, favorite_topic: `${favoriteTopic.slice(0, 119)}…` },
+        { onConflict: "session_id" },
+      ));
+  }
 
   // Kód se nasadí dřív, než Honza v Supabase pustí migraci 0009. Do té doby
   // sloupce chybí — uloží se aspoň zbytek, ať klient o odpověď nepřijde.

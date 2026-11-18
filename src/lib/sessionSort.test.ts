@@ -5,7 +5,6 @@ import {
   parseSessionKind,
   plainLabel,
   sortSessionText,
-  suggestTopics,
 } from "./sessionSort";
 
 const SAMPLE = [
@@ -86,28 +85,6 @@ describe("sortSessionText", () => {
   });
 });
 
-describe("suggestTopics", () => {
-  it("vezme tučné slovo, začátek věty a krátí na celá slova", () => {
-    const { content } = sortSessionText(SAMPLE);
-    assert.deepEqual(suggestTopics(content), [
-      "Pozdní usínání",
-      "Když má jasný plán na ráno",
-      "Hranice v práci a jak říkat ne",
-    ]);
-  });
-
-  it("dlouhou větu zkrátí a duplicity vynechá", () => {
-    const topics = suggestTopics({
-      insights:
-        "- Výčitky po vynechaném dni mu berou víc energie než samotný návyk\n- **Spánek**\n- **spánek**",
-    });
-    assert.deepEqual(topics, ["Výčitky po vynechaném dni mu berou víc…", "Spánek"]);
-  });
-
-  it("bez hlavních bodů nenavrhne nic", () => {
-    assert.deepEqual(suggestTopics({ summary: "Text" }), []);
-  });
-});
 
 // Vyplněná ukázka z Honzovy šablony zápisu, beze změny tvaru.
 const TEMPLATE = `Klient: Martin Ukázkový
@@ -187,14 +164,6 @@ describe("sortSessionText se šablonou zápisu", () => {
 
   it("úkoly zůstanou po řádcích", () => {
     assert.equal(result.content.tasks.split("\n").length, 2);
-  });
-
-  it("témata navrhne z uvědomění bez uvozovek a fokus neuseká na slovo", () => {
-    assert.deepEqual(suggestTopics(result.content), [
-      "Ten gól mě nestojí zápas",
-      "Když se soustředíš na dech a na puk",
-      "Sledovat, jak rychle se po chybě vracíš…",
-    ]);
   });
 });
 

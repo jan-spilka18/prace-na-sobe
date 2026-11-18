@@ -204,6 +204,16 @@ select pg_temp.must_fail(
   'hodnocení 0 neprojde');
 update public.session_feedback set rating = null
 where session_id = 'cccccccc-0000-0000-0000-000000000001';
+
+-- Co klienta bavilo je volný text do 1000 znaků (migrace 0011).
+update public.session_feedback set favorite_topic = repeat('a', 1000)
+where session_id = 'cccccccc-0000-0000-0000-000000000001';
+select pg_temp.check_eq(
+  (select char_length(favorite_topic) from public.session_feedback), 1000, 'delší odpověď projde');
+select pg_temp.must_fail(
+  $$update public.session_feedback set favorite_topic = repeat('a', 1001)
+    where session_id = 'cccccccc-0000-0000-0000-000000000001'$$,
+  'odpověď nad 1000 znaků neprojde');
 select pg_temp.check_eq(
   (select rating from public.session_feedback) is null, true, 'hodnocení jde nevyplnit');
 

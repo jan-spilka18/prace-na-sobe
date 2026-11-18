@@ -3,11 +3,8 @@
 import { FeedbackForm } from "@/components/session/FeedbackForm";
 import { FeedbackJump } from "@/components/session/FeedbackJump";
 import { SessionArticle } from "@/components/session/SessionArticle";
-import {
-  filledSections,
-  sessionHeading,
-  sessionTopics,
-} from "@/lib/sessionTemplate";
+import { filledSections, sessionHeading } from "@/lib/sessionTemplate";
+import { refineTasks } from "@/lib/sessionTasks";
 import type { SessionKind } from "@/lib/database.types";
 
 /**
@@ -27,7 +24,8 @@ export function ClientPreview({
   order: number;
   content: Record<string, string>;
 }) {
-  const sections = filledSections(content);
+  // Stejně jako u klienta: úkoly vyhodnocené znovu.
+  const sections = filledSections(refineTasks(content));
   const heading = sessionHeading(sessionDate, kind, order);
 
   return (
@@ -62,7 +60,6 @@ export function ClientPreview({
 
           <FeedbackForm
             sessionId=""
-            topics={sessionTopics(content)}
             feedback={null}
             preview
           />

@@ -6,15 +6,12 @@ import { saveFeedback } from "@/app/actions/sessions";
 import { FEEDBACK_MOODS } from "@/lib/sessionTemplate";
 import type { SessionFeedback } from "@/lib/database.types";
 
-const OTHER = "__jine";
-
 /**
  * Zpětná vazba po sezení.
  *
  * Hlavní je otázka, co si klient odnáší — kvůli ní je to velké pole nahoře.
- * Zbytek jsou rychlé odpovědi na klepnutí: hodnocení 1–10, téma, které ho
- * bavilo nejvíc (z témat, která Honza k sezení nabídl, nebo vlastní), a jak
- * se cítí. Nic není povinné, stačí cokoli z toho.
+ * Pod ní hodnocení 1–10, co ho bavilo nejvíc (vlastními slovy) a jak se
+ * cítí. Nic není povinné, stačí cokoli z toho.
  *
  * Tmavá karta, ať se na konci dlouhého zápisu nedá přehlédnout.
  *
@@ -22,24 +19,16 @@ const OTHER = "__jine";
  */
 export function FeedbackForm({
   sessionId,
-  topics,
   feedback,
   preview = false,
 }: {
   sessionId: string;
-  topics: string[];
   feedback: SessionFeedback | null;
   preview?: boolean;
 }) {
-  const savedTopic = feedback?.favorite_topic ?? "";
   const [takeaway, setTakeaway] = useState(feedback?.takeaway ?? "");
   const [rating, setRating] = useState<number | null>(feedback?.rating ?? null);
-  const [topic, setTopic] = useState<string | null>(
-    savedTopic === "" ? null : topics.includes(savedTopic) ? savedTopic : OTHER,
-  );
-  const [otherTopic, setOtherTopic] = useState(
-    topics.includes(savedTopic) ? "" : savedTopic,
-  );
+  const [enjoyed, setEnjoyed] = useState(feedback?.favorite_topic ?? "");
   const [mood, setMood] = useState<string | null>(feedback?.feeling || null);
   const [editing, setEditing] = useState(!feedback);
   const [error, setError] = useState<string>();
@@ -50,9 +39,7 @@ export function FeedbackForm({
   const moods =
     mood && !FEEDBACK_MOODS.includes(mood) ? [mood, ...FEEDBACK_MOODS] : FEEDBACK_MOODS;
 
-  // Bez nabídnutých témat (starší sezení) zbývá jen vlastní odpověď.
-  const choosingOther = topic === OTHER || topics.length === 0;
-  const favoriteTopic = choosingOther ? otherTopic.trim() : (topic ?? "");
+  const favoriteTopic = enjoyed.trim();
 
   const empty =
     takeaway.trim() === "" && rating === null && favoriteTopic === "" && !mood;
@@ -132,35 +119,20 @@ export function FeedbackForm({
             </p>
           </fieldset>
 
-          <fieldset className="space-y-2.5">
-            <legend className="mb-2.5 text-[15px] font-semibold">
+          <div className="space-y-2.5">
+            <label htmlFor="bavilo" className="block text-[15px] font-semibold">
               Co tě dnes bavilo nejvíc?
-            </legend>
-            {topics.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {[...topics, OTHER].map((option) => (
-                  <Chip
-                    key={option}
-                    selected={topic === option}
-                    onClick={() => setTopic(topic === option ? null : option)}
-                  >
-                    {option === OTHER ? "Jiné" : option}
-                  </Chip>
-                ))}
-              </div>
-            )}
-            {choosingOther && (
-              <input
-                type="text"
-                aria-label="Jiné téma"
-                value={otherTopic}
-                maxLength={120}
-                placeholder="Napiš, co to bylo"
-                onChange={(event) => setOtherTopic(event.target.value)}
-                className={cn(FIELD, "min-h-[44px]")}
-              />
-            )}
-          </fieldset>
+            </label>
+            <textarea
+              id="bavilo"
+              value={enjoyed}
+              rows={3}
+              maxLength={1000}
+              placeholder="Nejvíc mě bavilo…"
+              onChange={(event) => setEnjoyed(event.target.value)}
+              className={FIELD}
+            />
+          </div>
 
           <fieldset className="space-y-2.5">
             <legend className="mb-2.5 text-[15px] font-semibold">
@@ -252,7 +224,6 @@ function Sent({
 }) {
   const details = [
     rating !== null ? `Hodnocení ${rating}/10` : null,
-    favoriteTopic ? `Nejvíc bavilo: ${favoriteTopic}` : null,
     mood ? `Po sezení: ${mood.toLowerCase()}` : null,
   ].filter(Boolean);
 
@@ -277,6 +248,12 @@ function Sent({
       </h2>
       {takeaway && (
         <p className="text-[16px] leading-relaxed text-white/90">„{takeaway}“</p>
+      )}
+      {favoriteTopic && (
+        <p className="whitespace-pre-line text-[14px] leading-relaxed text-white/75">
+          <span className="font-semibold text-white">Nejvíc bavilo:</span>{" "}
+          {favoriteTopic}
+        </p>
       )}
       {details.length > 0 && (
         <p className="text-[14px] leading-relaxed text-white/65">

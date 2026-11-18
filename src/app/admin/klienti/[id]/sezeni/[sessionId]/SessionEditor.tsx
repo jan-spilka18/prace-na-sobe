@@ -3,16 +3,13 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { Field, FormError, Select, TextArea, TextInput } from "@/components/ui/Field";
+import { Field, FormError, Select, TextInput } from "@/components/ui/Field";
 import { MarkdownEditor } from "@/components/MarkdownEditor";
 import { Markdown } from "@/components/Markdown";
 import { cn } from "@/lib/cn";
-import {
-  SESSION_KIND_LABELS,
-  SESSION_SECTIONS,
-  TOPICS_KEY,
-} from "@/lib/sessionTemplate";
-import { suggestTopics, type SortResult } from "@/lib/sessionSort";
+import { SESSION_KIND_LABELS, SESSION_SECTIONS } from "@/lib/sessionTemplate";
+import type { SortResult } from "@/lib/sessionSort";
+import { refineTasks } from "@/lib/sessionTasks";
 import { PasteSorter } from "./PasteSorter";
 import { ClientPreview } from "./ClientPreview";
 import {
@@ -69,6 +66,9 @@ export function SessionEditor({
   } | null>(null);
 
   const [view, setView] = useState<"edit" | "preview">("edit");
+  // Co se po úpravě úkolů přesunulo jinam — ať Honzu nepřekvapí, že mu
+  // řádek z úkolů „zmizel".
+  const [taskNotice, setTaskNotice] = useState<string>();
 
   const hasContent = SESSION_SECTIONS.some(
     (section) => (content[section.key] ?? "").trim() !== "",
@@ -86,14 +86,42 @@ export function SessionEditor({
       privateNote: result.privateNote !== "",
       previous: { content, sessionDate, kind, coachNote },
     });
-    setContent({
-      ...result.content,
-      [TOPICS_KEY]: suggestTopics(result.content).join("\n"),
-    });
+    setContent(result.content);
+    setTaskNotice(undefined);
     if (result.meta.date) setSessionDate(result.meta.date);
     if (result.meta.kind) setKind(result.meta.kind);
     if (result.privateNote) setCoachNote(result.privateNote);
     setSaved(false);
+  }
+
+  /**
+   * Po úpravě úkolů nebo doporučení je znovu vyhodnotí: otázka jde
+   * k otázce k zamyšlení, tip k doporučením, úkol s termínem zpět k úkolům.
+   */
+  function recheckTasks() {
+    const refined = refineTasks(content);
+    const count = (text: string | undefined) =>
+      (text ?? "").split("\n").filter((line) => line.trim() !== "").length;
+
+    const questions = count(refined.question) - count(content.question);
+    const tips = count(refined.recommendations) - count(content.recommendations);
+    if (questions === 0 && tips === 0 && refined.tasks === (content.tasks ?? "").trim()) {
+      return;
+    }
+
+    const moved = [
+      questions > 0 ? `${questions}× otázku do Otázky k zamyšlení` : null,
+      tips > 0 ? `${tips}× tip do Nepovinných doporučení` : null,
+      tips < 0 ? `${-tips}× úkol z doporučení zpět do Úkolů` : null,
+    ].filter(Boolean);
+
+    setContent(refined);
+    setSaved(false);
+    setTaskNotice(
+      moved.length > 0
+        ? `Přesunul jsem ${moved.join(", ")}.`
+        : "Úkoly jsem znovu prošel a uspořádal.",
+    );
   }
 
   function undoSorted() {
@@ -281,43 +309,21 @@ export function SessionEditor({
               <MarkdownEditor
                 value={content[section.key] ?? ""}
                 onChange={(value) => setSection(section.key, value)}
+                onBlur={
+                  section.key === "tasks" || section.key === "recommendations"
+                    ? recheckTasks
+                    : undefined
+                }
                 placeholder={section.hint}
                 rows={rowsFor(content[section.key], section.key === "summary" ? 6 : 4)}
               />
+              {section.key === "tasks" && taskNotice && (
+                <p className="px-1 text-[13px] font-semibold leading-snug text-turquoise-700">
+                  {taskNotice}
+                </p>
+              )}
             </section>
           ))}
-
-          {/*
-            Témata pro otázku „Co tě dnes bavilo nejvíc?" ve zpětné vazbě.
-            Po rozřazení se navrhnou samy z hlavních bodů; jsou to jen návrhy.
-          */}
-          <section className="space-y-1.5">
-            <div className="flex items-center justify-between gap-2 px-1">
-              <h2 className="text-[13px] font-semibold text-ink-600">
-                Témata pro zpětnou vazbu
-              </h2>
-              <button
-                type="button"
-                onClick={() =>
-                  setSection(TOPICS_KEY, suggestTopics(content).join("\n"))
-                }
-                className="text-[13px] font-semibold text-turquoise-700 active:opacity-60"
-              >
-                Navrhnout z hlavních bodů
-              </button>
-            </div>
-            <TextArea
-              aria-label="Témata pro zpětnou vazbu"
-              value={content[TOPICS_KEY] ?? ""}
-              rows={rowsFor(content[TOPICS_KEY], 4)}
-              placeholder={"Jedno téma na řádek, třeba:\nSpánek\nHranice v práci"}
-              onChange={(event) => setSection(TOPICS_KEY, event.target.value)}
-            />
-            <p className="px-1 text-[13px] leading-snug text-ink-500">
-              Klient z nich vybere, co ho bavilo nejvíc, nebo napíše vlastní
-              odpověď do „Jiné“. Pár slov na téma, nejvýš 8.
-            </p>
-          </section>
 
           {/*
             Poznámka pro Honzu: část zápisu „POZNÁMKA PRO HONZU (neposílat)".
@@ -439,13 +445,10 @@ function SortChip({ filled, found }: { filled: boolean; found: boolean }) {
 function FeedbackSummary({ feedback }: { feedback: SessionFeedback }) {
   const rows = [
     feedback.rating ? { label: "Hodnocení", value: `${feedback.rating}/10` } : null,
-    feedback.favorite_topic
-      ? { label: "Nejvíc bavilo", value: feedback.favorite_topic }
-      : null,
     feedback.feeling ? { label: "Po sezení", value: feedback.feeling } : null,
   ].filter((row) => row !== null);
 
-  if (rows.length === 0 && !feedback.takeaway) return null;
+  if (rows.length === 0 && !feedback.takeaway && !feedback.favorite_topic) return null;
 
   return (
     <section className="space-y-3 rounded-group bg-surface p-4">
@@ -456,6 +459,12 @@ function FeedbackSummary({ feedback }: { feedback: SessionFeedback }) {
         <div>
           <p className="text-[13px] font-semibold text-ink-600">Co si odnáší</p>
           <Markdown source={feedback.takeaway} className="mt-1" />
+        </div>
+      )}
+      {feedback.favorite_topic && (
+        <div>
+          <p className="text-[13px] font-semibold text-ink-600">Nejvíc bavilo</p>
+          <Markdown source={feedback.favorite_topic} className="mt-1" />
         </div>
       )}
       {rows.map((row) => (

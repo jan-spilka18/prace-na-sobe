@@ -2,11 +2,8 @@ import { notFound } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Screen } from "@/components/ui/Screen";
-import {
-  filledSections,
-  sessionHeading,
-  sessionTopics,
-} from "@/lib/sessionTemplate";
+import { filledSections, sessionHeading } from "@/lib/sessionTemplate";
+import { refineTasks } from "@/lib/sessionTasks";
 import { FeedbackForm } from "@/components/session/FeedbackForm";
 import { SessionArticle } from "@/components/session/SessionArticle";
 import { FeedbackJump } from "@/components/session/FeedbackJump";
@@ -44,7 +41,9 @@ export default async function ClientSessionPage({
 
   if (!session) notFound();
 
-  const sections = filledSections(session.content ?? {});
+  // Úkoly se vyhodnotí i při zobrazení, ne jen při uložení — starší
+  // zápisy tak vypadají správně, aniž by je Honza musel uložit znovu.
+  const sections = filledSections(refineTasks(session.content ?? {}));
   const order = (all ?? []).findIndex((row) => row.id === session.id) + 1;
   const heading = sessionHeading(session.session_date, session.kind, order);
 
@@ -71,7 +70,6 @@ export default async function ClientSessionPage({
 
         <FeedbackForm
           sessionId={session.id}
-          topics={sessionTopics(session.content)}
           feedback={feedback ?? null}
         />
       </div>

@@ -185,28 +185,6 @@ export function filledSections(
   })).filter((section) => section.body !== "");
 }
 
-/*
-  Témata, ze kterých klient ve zpětné vazbě vybírá, co ho bavilo nejvíc.
-  Ukládají se do obsahu sezení pod vlastním klíčem, po jednom na řádek —
-  nejsou to sekce zápisu a klientovi se mezi nimi nezobrazují.
-*/
-export const TOPICS_KEY = "topics";
-export const MAX_SESSION_TOPICS = 8;
-export const MAX_TOPIC_LENGTH = 60;
-
-export function sessionTopics(content: Record<string, string> | null): string[] {
-  const seen = new Set<string>();
-  const topics: string[] = [];
-  for (const raw of (content?.[TOPICS_KEY] ?? "").split("\n")) {
-    const topic = raw.trim().slice(0, MAX_TOPIC_LENGTH);
-    if (topic === "" || seen.has(topic.toLowerCase())) continue;
-    seen.add(topic.toLowerCase());
-    topics.push(topic);
-    if (topics.length === MAX_SESSION_TOPICS) break;
-  }
-  return topics;
-}
-
 /**
  * Jak se klient po sezení cítí — ukládá se do sloupce feeling.
  *

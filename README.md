@@ -180,16 +180,19 @@ a denní návyky, Fokus do příštího sezení, Otázka k zamyšlení, Úkoly
 
 V sezení klikni na **Vložit celý zápis a rozřadit** a vlož celý zápis.
 Aplikace podle nadpisů rozřadí text do sekcí, z hlavičky převezme datum
-a typ, z uvědomění navrhne **témata pro zpětnou vazbu** a všechno pod
+a typ, v úkolech rozezná otázky a tipy a přesune je, kam patří, a všechno pod
 „POZNÁMKA PRO HONZU (neposílat)" dá do **Poznámky jen pro tebe**, kterou
 klient nikdy neuvidí (migrace `0010`). Přepínačem **Náhled pro klienta**
 uvidíš zápis jeho očima. Rozřazení jde vrátit tlačítkem **Vrátit zpět**.
 Jak se která sekce smí jmenovat, je v `src/lib/sessionTemplate.ts`
 (`aliases`) — co tam chybí, stačí doplnit.
 
+Úkoly se znovu vyhodnotí i při každé úpravě pole Úkoly, při uložení
+a při zobrazení klientovi — i u starších zápisů.
+
 Klient pod zápisem vyplní, co si z dneška odnáší, ohodnotí sezení 1–10,
-vybere téma, které ho bavilo nejvíc (nebo napíše vlastní), a jak se cítí.
-Hodnocení a téma potřebují migraci `0009`; bez ní se uloží jen zbytek.
+napíše, co ho bavilo nejvíc, a vybere, jak se cítí. Hodnocení a „co
+bavilo" potřebují migraci `0009`, delší odpověď (do 1000 znaků) `0011`.
 
 Uvítací text je v `src/lib/config.ts` jako `WELCOME_TEXT`.
 
