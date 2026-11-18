@@ -15,7 +15,7 @@ export default async function AdminSessionPage({
 
   const supabase = await createClient();
 
-  const [{ data: session }, { data: prep }, { data: feedback }] =
+  const [{ data: session }, { data: prep }, { data: feedback }, { data: all }] =
     await Promise.all([
       supabase
         .from("sessions")
@@ -34,9 +34,22 @@ export default async function AdminSessionPage({
         .select("*")
         .eq("session_id", sessionId)
         .maybeSingle(),
+      supabase
+        .from("sessions")
+        .select("id, status")
+        .eq("client_id", id)
+        .order("session_date", { ascending: true })
+        .order("created_at", { ascending: true }),
     ]);
 
   if (!session) notFound();
+
+  // Pořadí, jak ho uvidí klient: počítají se jen publikovaná sezení
+  // (koncepty klient nevidí) a k nim tohle, i když je zatím koncept.
+  const order =
+    (all ?? [])
+      .filter((row) => row.status === "published" || row.id === session.id)
+      .findIndex((row) => row.id === session.id) + 1;
 
   return (
     <Screen
@@ -52,6 +65,7 @@ export default async function AdminSessionPage({
           session={session}
           feedback={feedback ?? null}
           clientId={id}
+          order={order}
         />
       </div>
     </Screen>

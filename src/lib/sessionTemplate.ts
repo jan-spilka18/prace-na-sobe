@@ -1,4 +1,10 @@
 import type { SessionKind } from "@/lib/database.types";
+import {
+  formatCzechDate,
+  formatCzechDayMonth,
+  formatCzechWeekday,
+  todayISO,
+} from "@/lib/date";
 
 /**
  * Sekce zápisu ze sezení.
@@ -151,3 +157,23 @@ export function sessionTopics(content: Record<string, string> | null): string[] 
 
 /** Jak se klient po sezení cítí — ukládá se do sloupce feeling. */
 export const FEEDBACK_MOODS = ["Nabitý", "Klidný", "Zamyšlený", "Unavený", "Zmatený"];
+
+/**
+ * Hlavička zápisu: „Středa 18. listopadu" a „Koučink · 3. sezení".
+ * Rok jen u sezení z jiného roku. Stejná u klienta i v náhledu v adminu.
+ */
+export function sessionHeading(
+  date: string,
+  kind: SessionKind,
+  order: number,
+): { title: string; subtitle: string } {
+  let title = formatCzechDate(date);
+  if (date.slice(0, 4) === todayISO().slice(0, 4)) {
+    const weekday = formatCzechWeekday(date);
+    title = `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${formatCzechDayMonth(date)}`;
+  }
+  const subtitle = [SESSION_KIND_LABELS[kind], order > 0 ? `${order}. sezení` : null]
+    .filter(Boolean)
+    .join(" · ");
+  return { title, subtitle };
+}

@@ -3,18 +3,13 @@ import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Screen } from "@/components/ui/Screen";
 import {
-  formatCzechDate,
-  formatCzechDayMonth,
-  formatCzechWeekday,
-  todayISO,
-} from "@/lib/date";
-import {
-  SESSION_KIND_LABELS,
   filledSections,
+  sessionHeading,
   sessionTopics,
 } from "@/lib/sessionTemplate";
-import { FeedbackForm } from "./FeedbackForm";
-import { SessionArticle } from "./SessionArticle";
+import { FeedbackForm } from "@/components/session/FeedbackForm";
+import { SessionArticle } from "@/components/session/SessionArticle";
+import { FeedbackJump } from "@/components/session/FeedbackJump";
 
 export default async function ClientSessionPage({
   params,
@@ -51,16 +46,12 @@ export default async function ClientSessionPage({
 
   const sections = filledSections(session.content ?? {});
   const order = (all ?? []).findIndex((row) => row.id === session.id) + 1;
+  const heading = sessionHeading(session.session_date, session.kind, order);
 
   return (
     <Screen
-      title={sessionTitle(session.session_date)}
-      subtitle={[
-        SESSION_KIND_LABELS[session.kind],
-        order > 0 ? `${order}. sezení` : null,
-      ]
-        .filter(Boolean)
-        .join(" · ")}
+      title={heading.title}
+      subtitle={heading.subtitle}
       back={{ href: "/sezeni", label: "Sezení" }}
     >
       <div className="space-y-5">
@@ -68,26 +59,7 @@ export default async function ClientSessionPage({
           Zkratka ke zpětné vazbě jen dokud ji klient nenapsal. Pak by
           jen strkala dolů k něčemu, co už je hotové.
         */}
-        {!feedback && sections.length > 0 && (
-          <a
-            href="#zpetna-vazba"
-            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-night px-4 text-[14px] font-semibold text-white transition-opacity active:opacity-70"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden
-              className="h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 5v14M6 13l6 6 6-6" />
-            </svg>
-            Co si odnášíš? Napiš Honzovi
-          </a>
-        )}
+        {!feedback && sections.length > 0 && <FeedbackJump />}
 
         {sections.length === 0 ? (
           <p className="rounded-group bg-surface px-4 py-6 text-center text-[15px] text-ink-600">
@@ -105,11 +77,4 @@ export default async function ClientSessionPage({
       </div>
     </Screen>
   );
-}
-
-/** „Středa 18. listopadu" — rok jen u sezení z jiného roku. */
-function sessionTitle(date: string): string {
-  if (date.slice(0, 4) !== todayISO().slice(0, 4)) return formatCzechDate(date);
-  const weekday = formatCzechWeekday(date);
-  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${formatCzechDayMonth(date)}`;
 }

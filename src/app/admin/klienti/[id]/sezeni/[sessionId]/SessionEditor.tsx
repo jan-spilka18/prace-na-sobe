@@ -14,6 +14,7 @@ import {
 } from "@/lib/sessionTemplate";
 import { suggestTopics, type SortResult } from "@/lib/sessionSort";
 import { PasteSorter } from "./PasteSorter";
+import { ClientPreview } from "./ClientPreview";
 import {
   deleteSession,
   setSessionStatus,
@@ -29,10 +30,13 @@ export function SessionEditor({
   session,
   feedback,
   clientId,
+  order,
 }: {
   session: SessionRecord;
   feedback: SessionFeedback | null;
   clientId: string;
+  /** Kolikáté sezení to pro klienta je — do hlavičky náhledu. */
+  order: number;
 }) {
   const router = useRouter();
   const [sessionDate, setSessionDate] = useState(session.session_date);
@@ -50,6 +54,8 @@ export function SessionEditor({
     found: string[];
     previous: Record<string, string>;
   } | null>(null);
+
+  const [view, setView] = useState<"edit" | "preview">("edit");
 
   const hasContent = SESSION_SECTIONS.some(
     (section) => (content[section.key] ?? "").trim() !== "",
@@ -177,59 +183,99 @@ export function SessionEditor({
         </div>
       )}
 
-      {SESSION_SECTIONS.map((section) => (
-        <section key={section.key} className="space-y-1.5">
-          <div className="flex items-center justify-between gap-2 px-1">
-            <h2 className="text-[13px] font-semibold text-ink-600">
-              {section.title}
-            </h2>
-            {sorted && (
-              <SortChip
-                filled={(content[section.key] ?? "").trim() !== ""}
-                found={sorted.found.includes(section.key)}
-              />
-            )}
-          </div>
-          <MarkdownEditor
-            value={content[section.key] ?? ""}
-            onChange={(value) => setSection(section.key, value)}
-            placeholder={section.hint}
-            rows={rowsFor(content[section.key], section.key === "summary" ? 6 : 4)}
-          />
-        </section>
-      ))}
-
-      {/*
-        Témata pro otázku „Co tě dnes bavilo nejvíc?" ve zpětné vazbě.
-        Po rozřazení se navrhnou samy z hlavních bodů; jsou to jen návrhy.
-      */}
-      <section className="space-y-1.5">
-        <div className="flex items-center justify-between gap-2 px-1">
-          <h2 className="text-[13px] font-semibold text-ink-600">
-            Témata pro zpětnou vazbu
-          </h2>
+      <div
+        role="tablist"
+        aria-label="Zobrazení zápisu"
+        className="grid grid-cols-2 gap-1 rounded-full bg-hairline p-1"
+      >
+        {(
+          [
+            ["edit", "Úpravy"],
+            ["preview", "Náhled pro klienta"],
+          ] as const
+        ).map(([value, label]) => (
           <button
+            key={value}
             type="button"
-            onClick={() =>
-              setSection(TOPICS_KEY, suggestTopics(content).join("\n"))
-            }
-            className="text-[13px] font-semibold text-turquoise-700 active:opacity-60"
+            role="tab"
+            aria-selected={view === value}
+            onClick={() => setView(value)}
+            className={cn(
+              "h-10 rounded-full text-[15px] font-semibold transition-colors",
+              view === value
+                ? "bg-surface text-ink shadow-sm"
+                : "text-ink-600 active:opacity-60",
+            )}
           >
-            Navrhnout z hlavních bodů
+            {label}
           </button>
-        </div>
-        <TextArea
-          aria-label="Témata pro zpětnou vazbu"
-          value={content[TOPICS_KEY] ?? ""}
-          rows={rowsFor(content[TOPICS_KEY], 4)}
-          placeholder={"Jedno téma na řádek, třeba:\nSpánek\nHranice v práci"}
-          onChange={(event) => setSection(TOPICS_KEY, event.target.value)}
+        ))}
+      </div>
+
+      {view === "preview" ? (
+        <ClientPreview
+          sessionDate={sessionDate}
+          kind={kind}
+          order={order}
+          content={content}
         />
-        <p className="px-1 text-[13px] leading-snug text-ink-500">
-          Klient z nich vybere, co ho bavilo nejvíc, nebo napíše vlastní
-          odpověď do „Jiné“. Pár slov na téma, nejvýš 8.
-        </p>
-      </section>
+      ) : (
+        <>
+          {SESSION_SECTIONS.map((section) => (
+            <section key={section.key} className="space-y-1.5">
+              <div className="flex items-center justify-between gap-2 px-1">
+                <h2 className="text-[13px] font-semibold text-ink-600">
+                  {section.title}
+                </h2>
+                {sorted && (
+                  <SortChip
+                    filled={(content[section.key] ?? "").trim() !== ""}
+                    found={sorted.found.includes(section.key)}
+                  />
+                )}
+              </div>
+              <MarkdownEditor
+                value={content[section.key] ?? ""}
+                onChange={(value) => setSection(section.key, value)}
+                placeholder={section.hint}
+                rows={rowsFor(content[section.key], section.key === "summary" ? 6 : 4)}
+              />
+            </section>
+          ))}
+
+          {/*
+            Témata pro otázku „Co tě dnes bavilo nejvíc?" ve zpětné vazbě.
+            Po rozřazení se navrhnou samy z hlavních bodů; jsou to jen návrhy.
+          */}
+          <section className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2 px-1">
+              <h2 className="text-[13px] font-semibold text-ink-600">
+                Témata pro zpětnou vazbu
+              </h2>
+              <button
+                type="button"
+                onClick={() =>
+                  setSection(TOPICS_KEY, suggestTopics(content).join("\n"))
+                }
+                className="text-[13px] font-semibold text-turquoise-700 active:opacity-60"
+              >
+                Navrhnout z hlavních bodů
+              </button>
+            </div>
+            <TextArea
+              aria-label="Témata pro zpětnou vazbu"
+              value={content[TOPICS_KEY] ?? ""}
+              rows={rowsFor(content[TOPICS_KEY], 4)}
+              placeholder={"Jedno téma na řádek, třeba:\nSpánek\nHranice v práci"}
+              onChange={(event) => setSection(TOPICS_KEY, event.target.value)}
+            />
+            <p className="px-1 text-[13px] leading-snug text-ink-500">
+              Klient z nich vybere, co ho bavilo nejvíc, nebo napíše vlastní
+              odpověď do „Jiné“. Pár slov na téma, nejvýš 8.
+            </p>
+          </section>
+        </>
+      )}
 
       <FormError>{error}</FormError>
 

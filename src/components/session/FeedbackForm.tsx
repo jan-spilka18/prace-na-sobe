@@ -17,15 +17,19 @@ const OTHER = "__jine";
  * se cítí. Nic není povinné, stačí cokoli z toho.
  *
  * Tmavá karta, ať se na konci dlouhého zápisu nedá přehlédnout.
+ *
+ * `preview`: náhled v adminu. Na volby jde klepat, ale nic se neodešle.
  */
 export function FeedbackForm({
   sessionId,
   topics,
   feedback,
+  preview = false,
 }: {
   sessionId: string;
   topics: string[];
   feedback: SessionFeedback | null;
+  preview?: boolean;
 }) {
   const savedTopic = feedback?.favorite_topic ?? "";
   const [takeaway, setTakeaway] = useState(feedback?.takeaway ?? "");
@@ -54,6 +58,7 @@ export function FeedbackForm({
     takeaway.trim() === "" && rating === null && favoriteTopic === "" && !mood;
 
   function submit() {
+    if (preview) return;
     setError(undefined);
     startTransition(async () => {
       const result = await saveFeedback({
@@ -70,7 +75,7 @@ export function FeedbackForm({
 
   return (
     <section
-      id="zpetna-vazba"
+      id={preview ? undefined : "zpetna-vazba"}
       // Odsazení pro kotvu: bez něj skok schová nadpis pod lepivou lištu.
       className="scroll-mt-16 rounded-group bg-night px-5 py-6 text-white"
     >
@@ -178,12 +183,17 @@ export function FeedbackForm({
 
           <button
             type="button"
-            disabled={pending || empty}
+            disabled={preview || pending || empty}
             onClick={submit}
             className="h-[52px] w-full rounded-full bg-turquoise text-[16px] font-extrabold text-on-sun transition-opacity active:opacity-70 disabled:opacity-40"
           >
             {pending ? "Odesílám…" : feedback ? "Uložit změny" : "Poslat Honzovi"}
           </button>
+          {preview && (
+            <p className="text-center text-[13px] text-white/60">
+              Náhled — odpověď tady posílá klient.
+            </p>
+          )}
         </div>
       ) : (
         <Sent
