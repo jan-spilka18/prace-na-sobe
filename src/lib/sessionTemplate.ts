@@ -155,8 +155,23 @@ export function sessionTopics(content: Record<string, string> | null): string[] 
   return topics;
 }
 
-/** Jak se klient po sezení cítí — ukládá se do sloupce feeling. */
-export const FEEDBACK_MOODS = ["Nabitý", "Klidný", "Zamyšlený", "Unavený", "Zmatený"];
+/**
+ * Jak se klient po sezení cítí — ukládá se do sloupce feeling.
+ *
+ * Jen dobré stavy: otázka má klientovi pomoct pojmenovat, co mu sezení
+ * dalo, ne hledat, co bylo špatně. Na to je hodnocení 1–10.
+ */
+export const FEEDBACK_MOODS = [
+  "Nabitý",
+  "Klidný",
+  "Zamyšlený",
+  "Motivovaný",
+  "Inspirovaný",
+  "Odhodlaný",
+  "Uvolněný",
+  "Vděčný",
+  "S jasnou hlavou",
+];
 
 /**
  * Hlavička zápisu: „Středa 18. listopadu" a „Koučink · 3. sezení".

@@ -18,6 +18,7 @@ import { upcomingBirthdays } from "@/lib/profile";
 import { cookies } from "next/headers";
 import { ThemePicker } from "@/components/ThemePicker";
 import { THEME_COOKIE, parseTheme } from "@/lib/theme";
+import { formatRating, summarizeFeedback } from "@/lib/feedbackOverview";
 
 export const metadata = { title: "Klienti" };
 
@@ -42,9 +43,9 @@ export default async function AdminPage() {
     klientů je to rozdíl mezi třemi a třiceti cestami do databáze — a tahle
     obrazovka se otevírá jako první každé ráno.
   */
-  const [{ data: programs }, { data: habits }, { data: entries }] =
+  const [{ data: programs }, { data: habits }, { data: entries }, { data: feedback }] =
     ids.length === 0
-      ? [{ data: [] }, { data: [] }, { data: [] }]
+      ? [{ data: [] }, { data: [] }, { data: [] }, { data: [] }]
       : await Promise.all([
           supabase
             .from("programs")
@@ -58,9 +59,12 @@ export default async function AdminPage() {
             .in("client_id", ids)
             .gte("entry_date", addDays(today, -(HISTORY_DAYS - 1)))
             .lte("entry_date", today),
+          // Hvězdička: hodnocení a téma přibyly migrací 0009.
+          supabase.from("session_feedback").select("*"),
         ]);
 
   const birthdays = upcomingBirthdays(clients ?? [], today);
+  const feedbackSummary = summarizeFeedback(feedback ?? [], today);
 
   const rows = buildOverview({
     clients: clients ?? [],
@@ -153,6 +157,30 @@ export default async function AdminPage() {
             </Link>
           </>
         )}
+
+        <ListGroup title="Od klientů">
+          <ListRow
+            title="Zpětná vazba"
+            subtitle={
+              feedbackSummary.count === 0
+                ? "Zatím nikdo neodpověděl"
+                : [
+                    feedbackSummary.average !== null
+                      ? `Průměr ${formatRating(feedbackSummary.average)}/10`
+                      : null,
+                    feedbackSummary.lastWeek > 0
+                      ? `${feedbackSummary.lastWeek} za týden`
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || `${feedbackSummary.count} odpovědí`
+            }
+            trailing={
+              feedbackSummary.count > 0 ? String(feedbackSummary.count) : undefined
+            }
+            href="/admin/zpetna-vazba"
+          />
+        </ListGroup>
 
         <ThemePicker initial={theme} />
 

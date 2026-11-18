@@ -192,6 +192,11 @@ export default async function ClientDetailPage({
             className={sessionCount === 0 ? "text-turquoise-700" : undefined}
           />
           <ListRow
+            href={`/admin/zpetna-vazba?klient=${id}`}
+            title="Zpětná vazba"
+            subtitle="Hodnocení a co si ze sezení odnáší"
+          />
+          <ListRow
             href={`/admin/klienti/${id}/soukrome`}
             title="Soukromé"
             subtitle="Poznámky a odkazy, které klient nevidí"
