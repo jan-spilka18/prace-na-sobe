@@ -2,13 +2,19 @@ import { notFound } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Screen } from "@/components/ui/Screen";
-import { Markdown } from "@/components/Markdown";
-import { formatCzechDate, formatCzechWeekday } from "@/lib/date";
-import { SESSION_KIND_LABELS, filledSections } from "@/lib/sessionTemplate";
+import {
+  formatCzechDate,
+  formatCzechDayMonth,
+  formatCzechWeekday,
+  todayISO,
+} from "@/lib/date";
+import {
+  SESSION_KIND_LABELS,
+  filledSections,
+  sessionTopics,
+} from "@/lib/sessionTemplate";
 import { FeedbackForm } from "./FeedbackForm";
-
-/** Sekce, která se vykreslí žlutě — je to jediná část zápisu, podle které se jedná. */
-const HIGHLIGHT_SECTION = "tasks";
+import { SessionArticle } from "./SessionArticle";
 
 export default async function ClientSessionPage({
   params,
@@ -19,84 +25,91 @@ export default async function ClientSessionPage({
   const supabase = await createClient();
 
   // Koncept se sem nedostane — politika v databázi ho klientovi nevydá.
-  // Zpětná vazba se načítá souběžně se zápisem; obojí zná jen id z adresy.
-  const [{ data: session }, { data: feedback }] = await Promise.all([
-    supabase
-      .from("sessions")
-      .select("*")
-      .eq("id", id)
-      .eq("client_id", profile.id)
-      .maybeSingle(),
-    supabase
-      .from("session_feedback")
-      .select("*")
-      .eq("session_id", id)
-      .maybeSingle(),
-  ]);
+  // Zpětná vazba a pořadí sezení se načítají souběžně se zápisem.
+  const [{ data: session }, { data: feedback }, { data: all }] =
+    await Promise.all([
+      supabase
+        .from("sessions")
+        .select("*")
+        .eq("id", id)
+        .eq("client_id", profile.id)
+        .maybeSingle(),
+      supabase
+        .from("session_feedback")
+        .select("*")
+        .eq("session_id", id)
+        .maybeSingle(),
+      supabase
+        .from("sessions")
+        .select("id")
+        .eq("client_id", profile.id)
+        .order("session_date", { ascending: true })
+        .order("created_at", { ascending: true }),
+    ]);
 
   if (!session) notFound();
 
   const sections = filledSections(session.content ?? {});
+  const order = (all ?? []).findIndex((row) => row.id === session.id) + 1;
 
   return (
     <Screen
-      title={formatCzechDate(session.session_date)}
-      subtitle={`${SESSION_KIND_LABELS[session.kind]} · ${formatCzechWeekday(session.session_date)}`}
+      title={sessionTitle(session.session_date)}
+      subtitle={[
+        SESSION_KIND_LABELS[session.kind],
+        order > 0 ? `${order}. sezení` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")}
       back={{ href: "/sezeni", label: "Sezení" }}
     >
       <div className="space-y-5">
+        {/*
+          Zkratka ke zpětné vazbě jen dokud ji klient nenapsal. Pak by
+          jen strkala dolů k něčemu, co už je hotové.
+        */}
+        {!feedback && sections.length > 0 && (
+          <a
+            href="#zpetna-vazba"
+            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-night px-4 text-[14px] font-semibold text-white transition-opacity active:opacity-70"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 5v14M6 13l6 6 6-6" />
+            </svg>
+            Co si odnášíš? Napiš Honzovi
+          </a>
+        )}
+
         {sections.length === 0 ? (
           <p className="rounded-group bg-surface px-4 py-6 text-center text-[15px] text-ink-600">
             Zápis je zatím prázdný.
           </p>
         ) : (
-          <>
-            {/*
-              Jeden souvislý text s mezinadpisy, ne pět samostatných karet.
-              Zápis je souvislá úvaha o jednom sezení; rozřezaný na kartičky
-              se četl jako formulář.
-            */}
-            <article className="space-y-5 rounded-group bg-surface p-5">
-              {sections.map((section, index) =>
-                section.key === HIGHLIGHT_SECTION ? (
-                  <section
-                    key={section.key}
-                    className="rounded-card bg-sun-surface px-4 py-3.5"
-                  >
-                    <h2 className="font-display text-[19px] font-bold tracking-tight text-ink">
-                      {section.title}
-                    </h2>
-                    <Markdown source={section.body} className="mt-2" tone="sun" />
-                  </section>
-                ) : (
-                  <section key={section.key}>
-                    <h2 className="font-display text-[21px] font-bold tracking-tight text-ink">
-                      {section.title}
-                    </h2>
-                    <Markdown source={section.body} className="mt-2" />
-
-                    {/*
-                      Zkratka dolů sedí až pod prvním odstavcem, ne nad ním.
-                      Nabízet skok na konec dřív, než klient přečte shrnutí,
-                      by znamenalo pobízet ho, ať zápis přeskočí.
-                    */}
-                    {index === 0 && (
-                      <a
-                        href="#zpetna-vazba"
-                        className="mt-3 inline-block text-[15px] text-turquoise-700 underline underline-offset-4"
-                      >
-                        Přejít na tvoji zpětnou vazbu ↓
-                      </a>
-                    )}
-                  </section>
-                ),
-              )}
-            </article>
-          </>
+          <SessionArticle sections={sections} />
         )}
 
-        <FeedbackForm sessionId={session.id} feedback={feedback ?? null} />
+        <FeedbackForm
+          sessionId={session.id}
+          topics={sessionTopics(session.content)}
+          feedback={feedback ?? null}
+        />
       </div>
     </Screen>
   );
+}
+
+/** „Středa 18. listopadu" — rok jen u sezení z jiného roku. */
+function sessionTitle(date: string): string {
+  if (date.slice(0, 4) !== todayISO().slice(0, 4)) return formatCzechDate(date);
+  const weekday = formatCzechWeekday(date);
+  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${formatCzechDayMonth(date)}`;
 }

@@ -179,6 +179,27 @@ select pg_temp.check_eq(
   (select client_id from public.session_feedback),
   '22222222-2222-2222-2222-222222222222'::uuid, 'client_id zpětné vazby doplnil trigger');
 
+-- Hodnocení 1–10 a nejoblíbenější téma (migrace 0009).
+update public.session_feedback
+set rating = 8, favorite_topic = 'Pozdní usínání'
+where session_id = 'cccccccc-0000-0000-0000-000000000001';
+select pg_temp.check_eq(
+  (select rating::int from public.session_feedback), 8, 'hodnocení sezení');
+select pg_temp.check_eq(
+  (select favorite_topic from public.session_feedback), 'Pozdní usínání', 'oblíbené téma');
+select pg_temp.must_fail(
+  $$update public.session_feedback set rating = 11
+    where session_id = 'cccccccc-0000-0000-0000-000000000001'$$,
+  'hodnocení 11 neprojde');
+select pg_temp.must_fail(
+  $$update public.session_feedback set rating = 0
+    where session_id = 'cccccccc-0000-0000-0000-000000000001'$$,
+  'hodnocení 0 neprojde');
+update public.session_feedback set rating = null
+where session_id = 'cccccccc-0000-0000-0000-000000000001';
+select pg_temp.check_eq(
+  (select rating from public.session_feedback) is null, true, 'hodnocení jde nevyplnit');
+
 \echo ''
 \echo '=== Změna cíle platí jen do budoucna ==='
 insert into public.habit_targets (habit_id, target_value, effective_from)

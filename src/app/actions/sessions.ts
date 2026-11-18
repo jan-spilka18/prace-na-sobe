@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin, requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { SESSION_SECTIONS } from "@/lib/sessionTemplate";
+import {
+  SESSION_SECTIONS,
+  TOPICS_KEY,
+  sessionTopics,
+} from "@/lib/sessionTemplate";
 import type { SessionKind } from "@/lib/database.types";
 
 export type SessionResult = { error?: string; sessionId?: string };
@@ -19,6 +23,9 @@ function cleanContent(content: Record<string, string>): Record<string, string> {
     const body = (content[section.key] ?? "").trim();
     if (body !== "") cleaned[section.key] = body;
   }
+
+  const topics = sessionTopics(content);
+  if (topics.length > 0) cleaned[TOPICS_KEY] = topics.join("\n");
 
   return cleaned;
 }
@@ -118,23 +125,50 @@ export async function deleteSession(sessionId: string): Promise<SessionResult> {
 
 export type FeedbackResult = { error?: string; saved?: boolean };
 
-/** Zpětná vazba klienta po sezení. Dvě pole, nic víc. */
+/**
+ * Zpětná vazba klienta po sezení: co si odnáší, hodnocení 1–10, téma,
+ * které ho bavilo nejvíc, a jak se cítí. Nic z toho není povinné.
+ */
 export async function saveFeedback(input: {
   sessionId: string;
   feeling: string;
   takeaway: string;
+  rating: number | null;
+  favoriteTopic: string;
 }): Promise<FeedbackResult> {
   await requireProfile();
 
+  const rating =
+    input.rating === null ? null : Math.round(Number(input.rating));
+  if (rating !== null && !(rating >= 1 && rating <= 10)) {
+    return { error: "Hodnocení musí být od 1 do 10." };
+  }
+  const favoriteTopic = input.favoriteTopic.trim().replace(/\s+/g, " ");
+  if (favoriteTopic.length > 120) {
+    return { error: "Téma je nějak dlouhé. Zkus ho zkrátit." };
+  }
+
+  const base = {
+    session_id: input.sessionId,
+    feeling: input.feeling.trim(),
+    takeaway: input.takeaway.trim(),
+  };
+
   const supabase = await createClient();
-  const { error } = await supabase.from("session_feedback").upsert(
-    {
-      session_id: input.sessionId,
-      feeling: input.feeling.trim(),
-      takeaway: input.takeaway.trim(),
-    },
-    { onConflict: "session_id" },
-  );
+  let { error } = await supabase
+    .from("session_feedback")
+    .upsert(
+      { ...base, rating, favorite_topic: favoriteTopic },
+      { onConflict: "session_id" },
+    );
+
+  // Kód se nasadí dřív, než Honza v Supabase pustí migraci 0009. Do té doby
+  // sloupce chybí — uloží se aspoň zbytek, ať klient o odpověď nepřijde.
+  if (error && (error.code === "PGRST204" || error.code === "42703")) {
+    ({ error } = await supabase
+      .from("session_feedback")
+      .upsert(base, { onConflict: "session_id" }));
+  }
 
   if (error) return { error: error.message };
 

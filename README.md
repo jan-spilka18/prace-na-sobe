@@ -171,6 +171,20 @@ Přihlašovací e-mail, telefon a heslo klienta spravuješ jen ty: v detailu
 klienta **Změnit e-mail, telefon nebo heslo**. Klient je v Nastavení vidí,
 ale změnit je nemůže (od migrace `0008` to nepustí ani databáze).
 
+### Zápis ze sezení
+
+V sezení klikni na **Vložit celý zápis a rozřadit** a vlož celé shrnutí
+tak, jak ho máš (třeba z nahrávací aplikace). Aplikace podle nadpisů
+(„Klíčové body", „Další kroky"…) rozřadí text do sekcí a z hlavních bodů
+navrhne **témata pro zpětnou vazbu**. Všechno zkontroluješ a upravíš, než
+zápis publikuješ; rozřazení jde vrátit tlačítkem **Vrátit zpět**.
+Jak se která sekce smí jmenovat, je v `src/lib/sessionTemplate.ts`
+(`aliases`) — co tam chybí, stačí doplnit.
+
+Klient pod zápisem vyplní, co si z dneška odnáší, ohodnotí sezení 1–10,
+vybere téma, které ho bavilo nejvíc (nebo napíše vlastní), a jak se cítí.
+Hodnocení a téma potřebují migraci `0009`; bez ní se uloží jen zbytek.
+
 Uvítací text je v `src/lib/config.ts` jako `WELCOME_TEXT`.
 
 ## 11. Zkouška na telefonu

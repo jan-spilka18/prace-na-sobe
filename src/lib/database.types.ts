@@ -121,6 +121,10 @@ export type SessionFeedback = Timestamps & {
   client_id: string;
   feeling: string;
   takeaway: string;
+  /** 1–10, null = neodpověděl. Sloupec přibyl migrací 0009. */
+  rating?: number | null;
+  /** Téma, které klienta bavilo nejvíc. Přibylo migrací 0009. */
+  favorite_topic?: string;
 };
 
 export type SessionPrep = Timestamps & {
