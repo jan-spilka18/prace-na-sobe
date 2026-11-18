@@ -15,32 +15,44 @@ export default async function AdminSessionPage({
 
   const supabase = await createClient();
 
-  const [{ data: session }, { data: prep }, { data: feedback }, { data: all }] =
-    await Promise.all([
-      supabase
-        .from("sessions")
-        .select("*")
-        .eq("id", sessionId)
-        .eq("client_id", id)
-        .maybeSingle(),
-      supabase
-        .from("session_preps")
-        .select("content")
-        .eq("session_id", sessionId)
-        .limit(1)
-        .maybeSingle(),
-      supabase
-        .from("session_feedback")
-        .select("*")
-        .eq("session_id", sessionId)
-        .maybeSingle(),
-      supabase
-        .from("sessions")
-        .select("id, status")
-        .eq("client_id", id)
-        .order("session_date", { ascending: true })
-        .order("created_at", { ascending: true }),
-    ]);
+  const [
+    { data: session },
+    { data: prep },
+    { data: feedback },
+    { data: all },
+    { data: coachNote },
+  ] = await Promise.all([
+    supabase
+      .from("sessions")
+      .select("*")
+      .eq("id", sessionId)
+      .eq("client_id", id)
+      .maybeSingle(),
+    supabase
+      .from("session_preps")
+      .select("content")
+      .eq("session_id", sessionId)
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("session_feedback")
+      .select("*")
+      .eq("session_id", sessionId)
+      .maybeSingle(),
+    supabase
+      .from("sessions")
+      .select("id, status")
+      .eq("client_id", id)
+      .order("session_date", { ascending: true })
+      .order("created_at", { ascending: true }),
+    // Před migrací 0010 tabulka chybí: dotaz vrátí chybu, data null
+    // a poznámka je prázdná. Uložení pak řekne, co spustit.
+    supabase
+      .from("session_coach_notes")
+      .select("note")
+      .eq("session_id", sessionId)
+      .maybeSingle(),
+  ]);
 
   if (!session) notFound();
 
@@ -66,6 +78,7 @@ export default async function AdminSessionPage({
           feedback={feedback ?? null}
           clientId={id}
           order={order}
+          coachNote={coachNote?.note ?? ""}
         />
       </div>
     </Screen>

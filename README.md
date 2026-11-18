@@ -173,11 +173,17 @@ ale změnit je nemůže (od migrace `0008` to nepustí ani databáze).
 
 ### Zápis ze sezení
 
-V sezení klikni na **Vložit celý zápis a rozřadit** a vlož celé shrnutí
-tak, jak ho máš (třeba z nahrávací aplikace). Aplikace podle nadpisů
-(„Klíčové body", „Další kroky"…) rozřadí text do sekcí a z hlavních bodů
-navrhne **témata pro zpětnou vazbu**. Všechno zkontroluješ a upravíš, než
-zápis publikuješ; rozřazení jde vrátit tlačítkem **Vrátit zpět**.
+Zápis se řídí Honzovou šablonou: hlavička („Datum sezení: …", „Typ
+sezení: …") a sedm sekcí — Shrnutí sezení, Klíčová uvědomění, Závazky
+a denní návyky, Fokus do příštího sezení, Otázka k zamyšlení, Úkoly
+(„Úkol — Kdo — Do kdy — Poznámka") a Nepovinná doporučení.
+
+V sezení klikni na **Vložit celý zápis a rozřadit** a vlož celý zápis.
+Aplikace podle nadpisů rozřadí text do sekcí, z hlavičky převezme datum
+a typ, z uvědomění navrhne **témata pro zpětnou vazbu** a všechno pod
+„POZNÁMKA PRO HONZU (neposílat)" dá do **Poznámky jen pro tebe**, kterou
+klient nikdy neuvidí (migrace `0010`). Přepínačem **Náhled pro klienta**
+uvidíš zápis jeho očima. Rozřazení jde vrátit tlačítkem **Vrátit zpět**.
 Jak se která sekce smí jmenovat, je v `src/lib/sessionTemplate.ts`
 (`aliases`) — co tam chybí, stačí doplnit.
 

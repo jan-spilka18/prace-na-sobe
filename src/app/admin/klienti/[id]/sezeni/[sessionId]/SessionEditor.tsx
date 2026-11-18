@@ -17,6 +17,7 @@ import { PasteSorter } from "./PasteSorter";
 import { ClientPreview } from "./ClientPreview";
 import {
   deleteSession,
+  saveCoachNote,
   setSessionStatus,
   updateSession,
 } from "@/app/actions/sessions";
@@ -31,12 +32,15 @@ export function SessionEditor({
   feedback,
   clientId,
   order,
+  coachNote: initialCoachNote,
 }: {
   session: SessionRecord;
   feedback: SessionFeedback | null;
   clientId: string;
   /** Kolikáté sezení to pro klienta je — do hlavičky náhledu. */
   order: number;
+  /** Poznámka pro Honzu k sezení. Klient ji nevidí. */
+  coachNote: string;
 }) {
   const router = useRouter();
   const [sessionDate, setSessionDate] = useState(session.session_date);
@@ -44,15 +48,24 @@ export function SessionEditor({
   const [content, setContent] = useState<Record<string, string>>(
     session.content ?? {},
   );
+  const [coachNote, setCoachNote] = useState(initialCoachNote);
+  const [savedCoachNote, setSavedCoachNote] = useState(initialCoachNote);
   const [published, setPublished] = useState(session.status === "published");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
-  // Po rozřazení: které sekce se našly podle nadpisu a co v sekcích bylo
-  // předtím, ať jde rozřazení vrátit.
+  // Po rozřazení: co se našlo a jak vypadal zápis předtím, ať jde
+  // rozřazení vrátit celé — sekce, datum, typ i poznámka.
   const [sorted, setSorted] = useState<{
     found: string[];
-    previous: Record<string, string>;
+    fromHeader: boolean;
+    privateNote: boolean;
+    previous: {
+      content: Record<string, string>;
+      sessionDate: string;
+      kind: SessionKind;
+      coachNote: string;
+    };
   } | null>(null);
 
   const [view, setView] = useState<"edit" | "preview">("edit");
@@ -67,33 +80,56 @@ export function SessionEditor({
   }
 
   function applySorted(result: SortResult) {
-    setSorted({ found: result.found, previous: content });
+    setSorted({
+      found: result.found,
+      fromHeader: Boolean(result.meta.date || result.meta.kind),
+      privateNote: result.privateNote !== "",
+      previous: { content, sessionDate, kind, coachNote },
+    });
     setContent({
       ...result.content,
       [TOPICS_KEY]: suggestTopics(result.content).join("\n"),
     });
+    if (result.meta.date) setSessionDate(result.meta.date);
+    if (result.meta.kind) setKind(result.meta.kind);
+    if (result.privateNote) setCoachNote(result.privateNote);
     setSaved(false);
   }
 
   function undoSorted() {
     if (!sorted) return;
-    setContent(sorted.previous);
+    setContent(sorted.previous.content);
+    setSessionDate(sorted.previous.sessionDate);
+    setKind(sorted.previous.kind);
+    setCoachNote(sorted.previous.coachNote);
     setSorted(null);
     setSaved(false);
   }
 
-  function save(then?: () => void) {
+  /** Uloží zápis a poznámku pro Honzu. Vrací chybu, nebo nic. */
+  async function persist(): Promise<string | undefined> {
+    const write = await updateSession({
+      sessionId: session.id,
+      sessionDate,
+      kind,
+      content,
+    });
+    if (write.error) return write.error;
+
+    if (coachNote.trim() !== savedCoachNote.trim()) {
+      const note = await saveCoachNote({ sessionId: session.id, note: coachNote });
+      if (note.error) return note.error;
+      setSavedCoachNote(coachNote);
+    }
+    return undefined;
+  }
+
+  function save() {
     setError(undefined);
     startTransition(async () => {
-      const result = await updateSession({
-        sessionId: session.id,
-        sessionDate,
-        kind,
-        content,
-      });
-      if (result.error) return setError(result.error);
+      const failure = await persist();
+      if (failure) return setError(failure);
       setSaved(true);
-      then?.();
     });
   }
 
@@ -102,13 +138,8 @@ export function SessionEditor({
     startTransition(async () => {
       // Uloží se nejdřív obsah — publikovat rozepsaný zápis by znamenalo,
       // že klient uvidí starší verzi, než je na obrazovce.
-      const write = await updateSession({
-        sessionId: session.id,
-        sessionDate,
-        kind,
-        content,
-      });
-      if (write.error) return setError(write.error);
+      const failure = await persist();
+      if (failure) return setError(failure);
 
       const result = await setSessionStatus({
         sessionId: session.id,
@@ -164,14 +195,24 @@ export function SessionEditor({
           <div className="min-w-0 flex-1 space-y-0.5">
             <p className="text-[15px] font-semibold text-ink">
               {sorted.found.length > 0
-                ? `Rozřazeno do ${sorted.found.length} z ${SESSION_SECTIONS.length} sekcí`
+                ? `Rozřazeno do ${sorted.found.length} ${sectionsWord(sorted.found.length)}`
                 : "V textu jsem nenašel nadpisy"}
             </p>
             <p className="text-[14px] leading-snug text-ink-600">
               {sorted.found.length > 0
                 ? "Zkontroluj sekce níž a co nesedí, přepiš. Uloží se, až klikneš na Uložit."
-                : "Všechno je ve Shrnutí. Úkoly a body přesuň do jejich sekcí ručně."}
+                : "Všechno je ve Shrnutí sezení. Úkoly a body přesuň do jejich sekcí ručně."}
             </p>
+            {sorted.fromHeader && (
+              <p className="text-[14px] leading-snug text-ink-600">
+                Datum a typ sezení jsem převzal z hlavičky.
+              </p>
+            )}
+            {sorted.privateNote && (
+              <p className="text-[14px] font-semibold leading-snug text-ink">
+                Poznámku pro tebe jsem dal stranou — klient ji neuvidí.
+              </p>
+            )}
           </div>
           <button
             type="button"
@@ -221,7 +262,10 @@ export function SessionEditor({
         />
       ) : (
         <>
-          {SESSION_SECTIONS.map((section) => (
+          {SESSION_SECTIONS.filter(
+            // Starší sekce jen tam, kde v nich něco zůstalo.
+            (section) => !section.legacy || (content[section.key] ?? "").trim() !== "",
+          ).map((section) => (
             <section key={section.key} className="space-y-1.5">
               <div className="flex items-center justify-between gap-2 px-1">
                 <h2 className="text-[13px] font-semibold text-ink-600">
@@ -273,6 +317,43 @@ export function SessionEditor({
               Klient z nich vybere, co ho bavilo nejvíc, nebo napíše vlastní
               odpověď do „Jiné“. Pár slov na téma, nejvýš 8.
             </p>
+          </section>
+
+          {/*
+            Poznámka pro Honzu: část zápisu „POZNÁMKA PRO HONZU (neposílat)".
+            Ukládá se zvlášť do tabulky, kterou klient nepřečte, a v náhledu
+            pro klienta se neukazuje.
+          */}
+          <section className="space-y-2 rounded-group bg-night p-4 text-white">
+            <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden
+                className="h-4 w-4 text-sun"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3" />
+              </svg>
+              Poznámka jen pro tebe
+            </h2>
+            <p className="text-[13px] leading-snug text-white/65">
+              Věci k ověření a citlivá místa. Klient ji nikdy neuvidí.
+            </p>
+            <textarea
+              aria-label="Poznámka jen pro tebe"
+              value={coachNote}
+              rows={rowsFor(coachNote, 3)}
+              placeholder="- K ověření: …"
+              onChange={(event) => {
+                setCoachNote(event.target.value);
+                setSaved(false);
+              }}
+              className="w-full rounded-card border border-white/15 bg-white/[0.08] px-3.5 py-3 text-[15px] leading-relaxed text-white placeholder:text-white/40 focus:border-turquoise focus:outline-none focus:ring-2 focus:ring-turquoise/30"
+            />
           </section>
         </>
       )}
@@ -335,6 +416,11 @@ function rowsFor(text: string | undefined, min: number): number {
     .split("\n")
     .reduce((sum, line) => sum + Math.max(1, Math.ceil(line.length / 38)), 0);
   return Math.min(16, Math.max(min, lines + 1));
+}
+
+/** „do 1 sekce", „do 3 sekcí", „do 7 sekcí". */
+function sectionsWord(count: number): string {
+  return count === 1 ? "sekce" : "sekcí";
 }
 
 function SortChip({ filled, found }: { filled: boolean; found: boolean }) {

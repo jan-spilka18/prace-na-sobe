@@ -26,44 +26,54 @@ export type SessionSection = {
    * (viz sessionSort.ts). Doplnit sem jde cokoli, co se v zápisech objeví.
    */
   aliases: string[];
+  /**
+   * Sekce ze staršího tvaru zápisu. V editoru se ukáže jen tehdy, když
+   * v ní něco je, a klientovi se zobrazí dál — staré zápisy se nerozbijí.
+   */
+  legacy?: boolean;
 };
 
 /*
-  Pořadí je i pořadí na stránce klienta: co se povedlo jde před úkoly,
-  ať zápis nekončí seznamem povinností, ale tím, na čem se dál pracuje.
+  Sekce podle Honzovy šablony zápisu („Šablona zápisu ze sezení — pro
+  aplikaci Práce na sobě"): sedm pevných sekcí, vždy ve stejném pořadí.
+  V tomhle pořadí je klient i čte.
 */
 export const SESSION_SECTIONS: SessionSection[] = [
   {
     key: "summary",
-    title: "Shrnutí",
-    hint: "Pár vět o tom, co jsme řešili.",
+    title: "Shrnutí sezení",
+    hint: "4–6 vět: o čem jsme mluvili a kam se klient posunul.",
     aliases: [
-      "shrnuti",
       "shrnuti sezeni",
+      "shrnuti",
       "souhrn",
       "o cem jsme mluvili",
       "co jsme resili",
       "prehled",
       "uvod",
-      "kontext",
-      "tema sezeni",
       "summary",
     ],
   },
   {
     key: "key_points",
     title: "Hlavní body",
-    hint: "Co zaznělo a stojí za zapamatování.",
+    aliases: [],
+    legacy: true,
+  },
+  {
+    key: "insights",
+    title: "Klíčová uvědomění",
+    hint: "2–4 odrážky, ideálně klientovými slovy v uvozovkách.",
     aliases: [
-      "hlavni body",
+      "klicova uvedomeni",
+      "uvedomeni",
       "klicove body",
+      "hlavni body",
       "klicove myslenky",
       "hlavni myslenky",
-      "dulezite body",
       "postrehy",
       "poznatky",
       "insighty",
-      "co zaznelo",
       "key points",
       "key takeaways",
       "highlights",
@@ -72,55 +82,78 @@ export const SESSION_SECTIONS: SessionSection[] = [
   {
     key: "wins",
     title: "Co se povedlo",
+    aliases: ["co se povedlo", "povedlo se", "uspechy", "vyhry", "wins"],
+    legacy: true,
+  },
+  {
+    key: "commitments",
+    title: "Závazky a denní návyky",
+    hint: "Denní návyky v 90denní výzvě:\n- …\nDalší závazky:\n- …",
     aliases: [
-      "co se povedlo",
-      "povedlo se",
-      "uspechy",
-      "vyhry",
-      "pokrok",
-      "co funguje",
-      "wins",
+      "zavazky a denni navyky",
+      "zavazky a navyky",
+      "zavazky",
+      "denni navyky",
+      "navyky",
+    ],
+  },
+  {
+    key: "focus",
+    title: "Fokus do příštího sezení",
+    hint: "1–2 věty: na co se do příště soustředit.",
+    aliases: [
+      "fokus do pristiho sezeni",
+      "fokus do priste",
+      "fokus",
+      "focus",
+      "na cem chceme pracovat",
+      "na cem budeme pracovat",
+      "zamereni",
+    ],
+  },
+  {
+    key: "question",
+    title: "Otázka k zamyšlení",
+    hint: "Jedna otázka na dobu mezi sezeními.",
+    aliases: [
+      "otazka k zamysleni",
+      "otazka na zamysleni",
+      "otazka do priste",
+      "k zamysleni",
+      "otazka",
     ],
   },
   {
     key: "tasks",
-    title: "Úkoly do příště",
-    hint: "Na čem má klient do dalšího sezení pracovat.",
+    title: "Úkoly",
+    hint: "Jeden úkol na řádek: Úkol — Kdo — Do kdy — Poznámka",
     aliases: [
-      "ukoly do priste",
       "ukoly",
       "ukol",
+      "ukoly do priste",
       "do priste",
       "dalsi kroky",
       "akcni kroky",
       "domaci ukol",
       "domaci ukoly",
-      "zavazky",
       "co udelat",
       "action items",
       "next steps",
     ],
   },
   {
-    key: "focus",
-    title: "Na čem chceme pracovat",
-    aliases: [
-      "na cem chceme pracovat",
-      "na cem budeme pracovat",
-      "na cem pracovat",
-      "zamereni",
-      "focus",
-      "dalsi temata",
-      "oblasti rozvoje",
-      "vyzvy",
-      "priste",
-    ],
+    key: "recommendations",
+    title: "Nepovinná doporučení",
+    hint: "Tipy mimo hlavní práci, třeba sportovní. Nejsou to úkoly.",
+    aliases: ["nepovinna doporuceni", "doporuceni", "tipy", "bonus"],
   },
 ];
 
 export const SESSION_KIND_LABELS: Record<SessionKind, string> = {
   coaching: "Koučink",
   breathwork: "Dech",
+  monthly_review: "Reflexe měsíce",
+  pregame: "Předzápasový hovor",
 };
 
 /** Sekce, které mají obsah — prázdné se klientovi nezobrazují. */

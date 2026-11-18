@@ -13,7 +13,18 @@ import type { SessionKind } from "@/lib/database.types";
 export type SessionResult = { error?: string; sessionId?: string };
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const KINDS: SessionKind[] = ["coaching", "breathwork"];
+const KINDS: SessionKind[] = ["coaching", "breathwork", "monthly_review", "pregame"];
+
+/** Chyba, když kód běží dřív, než Honza v Supabase pustí novou migraci. */
+function needsMigration(error: { code?: string; message: string }): boolean {
+  return (
+    ["PGRST204", "PGRST205", "42703", "42P01", "23514"].includes(error.code ?? "") ||
+    /could not find the table|does not exist|violates check constraint/i.test(error.message)
+  );
+}
+
+const MIGRATION_HINT =
+  "Databáze čeká na aktualizaci: v Supabase spusť znovu schema.sql (SQL Editor → Run).";
 
 /** Do obsahu pustí jen klíče ze šablony — nic jiného tam nemá co dělat. */
 function cleanContent(content: Record<string, string>): Record<string, string> {
@@ -81,9 +92,32 @@ export async function updateSession(input: {
     })
     .eq("id", input.sessionId);
 
-  if (error) return { error: error.message };
+  if (error) return { error: needsMigration(error) ? MIGRATION_HINT : error.message };
 
   revalidatePath("/", "layout");
+  return {};
+}
+
+/**
+ * Poznámka pro Honzu k sezení — část zápisu „POZNÁMKA PRO HONZU
+ * (neposílat)". Leží v tabulce, kterou klient nepřečte (migrace 0010),
+ * nikdy v obsahu sezení.
+ */
+export async function saveCoachNote(input: {
+  sessionId: string;
+  note: string;
+}): Promise<SessionResult> {
+  await requireAdmin();
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("session_coach_notes")
+    .upsert(
+      { session_id: input.sessionId, note: input.note.trim() },
+      { onConflict: "session_id" },
+    );
+
+  if (error) return { error: needsMigration(error) ? MIGRATION_HINT : error.message };
   return {};
 }
 

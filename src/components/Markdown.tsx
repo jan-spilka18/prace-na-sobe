@@ -16,10 +16,13 @@ export function Markdown({
 }: {
   source: string;
   className?: string;
-  /** Na žlutém ani na tmavém podkladu není tyrkysová odrážka vidět. */
-  tone?: "default" | "sun" | "dark";
-  /** lg pro úvodní shrnutí, které se čte jako perex. */
-  size?: "base" | "lg";
+  /**
+   * Na žlutém ani na tmavém podkladu není tyrkysová odrážka vidět.
+   * accent: tmavý text na plné tyrkysové, v obou režimech stejný.
+   */
+  tone?: "default" | "sun" | "dark" | "accent";
+  /** lg pro úvodní shrnutí a citáty, xl pro fokus a otázku k zamyšlení. */
+  size?: "base" | "lg" | "xl";
   /** badge: číslo v kolečku — pro úkoly, ať se dají odškrtávat očima. */
   numbers?: "plain" | "badge";
 }) {
@@ -31,19 +34,33 @@ export function Markdown({
     prvek na stránce a text se kvůli ní hůř četl jako souvislá úvaha.
   */
   const marker =
-    tone === "sun" ? "bg-ink/50" : tone === "dark" ? "bg-sun" : "bg-ink/40";
+    tone === "sun"
+      ? "bg-ink/50"
+      : tone === "dark"
+        ? "bg-sun"
+        : tone === "accent"
+          ? "bg-on-sun/50"
+          : "bg-ink/40";
   const counter =
     tone === "sun"
       ? "text-ink/60"
       : tone === "dark"
         ? "text-sun"
-        : "text-turquoise-700";
+        : tone === "accent"
+          ? "text-on-sun/70"
+          : "text-turquoise-700";
   // Barva textu patří sem, ne do className volajícího: cn() třídy jen
   // slepuje, takže by se text-ink a text-white přebíjely podle pořadí
   // v CSS, ne podle pořadí v zápisu.
-  const text = tone === "dark" ? "text-white" : "text-ink";
+  const text =
+    tone === "dark" ? "text-white" : tone === "accent" ? "text-on-sun" : "text-ink";
   // Velikost taky sem, ze stejného důvodu jako barva.
-  const fontSize = size === "lg" ? "text-[17px] leading-[1.6]" : "text-[16px] leading-relaxed";
+  const fontSize =
+    size === "xl"
+      ? "text-[19px] leading-snug"
+      : size === "lg"
+        ? "text-[17px] leading-[1.6]"
+        : "text-[16px] leading-relaxed";
 
   return (
     <div className={cn("space-y-3", fontSize, text, className)}>

@@ -10,7 +10,7 @@ export type HabitType = "boolean" | "minutes" | "reps";
 export type EntryStatus = "done" | "missed";
 /** `rest` = den, na který nepřipadá žádný návyk. Klient nic nezanedbal. */
 export type DayStatus = "complete" | "incomplete" | "empty" | "rest";
-export type SessionKind = "coaching" | "breathwork";
+export type SessionKind = "coaching" | "breathwork" | "monthly_review" | "pregame";
 export type SessionStatus = "draft" | "published";
 export type UserRole = "admin" | "client";
 export type ProgramStatus = "active" | "completed" | "archived";
@@ -127,6 +127,12 @@ export type SessionFeedback = Timestamps & {
   favorite_topic?: string;
 };
 
+/** Poznámka pro Honzu k sezení — klient ji nevidí. Migrace 0010. */
+export type SessionCoachNote = Timestamps & {
+  session_id: string;
+  note: string;
+};
+
 export type SessionPrep = Timestamps & {
   id: string;
   session_id: string;
@@ -217,6 +223,7 @@ export type Database = {
       sessions: TableDef<SessionRecord, Audit | "published_at">;
       session_feedback: TableDef<SessionFeedback, Audit | "client_id">;
       session_preps: TableDef<SessionPrep, Audit>;
+      session_coach_notes: TableDef<SessionCoachNote, "created_at" | "updated_at">;
       client_notes: TableDef<ClientNote, Audit>;
       client_links: TableDef<ClientLink, Audit>;
       notification_settings: TableDef<NotificationSettings, "created_at" | "updated_at">;

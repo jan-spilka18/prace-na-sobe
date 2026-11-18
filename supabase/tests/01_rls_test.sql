@@ -96,6 +96,8 @@ insert into public.sessions (id, client_id, session_date, kind, status) values
 
 insert into public.session_preps (session_id, content)
   values ('cccccccc-0000-0000-0000-000000000001', 'Soukromá příprava kouče');
+insert into public.session_coach_notes (session_id, note)
+  values ('cccccccc-0000-0000-0000-000000000001', 'K ověření: termín nahrávky');
 insert into public.client_notes (client_id, body)
   values ('22222222-2222-2222-2222-222222222222', 'Soukromá poznámka');
 insert into public.client_links (client_id, title, url)
@@ -113,6 +115,11 @@ select pg_temp.check_eq((select count(*)::int from public.habit_targets), 2, 'vi
 
 \echo '--- Soukromý prostor kouče musí být prázdný ---'
 select pg_temp.check_eq((select count(*)::int from public.session_preps), 0, 'přípravy');
+select pg_temp.check_eq((select count(*)::int from public.session_coach_notes), 0, 'poznámky pro Honzu ke sezení');
+select pg_temp.must_fail(
+  $$insert into public.session_coach_notes (session_id, note)
+    values ('cccccccc-0000-0000-0000-000000000002', 'x')$$,
+  'zapsat si poznámku pro Honzu');
 select pg_temp.check_eq((select count(*)::int from public.client_notes), 0, 'soukromé poznámky');
 select pg_temp.check_eq((select count(*)::int from public.client_links), 0, 'odkazy');
 select pg_temp.check_eq((select count(*)::int from public.app_settings), 0, 'nastavení aplikace');
@@ -300,7 +307,18 @@ select pg_temp.check_eq((select count(*)::int from public.profiles), 3, 'všechn
 select pg_temp.check_eq((select count(*)::int from public.programs), 2, 'všechny programy');
 select pg_temp.check_eq((select count(*)::int from public.sessions), 2, 'koncept i publikované');
 select pg_temp.check_eq((select count(*)::int from public.session_preps), 1, 'přípravy');
+select pg_temp.check_eq((select count(*)::int from public.session_coach_notes), 1, 'poznámky pro Honzu ke sezení');
 select pg_temp.check_eq((select count(*)::int from public.client_notes), 1, 'soukromé poznámky');
+
+\echo '--- Nové typy sezení (migrace 0010) ---'
+update public.sessions set kind = 'pregame' where id = 'cccccccc-0000-0000-0000-000000000002';
+update public.sessions set kind = 'monthly_review' where id = 'cccccccc-0000-0000-0000-000000000002';
+select pg_temp.check_eq(
+  (select kind from public.sessions where id = 'cccccccc-0000-0000-0000-000000000002'),
+  'monthly_review', 'reflexe měsíce');
+select pg_temp.must_fail(
+  $$update public.sessions set kind = 'party' where id = 'cccccccc-0000-0000-0000-000000000002'$$,
+  'neznámý typ sezení');
 select pg_temp.check_eq((select count(*)::int from public.app_settings), 1, 'nastavení aplikace');
 select pg_temp.check_eq(
   (select (value -> 'consecutive_missed_days')::int from public.app_settings where key = 'patterns'),
@@ -319,6 +337,7 @@ select pg_temp.check_eq((select count(*)::int from public.habits), 1, 'zbylé n�
 select pg_temp.check_eq((select count(*)::int from public.habit_entries), 0, 'zbylé záznamy');
 select pg_temp.check_eq((select count(*)::int from public.sessions), 0, 'zbylá sezení');
 select pg_temp.check_eq((select count(*)::int from public.session_preps), 0, 'zbylé přípravy');
+select pg_temp.check_eq((select count(*)::int from public.session_coach_notes), 0, 'zbylé poznámky ke sezení');
 select pg_temp.check_eq((select count(*)::int from public.client_notes), 0, 'zbylé poznámky');
 select pg_temp.check_eq((select count(*)::int from public.visions), 0, 'zbylé vize');
 select pg_temp.check_eq((select count(*)::int from public.notification_settings), 2, 'zbylá nastavení');

@@ -1,4 +1,5 @@
 import { SESSION_SECTIONS } from "@/lib/sessionTemplate";
+import type { SessionKind } from "@/lib/database.types";
 
 /*
   Rozřazení vloženého zápisu do sekcí.
@@ -18,6 +19,13 @@ export type SortResult = {
   content: Record<string, string>;
   /** Sekce, které se našly podle nadpisu. */
   found: string[];
+  /** Co se dalo vyčíst z hlavičky („Datum sezení: …", „Typ sezení: …"). */
+  meta: { date?: string; kind?: SessionKind };
+  /**
+   * Všechno od „POZNÁMKA PRO HONZU (neposílat)" dál. Do obsahu zápisu
+   * se to nedostane — ten čte klient.
+   */
+  privateNote: string;
 };
 
 const FALLBACK = SESSION_SECTIONS[0].key;
@@ -67,15 +75,84 @@ function markedHeading(line: string): boolean {
   );
 }
 
+/** Řádek hlavičky: „Popisek: hodnota" s popiskem ze šablony. */
+const HEADER = /^(klient|datum sezeni|datum|sezeni c|cislo sezeni|tyden programu|typ sezeni|typ)\.?\s*:\s*(.*)$/;
+
+/** Oddělovač „---" nad poznámkou pro Honzu. Do zápisu se nepřenáší. */
+const RULE = /^(-{3,}|\*{3,}|_{3,})$/;
+
+/** Začátek části, kterou klient nesmí vidět. */
+function privateStart(text: string): boolean {
+  const name = plainLabel(text);
+  return (
+    name.includes("neposilat") ||
+    name.startsWith("poznamka pro honzu") ||
+    name.startsWith("poznamka pro kouce") ||
+    name.startsWith("zapis pro kouce") ||
+    name.startsWith("rozbor pro kouce")
+  );
+}
+
+/** „12.11.2026", „12. 11. 2026" nebo „2026-11-12" → ISO datum. */
+export function parseCzechDate(value: string): string | undefined {
+  const czech = value.match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/);
+  const iso = value.match(/(\d{4})-(\d{2})-(\d{2})/);
+  const [y, m, d] = czech
+    ? [Number(czech[3]), Number(czech[2]), Number(czech[1])]
+    : iso
+      ? [Number(iso[1]), Number(iso[2]), Number(iso[3])]
+      : [0, 0, 0];
+  if (!y) return undefined;
+
+  const date = new Date(Date.UTC(y, m - 1, d));
+  if (date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) return undefined;
+  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+export function parseSessionKind(value: string): SessionKind | undefined {
+  const name = plainLabel(value);
+  if (name.includes("reflexe")) return "monthly_review";
+  if (name.includes("zapas")) return "pregame";
+  if (name.includes("dech") || name.includes("breath")) return "breathwork";
+  if (name.includes("koucink") || name.includes("coaching")) return "coaching";
+  return undefined;
+}
+
 export function sortSessionText(raw: string): SortResult {
   const lines: Record<string, string[]> = {};
   for (const section of SESSION_SECTIONS) lines[section.key] = [];
   const found = new Set<string>();
+  const meta: SortResult["meta"] = {};
+  const privateLines: string[] = [];
 
   let current = FALLBACK;
+  let inPrivate = false;
 
   for (const line of raw.replace(/\r\n?/g, "\n").split("\n")) {
     const text = line.trim();
+
+    // Od poznámky pro Honzu dál už nic nepatří klientovi.
+    if (inPrivate) {
+      privateLines.push(line);
+      continue;
+    }
+    if (text !== "" && !BULLET.test(text) && privateStart(text)) {
+      inPrivate = true;
+      continue;
+    }
+    if (RULE.test(text)) continue;
+
+    // Hlavička nad první sekcí: datum a typ se převezmou, zbytek
+    // (jméno, číslo sezení, týden) si aplikace ví sama.
+    if (found.size === 0) {
+      const header = plainLabel(text).match(HEADER);
+      if (header) {
+        const value = text.slice(text.indexOf(":") + 1).trim();
+        if (header[1].startsWith("datum")) meta.date = parseCzechDate(value) ?? meta.date;
+        if (header[1].startsWith("typ")) meta.kind = parseSessionKind(value) ?? meta.kind;
+        continue;
+      }
+    }
 
     if (text !== "" && !BULLET.test(text)) {
       const marked = markedHeading(text);
@@ -83,7 +160,12 @@ export function sortSessionText(raw: string): SortResult {
       // jako sekce. U zjevného nadpisu stačí, že tak začíná.
       const key = sectionFor(text, marked);
 
-      if (key) {
+      // Podnadpis uvnitř sekce, který se jmenuje jako ona sama
+      // („Denní návyky v 90denní výzvě:" pod „Závazky a denní návyky"),
+      // je obsah, ne nový nadpis — jinak by zmizel.
+      const subLabel = key === current && found.has(key) && !text.startsWith("#");
+
+      if (key && !subLabel) {
         current = key;
         found.add(key);
         continue;
@@ -92,7 +174,7 @@ export function sortSessionText(raw: string): SortResult {
       // „Úkoly: zavolat do banky" — nadpis i obsah na jednom řádku.
       const inline = text.match(/^([^:]{2,40}):\s+(.+)$/);
       const inlineKey = inline ? sectionFor(inline[1], false) : null;
-      if (inline && inlineKey) {
+      if (inline && inlineKey && inlineKey !== current) {
         current = inlineKey;
         found.add(inlineKey);
         lines[current].push(inline[2]);
@@ -121,13 +203,15 @@ export function sortSessionText(raw: string): SortResult {
   return {
     content,
     found: SESSION_SECTIONS.map((s) => s.key).filter((key) => found.has(key)),
+    meta,
+    privateNote: privateLines.join("\n").replace(/\n{3,}/g, "\n\n").trim(),
   };
 }
 
 /*
   Témata pro zpětnou vazbu („Co tě dnes bavilo nejvíc?").
 
-  Navrhují se z hlavních bodů a z toho, na čem se bude pracovat — každá
+  Navrhují se z klíčových uvědomění a z fokusu do příštího sezení — každá
   odrážka je jedno téma. Téma má být pár slov, ne věta: když je v odrážce
   něco tučně, je to ono; jinak se vezme začátek před pomlčkou nebo
   dvojtečkou, a když je pořád dlouhý, zkrátí se na celá slova.
@@ -137,7 +221,7 @@ export function sortSessionText(raw: string): SortResult {
 export const MAX_TOPICS = 6;
 const TOPIC_LENGTH = 40;
 
-const TOPIC_SOURCES = ["key_points", "focus"];
+const TOPIC_SOURCES = ["insights", "key_points", "focus"];
 
 export function suggestTopics(content: Record<string, string>): string[] {
   const topics: string[] = [];
@@ -158,14 +242,18 @@ export function suggestTopics(content: Record<string, string>): string[] {
 }
 
 function topicFrom(line: string): string | null {
+  // Uvědomění bývají citace klienta v uvozovkách — téma jsou slova, ne uvozovky.
+  line = line.replace(/[„“”"«»]/g, "").trim();
   const bold = line.match(/\*\*([^*]+)\*\*/);
   let topic = bold ? bold[1] : line.replace(/\*\*|__|_/g, "");
 
   if (!bold) {
     // Začátek do první pomlčky, dvojtečky nebo čárky — tam věta obvykle
     // přechází od tématu k vysvětlení.
+    // Jen když začátek dává smysl sám o sobě: „Sledovat, jak rychle…"
+    // by uřízlo jediné slovo, a to téma není.
     const head = topic.split(/\s[–—-]\s|:\s|,\s/)[0];
-    if (head.length >= 4) topic = head;
+    if (head.length >= 4 && head.trim().split(/\s+/).length >= 2) topic = head;
   }
 
   topic = topic.replace(/[.!?;:,]+$/, "").trim();
