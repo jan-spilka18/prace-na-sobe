@@ -14,12 +14,27 @@ type FilledSection = SessionSection & { body: string };
  * klientovy a Honzovy. Klient tak pozná, co je co, i bez čtení nadpisů.
  */
 export function SessionArticle({ sections }: { sections: FilledSection[] }) {
+  // Úkoly a doporučení jsou jedna karta: obojí je „co dělat do příště",
+  // jen jedno povinně a druhé podle chuti.
+  const tasks = sections.find((section) => section.key === "tasks");
+  const recommendations = sections.find((section) => section.key === "recommendations");
+  const visible = sections.filter(
+    (section) => !(section.key === "recommendations" && tasks),
+  );
+
   return (
     <article className="space-y-7 rounded-group bg-surface px-5 py-6">
-      {sections.map((section, index) => (
+      {visible.map((section, index) => (
         <div key={section.key} className="space-y-7">
-          <SectionBlock section={section} />
-          {section.key === "summary" && index < sections.length - 1 && (
+          {section.key === "tasks" || section.key === "recommendations" ? (
+            <TasksAndRecommendations
+              tasks={tasks?.body ?? ""}
+              recommendations={recommendations?.body ?? ""}
+            />
+          ) : (
+            <SectionBlock section={section} />
+          )}
+          {section.key === "summary" && index < visible.length - 1 && (
             <hr className="border-hairline" />
           )}
         </div>
@@ -38,10 +53,6 @@ function SectionBlock({ section }: { section: FilledSection }) {
       return <Focus section={section} />;
     case "question":
       return <Question section={section} />;
-    case "tasks":
-      return <Tasks section={section} />;
-    case "recommendations":
-      return <Recommendations section={section} />;
     case "wins":
       return <Wins section={section} />;
     default:
@@ -215,38 +226,76 @@ function Question({ section }: { section: FilledSection }) {
   );
 }
 
-/** Úkoly: klientovy s číslem a termínem, pod nimi co udělá Honza. */
-function Tasks({ section }: { section: FilledSection }) {
-  const { tasks, rest } = parseTasks(section.body);
-  const mine = tasks.filter((task) => !task.byCoach);
-  const coach = tasks.filter((task) => task.byCoach);
+/**
+ * Úkoly a doporučení v jedné kartě.
+ *
+ * Úkoly klienta nahoře, očíslované, s termínem a s tím, kdo s kým, jako
+ * štítky — ne slité do věty. Pod nimi, co udělá Honza. Doporučení až na
+ * konci a tišeji: nejsou povinná, takže nesmí vypadat jako úkol.
+ */
+function TasksAndRecommendations({
+  tasks: tasksBody,
+  recommendations,
+}: {
+  tasks: string;
+  recommendations: string;
+}) {
+  const tasks = parseTasks(tasksBody);
+  const mine = tasks.filter((task) => task.whoKind !== "coach");
+  const coach = tasks.filter((task) => task.whoKind === "coach");
+  const tips = sectionLines(recommendations);
+
+  const title =
+    tasks.length > 0 && tips.length > 0
+      ? "Úkoly a doporučení"
+      : tasks.length > 0
+        ? "Úkoly"
+        : "Doporučení";
 
   return (
-    <section className="space-y-3.5 rounded-card bg-sun-surface px-4 py-4">
+    <section className="space-y-4 rounded-card bg-sun-surface px-4 py-4">
       <h2 className="font-display text-[19px] font-extrabold tracking-tight text-ink">
-        {section.title}
+        {title}
       </h2>
 
       {mine.length > 0 && (
-        <ol className="space-y-3.5">
-          {mine.map((task, index) => (
-            <TaskItem key={index} task={task} number={index + 1} />
-          ))}
-        </ol>
+        <TaskGroup label={coach.length > 0 || tips.length > 0 ? "Na tobě" : null}>
+          <ol className="space-y-3.5">
+            {mine.map((task, index) => (
+              <TaskItem key={index} task={task} number={index + 1} />
+            ))}
+          </ol>
+        </TaskGroup>
       )}
 
-      {/* Starší zápisy mají úkoly jako odrážky, ne podle šablony. */}
-      {rest && <Markdown source={rest} tone="sun" numbers="badge" />}
-
       {coach.length > 0 && (
-        <div className="space-y-2.5 border-t border-ink/10 pt-3">
-          <p className="text-[12px] font-bold uppercase tracking-[0.1em] text-ink/60">
-            Co pro tebe udělá Honza
-          </p>
-          <ul className="space-y-2.5">
+        <TaskGroup label="Co pro tebe udělá Honza">
+          <ul className="space-y-3">
             {coach.map((task, index) => (
               <TaskItem key={index} task={task} />
             ))}
+          </ul>
+        </TaskGroup>
+      )}
+
+      {tips.length > 0 && (
+        <div className="space-y-2.5 rounded-card bg-surface/70 px-3.5 py-3">
+          <p className="text-[12px] font-bold uppercase tracking-[0.1em] text-ink/60">
+            Doporučení · nepovinné
+          </p>
+          <ul className="space-y-2.5">
+            {tips.map((line, index) =>
+              line.kind === "label" ? (
+                <li key={index} className="pt-1 text-[13px] font-semibold text-ink/70">
+                  {line.text}
+                </li>
+              ) : (
+                <li key={index} className="flex gap-2.5">
+                  <Icon path={BULB} className="mt-0.5 h-5 w-5 text-turquoise-700" />
+                  <Markdown source={line.text} />
+                </li>
+              ),
+            )}
           </ul>
         </div>
       )}
@@ -254,7 +303,28 @@ function Tasks({ section }: { section: FilledSection }) {
   );
 }
 
+function TaskGroup({
+  label,
+  children,
+}: {
+  label: string | null;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2.5">
+      {label && (
+        <p className="text-[12px] font-bold uppercase tracking-[0.1em] text-ink/60">
+          {label}
+        </p>
+      )}
+      {children}
+    </div>
+  );
+}
+
 function TaskItem({ task, number }: { task: SessionTask; number?: number }) {
+  const together = task.whoKind === "both";
+
   return (
     <li className="flex gap-3">
       {number !== undefined ? (
@@ -267,52 +337,51 @@ function TaskItem({ task, number }: { task: SessionTask; number?: number }) {
       ) : (
         <span aria-hidden className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-ink/40" />
       )}
-      <div className="min-w-0 flex-1 space-y-1">
-        <Markdown
-          source={task.task}
-          className={number !== undefined ? "font-semibold" : undefined}
-        />
-        {(task.due || task.note) && (
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] leading-snug text-ink/70">
-            {task.due && (
-              <span className="rounded-full bg-surface/70 px-2 py-0.5 text-[13px] font-semibold text-ink">
-                {task.due}
-              </span>
-            )}
-            {task.note && <span>{task.note}</span>}
-          </p>
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <Markdown source={task.task} className="font-semibold" />
+        {(task.due || together) && (
+          <div className="flex flex-wrap gap-1.5">
+            {task.due && <Chip icon={CALENDAR}>{task.due}</Chip>}
+            {together && <Chip icon={PEOPLE}>Spolu s Honzou</Chip>}
+          </div>
+        )}
+        {task.note && (
+          <p className="text-[14px] leading-snug text-ink/70">{task.note}</p>
         )}
       </div>
     </li>
   );
 }
 
-/** Nepovinná doporučení — tipy navíc, tišeji než úkoly. */
-function Recommendations({ section }: { section: FilledSection }) {
-  const lines = sectionLines(section.body);
+function Chip({ icon, children }: { icon: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-3">
-      <Heading className="text-[19px]">{section.title}</Heading>
-      <ul className="space-y-2.5">
-        {lines.map((line, index) => (
-          <li key={index} className="flex gap-3">
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden
-              className="mt-0.5 h-5 w-5 shrink-0 text-turquoise-700"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.9"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2V16h5v-.2c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z" />
-            </svg>
-            <Markdown source={line.text} />
-          </li>
-        ))}
-      </ul>
-    </section>
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-2.5 py-1 text-[13px] font-semibold leading-none text-ink">
+      <Icon path={icon} className="h-3.5 w-3.5 text-ink/60" />
+      {children}
+    </span>
+  );
+}
+
+const CALENDAR = "M4 6h16v14H4zM4 10h16M8 3v4M16 3v4";
+const PEOPLE =
+  "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M16 3.5a4 4 0 0 1 0 7.5M22 21a7 7 0 0 0-4-6.3";
+const BULB =
+  "M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2V16h5v-.2c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z";
+
+function Icon({ path, className }: { path: string; className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden
+      className={cn("shrink-0", className)}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d={path} />
+    </svg>
   );
 }
 

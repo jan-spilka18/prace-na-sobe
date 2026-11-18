@@ -1,5 +1,9 @@
 import { SESSION_SECTIONS } from "@/lib/sessionTemplate";
 import type { SessionKind } from "@/lib/database.types";
+import { parseCzechDate, plainLabel } from "@/lib/sessionText";
+import { refineTasks } from "@/lib/sessionTasks";
+
+export { parseCzechDate, plainLabel };
 
 /*
   Rozřazení vloženého zápisu do sekcí.
@@ -29,20 +33,6 @@ export type SortResult = {
 };
 
 const FALLBACK = SESSION_SECTIONS[0].key;
-
-/** Malá písmena, bez diakritiky, bez ozdob nadpisu a koncové dvojtečky. */
-export function plainLabel(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/^[#\s]+/, "")
-    .replace(/^\d+[.)]\s*/, "")
-    .replace(/\*\*|__/g, "")
-    .replace(/[:*\s]+$/, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
 /**
  * Sekce, které odpovídá popisek. `loose` dovolí za názvem ještě pokračování
@@ -91,22 +81,6 @@ function privateStart(text: string): boolean {
     name.startsWith("zapis pro kouce") ||
     name.startsWith("rozbor pro kouce")
   );
-}
-
-/** „12.11.2026", „12. 11. 2026" nebo „2026-11-12" → ISO datum. */
-export function parseCzechDate(value: string): string | undefined {
-  const czech = value.match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/);
-  const iso = value.match(/(\d{4})-(\d{2})-(\d{2})/);
-  const [y, m, d] = czech
-    ? [Number(czech[3]), Number(czech[2]), Number(czech[1])]
-    : iso
-      ? [Number(iso[1]), Number(iso[2]), Number(iso[3])]
-      : [0, 0, 0];
-  if (!y) return undefined;
-
-  const date = new Date(Date.UTC(y, m - 1, d));
-  if (date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) return undefined;
-  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
 
 export function parseSessionKind(value: string): SessionKind | undefined {
@@ -201,7 +175,9 @@ export function sortSessionText(raw: string): SortResult {
   }
 
   return {
-    content,
+    // Úkoly se ještě dočistí: otázky a tipy, které v nich skončily,
+    // se přesunou tam, kam patří.
+    content: refineTasks(content),
     found: SESSION_SECTIONS.map((s) => s.key).filter((key) => found.has(key)),
     meta,
     privateNote: privateLines.join("\n").replace(/\n{3,}/g, "\n\n").trim(),
