@@ -13,7 +13,12 @@ import type { SessionKind } from "@/lib/database.types";
   aplikaci s vybraným hodnocením, takže zpětná vazba je na jeden dotek.
 
   E-mailové aplikace (hlavně Gmail a Outlook) neumí moderní CSS. Proto
-  tabulky a styly přímo na prvcích. Soukromá poznámka pro Honzu tu být
+  tabulky a styly přímo na prvcích.
+
+  Žádné tmavé karty se světlým písmem: Gmail v tmavém režimu (hlavně na
+  iPhonu) barvy sám převrací a z bílého písma na černé kartě udělal tmavé
+  písmo na tmavém pozadí. Všude je proto tmavé písmo na světlém nebo
+  barevném podkladu — to Gmail převrátí čitelně, ať je režim jakýkoli. Soukromá poznámka pro Honzu tu být
   nemůže: leží v jiné tabulce a do `content` se nikdy nedostane.
 */
 
@@ -28,7 +33,6 @@ const C = {
   turquoise700: "#1f5f67",
   sun: "#fff0a6",
   sun700: "#8a7b21",
-  night: "#171717",
 };
 
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
@@ -65,11 +69,11 @@ export function sessionEmail(input: SessionEmailInput): SessionEmail {
 
   blocks.push(
     card(
-      C.night,
+      C.surface,
       `${brand()}
-      ${eyebrow(`Zápis ze sezení · ${heading.title}`, C.sun)}
-      <h1 style="margin:6px 0 0;font-family:${DISPLAY};font-size:28px;line-height:1.15;font-weight:800;color:#ffffff">${escapeHtml(heading.subtitle || "Sezení")}</h1>
-      <p style="margin:14px 0 0;font-family:${FONT};font-size:15px;line-height:1.55;color:#d1d1d6">Ahoj, díky za dnešek. Tady máš všechno, na čem jsme se domluvili, ať to máš po ruce.</p>`,
+      ${eyebrow(`Zápis ze sezení · ${heading.title}`, C.turquoise700)}
+      <h1 style="margin:6px 0 0;font-family:${DISPLAY};font-size:28px;line-height:1.15;font-weight:800;color:${C.ink}">${escapeHtml(heading.subtitle || "Sezení")}</h1>
+      <p style="margin:14px 0 0;font-family:${FONT};font-size:15px;line-height:1.55;color:${C.ink2}">Ahoj, díky za dnešek. Tady máš všechno, na čem jsme se domluvili, ať to máš po ruce.</p>`,
     ),
   );
 
@@ -158,7 +162,7 @@ function eyebrow(text: string, color: string): string {
 function brand(): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:14px"><tr>
     <td style="width:26px;height:26px;background:${C.turquoise};border-radius:8px;text-align:center;font-size:15px;line-height:26px">☀︎</td>
-    <td style="padding-left:8px;font-family:${DISPLAY};font-size:14px;font-weight:800;color:#ffffff">Práce na sobě</td>
+    <td style="padding-left:8px;font-family:${DISPLAY};font-size:14px;font-weight:800;color:${C.ink}">Práce na sobě</td>
   </tr></table>`;
 }
 
@@ -235,7 +239,7 @@ function tasksHtml(tasksBody: string, recommendations: string): string {
       .map((task, index) =>
         taskRow(
           task,
-          `<div style="width:24px;height:24px;border-radius:12px;background:${C.ink};color:${C.sun};text-align:center;font-family:${FONT};font-size:12px;font-weight:800;line-height:24px">${index + 1}</div>`,
+          `<div style="width:24px;height:24px;border-radius:12px;background:${C.turquoise};color:${C.ink};text-align:center;font-family:${FONT};font-size:12px;font-weight:800;line-height:24px">${index + 1}</div>`,
         ),
       )
       .join("")}</table>`);
@@ -264,21 +268,21 @@ function tasksHtml(tasksBody: string, recommendations: string): string {
 
 function feedbackCard(feedbackUrl: (rating?: number) => string): string {
   const cell = (n: number) =>
-    `<td style="padding:3px"><a href="${escapeHtml(feedbackUrl(n))}" style="display:block;height:40px;line-height:40px;border-radius:12px;background:#2c2c2e;color:#ffffff;text-align:center;text-decoration:none;font-family:${DISPLAY};font-size:15px;font-weight:800">${n}</a></td>`;
+    `<td style="padding:3px"><a href="${escapeHtml(feedbackUrl(n))}" style="display:block;height:40px;line-height:40px;border-radius:12px;background:${C.surface};color:${C.ink};text-align:center;text-decoration:none;font-family:${DISPLAY};font-size:15px;font-weight:800">${n}</a></td>`;
   const row = (from: number) =>
     `<tr>${[0, 1, 2, 3, 4].map((i) => cell(from + i)).join("")}</tr>`;
 
   return card(
-    C.night,
-    `${eyebrow("Tvoje zpětná vazba", C.sun)}
-    <p style="margin:8px 0 0;font-family:${DISPLAY};font-size:22px;line-height:1.25;font-weight:800;color:#ffffff">Jak ti dnešní sezení sedlo?</p>
-    <p style="margin:8px 0 12px;font-family:${FONT};font-size:14px;line-height:1.5;color:#aeaeb2">Klikni na číslo – otevře se aplikace s vybraným hodnocením a dopíšeš, co sis odnesl.</p>
+    C.turquoise100,
+    `${eyebrow("Tvoje zpětná vazba", C.turquoise700)}
+    <p style="margin:8px 0 0;font-family:${DISPLAY};font-size:22px;line-height:1.25;font-weight:800;color:${C.ink}">Jak ti dnešní sezení sedlo?</p>
+    <p style="margin:8px 0 12px;font-family:${FONT};font-size:14px;line-height:1.5;color:${C.ink2}">Klikni na číslo – otevře se aplikace s vybraným hodnocením a dopíšeš, co sis odnesl.</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="table-layout:fixed">${row(1)}${row(6)}</table>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:4px"><tr>
-      <td style="font-family:${FONT};font-size:12px;color:#8e8e93">nic moc</td>
-      <td style="font-family:${FONT};font-size:12px;color:#8e8e93;text-align:right">pecka</td>
+      <td style="font-family:${FONT};font-size:12px;color:${C.turquoise700}">nic moc</td>
+      <td style="font-family:${FONT};font-size:12px;color:${C.turquoise700};text-align:right">pecka</td>
     </tr></table>
-    <a href="${escapeHtml(feedbackUrl())}" style="display:block;margin-top:14px;height:50px;line-height:50px;border-radius:25px;background:${C.sun};color:${C.ink};text-align:center;text-decoration:none;font-family:${FONT};font-size:16px;font-weight:800">Napsat zpětnou vazbu →</a>`,
+    <a href="${escapeHtml(feedbackUrl())}" style="display:block;margin-top:14px;height:50px;line-height:50px;border-radius:25px;background:${C.turquoise};color:${C.ink};text-align:center;text-decoration:none;font-family:${FONT};font-size:16px;font-weight:800">Napsat zpětnou vazbu →</a>`,
   );
 }
 
