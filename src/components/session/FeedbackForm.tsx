@@ -21,13 +21,18 @@ export function FeedbackForm({
   sessionId,
   feedback,
   preview = false,
+  initialRating = null,
 }: {
   sessionId: string;
   feedback: SessionFeedback | null;
   preview?: boolean;
+  /** Hodnocení z odkazu v e-mailu (?hodnoceni=8) — jen předvyplní. */
+  initialRating?: number | null;
 }) {
   const [takeaway, setTakeaway] = useState(feedback?.takeaway ?? "");
-  const [rating, setRating] = useState<number | null>(feedback?.rating ?? null);
+  const [rating, setRating] = useState<number | null>(
+    feedback?.rating ?? initialRating,
+  );
   const [enjoyed, setEnjoyed] = useState(feedback?.favorite_topic ?? "");
   const [mood, setMood] = useState<string | null>(feedback?.feeling || null);
   const [editing, setEditing] = useState(!feedback);

@@ -10,9 +10,13 @@ import { FeedbackJump } from "@/components/session/FeedbackJump";
 
 export default async function ClientSessionPage({
   params,
+  searchParams,
 }: PageProps<"/sezeni/[id]">) {
   const profile = await requireProfile();
   const { id } = await params;
+  // Klik na číslo v e-mailu se zápisem: /sezeni/…?hodnoceni=8#zpetna-vazba
+  const raw = Number((await searchParams).hodnoceni);
+  const initialRating = Number.isInteger(raw) && raw >= 1 && raw <= 10 ? raw : null;
 
   const supabase = await createClient();
 
@@ -71,6 +75,7 @@ export default async function ClientSessionPage({
         <FeedbackForm
           sessionId={session.id}
           feedback={feedback ?? null}
+          initialRating={initialRating}
         />
       </div>
     </Screen>

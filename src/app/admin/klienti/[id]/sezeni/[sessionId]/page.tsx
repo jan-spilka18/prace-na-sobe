@@ -6,6 +6,7 @@ import { formatCzechDate } from "@/lib/date";
 import { SESSION_KIND_LABELS } from "@/lib/sessionTemplate";
 import { SessionEditor } from "./SessionEditor";
 import { PrepEditor } from "./PrepEditor";
+import { emailConfigured } from "@/lib/email";
 
 export default async function AdminSessionPage({
   params,
@@ -21,6 +22,7 @@ export default async function AdminSessionPage({
     { data: feedback },
     { data: all },
     { data: coachNote },
+    { data: client },
   ] = await Promise.all([
     supabase
       .from("sessions")
@@ -52,6 +54,7 @@ export default async function AdminSessionPage({
       .select("note")
       .eq("session_id", sessionId)
       .maybeSingle(),
+    supabase.from("profiles").select("full_name, email").eq("id", id).maybeSingle(),
   ]);
 
   if (!session) notFound();
@@ -79,6 +82,11 @@ export default async function AdminSessionPage({
           clientId={id}
           order={order}
           coachNote={coachNote?.note ?? ""}
+          email={{
+            ready: emailConfigured(),
+            to: client?.email ?? "",
+            name: client?.full_name || client?.email || "klient",
+          }}
         />
       </div>
     </Screen>

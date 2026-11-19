@@ -228,6 +228,8 @@ Zatím vypnuté. Zapnout je znamená mít plánovač, který zavolá adresu
 | `VAPID_PRIVATE_KEY` | push — **nikdy nikam kromě Vercelu** |
 | `VAPID_SUBJECT` | tvůj e-mail ve tvaru `mailto:…` |
 | `CRON_SECRET` | chrání `/api/cron/*` před cizím spuštěním |
+| `GMAIL_USER` | Gmail, ze kterého chodí e-maily se zápisem, nepovinné |
+| `GMAIL_APP_PASSWORD` | heslo pro aplikace k tomu Gmailu (jen ve Vercelu, nikdy v gitu), nepovinné |
 | `RESEND_API_KEY` | e-mail se souhrnem, nepovinné |
 | `EMAIL_FROM` | odesílatel souhrnu, nepovinné |
 | `NEXT_PUBLIC_APP_URL` | adresa v odkazu v e-mailu, nepovinné |

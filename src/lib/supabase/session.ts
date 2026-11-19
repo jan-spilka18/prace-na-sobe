@@ -49,7 +49,10 @@ export async function updateSession(request: NextRequest) {
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/prihlaseni";
-    url.searchParams.set("dal", pathname);
+    // I s parametry: odkaz z e-mailu nese hodnocení (?hodnoceni=8), které
+    // se má po přihlášení předvyplnit.
+    url.search = "";
+    url.searchParams.set("dal", pathname + request.nextUrl.search);
     return NextResponse.redirect(url);
   }
 

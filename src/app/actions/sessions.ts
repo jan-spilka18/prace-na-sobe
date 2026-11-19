@@ -6,6 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 import { SESSION_SECTIONS } from "@/lib/sessionTemplate";
 import { refineTasks } from "@/lib/sessionTasks";
 import type { SessionKind } from "@/lib/database.types";
+import { headers } from "next/headers";
+import { emailConfigured, sendEmail } from "@/lib/email";
+import { sessionEmail } from "@/lib/sessionEmail";
 
 export type SessionResult = { error?: string; sessionId?: string };
 
@@ -126,10 +129,19 @@ export async function saveCoachNote(input: {
  * Klient vidí jen publikovaná sezení — hlídá to politika v databázi,
  * ne jen tahle funkce.
  */
+export type PublishResult = SessionResult & {
+  /** Komu odešel e-mail se zápisem. */
+  emailedTo?: string;
+  /** Zápis se zveřejnil, ale e-mail neodešel — proč. */
+  emailError?: string;
+};
+
 export async function setSessionStatus(input: {
   sessionId: string;
   published: boolean;
-}): Promise<SessionResult> {
+  /** Po zveřejnění poslat klientovi e-mail se zápisem. */
+  sendEmail?: boolean;
+}): Promise<PublishResult> {
   await requireAdmin();
 
   const supabase = await createClient();
@@ -140,8 +152,83 @@ export async function setSessionStatus(input: {
 
   if (error) return { error: error.message };
 
+  let email: { emailedTo?: string; emailError?: string } = {};
+  if (input.published && input.sendEmail) {
+    const result = await deliverSessionEmail(supabase, input.sessionId);
+    email = result.error ? { emailError: result.error } : { emailedTo: result.sentTo };
+  }
+
   revalidatePath("/", "layout");
-  return {};
+  return email;
+}
+
+/** Pošle e-mail se zápisem znovu — ručně, z editoru zápisu. */
+export async function resendSessionEmail(sessionId: string): Promise<PublishResult> {
+  await requireAdmin();
+  const supabase = await createClient();
+  const result = await deliverSessionEmail(supabase, sessionId);
+  revalidatePath("/", "layout");
+  return result.error ? { emailError: result.error } : { emailedTo: result.sentTo };
+}
+
+/** Adresa aplikace pro odkazy v e-mailu. */
+async function appUrl(): Promise<string> {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (configured) return configured.replace(/\/+$/, "");
+  const list = await headers();
+  const host = list.get("x-forwarded-host") ?? list.get("host") ?? "prace-na-sobe.vercel.app";
+  const proto = list.get("x-forwarded-proto") ?? "https";
+  return `${proto}://${host}`;
+}
+
+async function deliverSessionEmail(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  sessionId: string,
+): Promise<{ error?: string; sentTo?: string }> {
+  if (!emailConfigured()) {
+    return { error: "E-maily zatím nejsou nastavené — chybí propojení s Gmailem ve Vercelu." };
+  }
+
+  const { data: session } = await supabase
+    .from("sessions")
+    .select("*")
+    .eq("id", sessionId)
+    .single();
+  if (!session) return { error: "Zápis nenalezen." };
+  if (session.status !== "published") return { error: "Zápis ještě není zveřejněný." };
+
+  const [{ data: client }, { data: published }] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", session.client_id).single(),
+    supabase
+      .from("sessions")
+      .select("id")
+      .eq("client_id", session.client_id)
+      .eq("status", "published")
+      .order("session_date", { ascending: true })
+      .order("created_at", { ascending: true }),
+  ]);
+  if (!client?.email) return { error: "Klient nemá e-mail." };
+
+  const order = (published ?? []).findIndex((row) => row.id === session.id) + 1;
+  const email = sessionEmail({
+    sessionId: session.id,
+    date: session.session_date,
+    kind: session.kind,
+    order,
+    content: session.content ?? {},
+    appUrl: await appUrl(),
+  });
+
+  const sent = await sendEmail({ to: client.email, fromName: "Honza · Práce na sobě", ...email });
+  if (!sent.ok) return { error: `E-mail neodešel: ${sent.error ?? "neznámá chyba"}` };
+
+  // Bez migrace 0013 sloupec chybí — e-mail ale odešel, to je podstatné.
+  await supabase
+    .from("sessions")
+    .update({ emailed_at: new Date().toISOString() })
+    .eq("id", session.id);
+
+  return { sentTo: client.email };
 }
 
 export async function deleteSession(sessionId: string): Promise<SessionResult> {

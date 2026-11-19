@@ -118,6 +118,8 @@ export type SessionRecord = Timestamps & {
   published_at: string | null;
   external_source: string | null;
   external_id: string | null;
+  /** Kdy klientovi odešel e-mail se zápisem. Migrace 0013. */
+  emailed_at?: string | null;
 };
 
 export type SessionFeedback = Timestamps & {

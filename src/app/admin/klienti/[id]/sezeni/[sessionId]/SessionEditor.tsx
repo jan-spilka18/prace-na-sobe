@@ -15,6 +15,7 @@ import { ClientPreview } from "./ClientPreview";
 import {
   deleteSession,
   saveCoachNote,
+  resendSessionEmail,
   setSessionStatus,
   updateSession,
 } from "@/app/actions/sessions";
@@ -30,6 +31,7 @@ export function SessionEditor({
   clientId,
   order,
   coachNote: initialCoachNote,
+  email,
 }: {
   session: SessionRecord;
   feedback: SessionFeedback | null;
@@ -38,6 +40,8 @@ export function SessionEditor({
   order: number;
   /** Poznámka pro Honzu k sezení. Klient ji nevidí. */
   coachNote: string;
+  /** E-mail se zápisem: jestli je Gmail nastavený a komu půjde. */
+  email: { ready: boolean; to: string; name: string };
 }) {
   const router = useRouter();
   const [sessionDate, setSessionDate] = useState(session.session_date);
@@ -48,6 +52,10 @@ export function SessionEditor({
   const [coachNote, setCoachNote] = useState(initialCoachNote);
   const [savedCoachNote, setSavedCoachNote] = useState(initialCoachNote);
   const [published, setPublished] = useState(session.status === "published");
+  const [emailedAt, setEmailedAt] = useState(session.emailed_at ?? null);
+  // Poslat e-mail při zveřejnění: zapnuté, dokud jeden neodešel.
+  const [sendMail, setSendMail] = useState(email.ready && !session.emailed_at);
+  const [mailNote, setMailNote] = useState<{ ok: boolean; text: string }>();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
@@ -169,16 +177,40 @@ export function SessionEditor({
       const failure = await persist();
       if (failure) return setError(failure);
 
+      const publishing = !published;
       const result = await setSessionStatus({
         sessionId: session.id,
-        published: !published,
+        published: publishing,
+        sendEmail: publishing && sendMail,
       });
       if (result.error) return setError(result.error);
 
-      setPublished(!published);
+      setPublished(publishing);
       setSaved(true);
+      reportMail(result);
     });
   }
+
+  function reportMail(result: { emailedTo?: string; emailError?: string }) {
+    if (result.emailedTo) {
+      setEmailedAt(new Date().toISOString());
+      setSendMail(false);
+      setMailNote({ ok: true, text: `E-mail se zápisem odešel na ${result.emailedTo}.` });
+    } else if (result.emailError) {
+      setMailNote({ ok: false, text: result.emailError });
+    }
+  }
+
+  function resend() {
+    setMailNote(undefined);
+    startTransition(async () => {
+      const failure = await persist();
+      if (failure) return setError(failure);
+      reportMail(await resendSessionEmail(session.id));
+    });
+  }
+
+  const previewHref = `/admin/klienti/${clientId}/sezeni/${session.id}/email`;
 
   return (
     <div className="space-y-5">
@@ -381,6 +413,71 @@ export function SessionEditor({
             ? "Klient zápis vidí. Změny se projeví hned po uložení."
             : "Klient tenhle zápis nevidí, dokud ho nepublikuješ."}
         </p>
+
+        {!published && (
+          <label
+            className={cn(
+              "flex items-start gap-3 rounded-card bg-canvas px-3.5 py-3",
+              !email.ready && "opacity-60",
+            )}
+          >
+            <input
+              type="checkbox"
+              className="mt-0.5 h-5 w-5 shrink-0 accent-[#5fc3ce]"
+              checked={sendMail}
+              disabled={!email.ready}
+              onChange={(event) => setSendMail(event.target.checked)}
+            />
+            <span className="min-w-0">
+              <span className="block text-[15px] font-semibold text-ink">
+                Poslat e-mail se zápisem
+              </span>
+              <span className="block text-[13px] leading-snug text-ink-500">
+                {!email.ready
+                  ? "Zatím nejde — chybí propojení s Gmailem ve Vercelu."
+                  : emailedAt
+                    ? `Už jednou odešel. Zaškrtni, jen když ho chceš poslat znovu.`
+                    : `Na ${email.to} hned po zveřejnění. Tvoje soukromá poznámka v něm nebude.`}
+              </span>
+            </span>
+          </label>
+        )}
+
+        {published && email.ready && (
+          <p className="text-[13px] leading-snug text-ink-500">
+            {emailedAt
+              ? `E-mail se zápisem odešel ${new Date(emailedAt).toLocaleString("cs-CZ", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}.`
+              : "E-mail se zápisem zatím neodešel."}{" "}
+            <button
+              type="button"
+              disabled={pending}
+              onClick={resend}
+              className="font-semibold text-turquoise-700"
+            >
+              {emailedAt ? "Poslat znovu" : "Poslat teď"}
+            </button>
+          </p>
+        )}
+
+        {mailNote && (
+          <p
+            className={cn(
+              "rounded-card px-3.5 py-2.5 text-[14px] leading-snug",
+              mailNote.ok ? "bg-turquoise-100 text-turquoise-700" : "bg-sun-surface text-ink",
+            )}
+          >
+            {mailNote.text}
+          </p>
+        )}
+
+        <a
+          href={previewHref}
+          target="_blank"
+          rel="noopener"
+          className="inline-block text-[14px] font-semibold text-turquoise-700"
+        >
+          Náhled e-mailu ↗
+        </a>
 
         <div className="flex gap-3">
           <Button
