@@ -57,7 +57,6 @@ export function HabitRow({
     habit.weekdays && habit.weekdays.length < 7
       ? describeWeekdays(habit.weekdays)
       : null;
-  const subtitle = targetLabel || scheduleLabel;
   const needsValue = habit.type !== "boolean";
   const hasDetail = Boolean(habit.description || habit.link_url) || needsValue;
 
@@ -108,13 +107,11 @@ export function HabitRow({
   return (
     <article
       className={cn(
-        "overflow-hidden rounded-group border transition-colors duration-200",
-        status === "done"
-          ? "border-turquoise-200 bg-turquoise-50"
-          : "border-hairline bg-surface",
+        "overflow-hidden rounded-[22px] transition-colors duration-200",
+        status === "done" ? "bg-turquoise-100" : "bg-surface",
       )}
     >
-      <div className="flex items-center gap-3 py-3.5 pl-3 pr-1.5">
+      <div className="flex items-center gap-3 py-3 pl-3 pr-1.5">
         <Tick
           status={status}
           onClick={() => choose("done")}
@@ -130,11 +127,16 @@ export function HabitRow({
           >
             {habit.title}
           </h3>
-          {(subtitle || status === "missed") && (
-            <p className="mt-0.5 text-[14px] text-ink-500">
-              {status === "missed" ? "Nesplněno" : subtitle}
-              {status === "missed" && subtitle && ` · ${subtitle}`}
-            </p>
+          {(targetLabel || scheduleLabel || status === "missed") && (
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {status === "missed" && <Chip tone="ink">Nesplněno</Chip>}
+              {targetLabel && <Chip tone="sun">{targetLabel}</Chip>}
+              {scheduleLabel && (
+                <Chip tone="plain" calendar>
+                  {scheduleLabel}
+                </Chip>
+              )}
+            </div>
           )}
         </div>
 
@@ -255,26 +257,29 @@ function Tick({
       onClick={onClick}
       aria-pressed={status === "done"}
       aria-label={label}
-      // Kolečko má 32 px, ale plocha k trefení 44 — jinak se na telefonu míjí.
-      className="group flex h-11 w-11 shrink-0 items-center justify-center"
+      className="group flex h-12 w-12 shrink-0 items-center justify-center"
     >
+      {/*
+        Fajfka je tmavá, ne bílá: bílá na tyrkysové má kontrast kolem 2 : 1
+        a za sluncem venku by nebyla vidět.
+      */}
       <span
         className={cn(
-          "flex h-9 w-9 items-center justify-center rounded-full border-2",
+          "flex h-11 w-11 items-center justify-center rounded-full border-[2.5px]",
           "transition-all duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
           "group-active:scale-90",
-          status === "done" && "scale-105 border-turquoise bg-turquoise text-white",
+          status === "done" && "border-turquoise bg-turquoise text-on-sun",
           status === "missed" && "border-ink bg-ink text-on-ink",
-          status === null && "border-hairline text-transparent",
+          status === null && "border-ink-300 text-transparent",
         )}
       >
         <svg
           viewBox="0 0 24 24"
           aria-hidden
-          className="h-[18px] w-[18px]"
+          className="h-5 w-5"
           fill="none"
           stroke="currentColor"
-          strokeWidth="3.5"
+          strokeWidth="3.2"
           strokeLinecap="round"
           strokeLinejoin="round"
         >
@@ -286,5 +291,43 @@ function Tick({
         </svg>
       </span>
     </button>
+  );
+}
+
+/** Štítek pod názvem návyku: cíl, rozvrh nebo stav. */
+function Chip({
+  tone,
+  calendar = false,
+  children,
+}: {
+  tone: "plain" | "sun" | "ink";
+  calendar?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-semibold",
+        tone === "plain" && "bg-canvas text-ink-600",
+        tone === "sun" && "bg-sun-surface text-ink",
+        tone === "ink" && "bg-ink text-on-ink",
+      )}
+    >
+      {calendar && (
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden
+          className="h-3 w-3"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4" />
+        </svg>
+      )}
+      {children}
+    </span>
   );
 }

@@ -10,7 +10,7 @@ import { Bone, LoadingLabel } from "@/components/ui/Skeleton";
  */
 export default function Loading() {
   return (
-    <Screen title={<Bone className="h-9 w-28" />} subtitle={<Bone className="mt-2 h-4 w-40" />}>
+    <Screen eyebrow={<Bone className="h-3 w-32" />} title={<Bone className="h-9 w-28" />}>
       <LoadingLabel />
       <div className="space-y-4">
         <div className="flex justify-between gap-1">

@@ -3,7 +3,7 @@ import { Bone, LoadingLabel } from "@/components/ui/Skeleton";
 
 export default function Loading() {
   return (
-    <Screen title="Sezení" subtitle="Zápisy z našich setkání">
+    <Screen eyebrow="Zápisy z našich setkání" title="Sezení">
       <LoadingLabel />
       <div className="space-y-2.5">
         <Bone className="mx-1 h-6 w-36" />

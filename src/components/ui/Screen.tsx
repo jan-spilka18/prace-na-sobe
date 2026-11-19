@@ -2,10 +2,14 @@ import Link from "next/link";
 import { cn } from "@/lib/cn";
 
 /**
- * Obrazovka s hlavičkou ve stylu iOS: malý titulek v liště nahoře
- * a velký titulek v obsahu pod ní.
+ * Obrazovka: malý štítek nad velkým nadpisem a obsah pod ním.
+ *
+ * Lišta nahoře je jen u podstránek, kde je potřeba cesta zpátky. Hlavní
+ * obrazovky ji nemají — nadpis začíná rovnou nahoře a případné tlačítko
+ * (nastavení) sedí vedle něj.
  */
 export function Screen({
+  eyebrow,
   title,
   subtitle,
   back,
@@ -13,6 +17,8 @@ export function Screen({
   children,
   className,
 }: {
+  /** Malý tyrkysový štítek nad nadpisem, verzálkami. */
+  eyebrow?: React.ReactNode;
   /** Text, nebo při načítání kostra místo něj. */
   title: React.ReactNode;
   subtitle?: React.ReactNode;
@@ -25,15 +31,15 @@ export function Screen({
     // flex-1 místo pevné výšky: obrazovka se roztáhne v layoutu,
     // takže pod ní může sedět spodní lišta.
     <div className="flex flex-1 flex-col bg-canvas">
-      {/*
-        Lišta je poloprůhledná jako na iOS, ale málo krycí barva nechá
-        prosvítat text pod ní a hlavička se stane nečitelnou. Rozostření
-        samo nestačí — na to je potřeba krytí.
-      */}
-      <header className="sticky top-0 z-20 border-b border-hairline bg-surface/95 pt-safe backdrop-blur-xl">
-        <div className="mx-auto flex h-11 w-full max-w-2xl items-center gap-2 px-4">
-          <div className="min-w-0 flex-1">
-            {back && (
+      {back && (
+        /*
+          Lišta je poloprůhledná jako na iOS, ale málo krycí barva nechá
+          prosvítat text pod ní a hlavička se stane nečitelnou. Rozostření
+          samo nestačí — na to je potřeba krytí.
+        */
+        <header className="sticky top-0 z-20 border-b border-hairline bg-surface/95 pt-safe backdrop-blur-xl">
+          <div className="mx-auto flex h-11 w-full max-w-2xl items-center gap-2 px-4">
+            <div className="min-w-0 flex-1">
               <Link
                 href={back.href}
                 className="-ml-1 inline-flex items-center gap-1 text-[17px] text-turquoise-700"
@@ -52,27 +58,36 @@ export function Screen({
                 </svg>
                 <span className="truncate">{back.label}</span>
               </Link>
-            )}
+            </div>
+            {action}
           </div>
-          {action}
-        </div>
-      </header>
+        </header>
+      )}
 
       <main
         className={cn(
           // Spodní odsazení musí přesáhnout spodní lištu, jinak se poslední
           // karta nedá doscrollovat zpod ní.
-          "mx-auto w-full max-w-2xl flex-1 px-4 pb-24 pt-4",
+          "mx-auto w-full max-w-2xl flex-1 px-4 pb-28",
+          back ? "pt-5" : "pt-safe",
           className,
         )}
       >
-        <div className="mb-5">
-          <h1 className="font-display text-[34px] font-bold leading-tight tracking-tight text-ink">
-            {title}
-          </h1>
-          {subtitle && (
-            <p className="mt-1 text-[15px] text-ink-600">{subtitle}</p>
-          )}
+        <div className={cn("mb-6 flex items-end gap-3 px-1", !back && "pt-5")}>
+          <div className="min-w-0 flex-1">
+            {eyebrow && (
+              <div className="mb-1 text-[12px] font-bold uppercase tracking-[0.12em] text-turquoise-700">
+                {eyebrow}
+              </div>
+            )}
+            <h1 className="font-display text-[34px] font-extrabold leading-[1.08] tracking-tight text-ink">
+              {title}
+            </h1>
+            {subtitle && (
+              <p className="mt-1.5 text-[15px] text-ink-600">{subtitle}</p>
+            )}
+          </div>
+          {!back && action && <div className="shrink-0">{action}</div>}
         </div>
         {children}
       </main>

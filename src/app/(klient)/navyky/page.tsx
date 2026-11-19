@@ -19,7 +19,7 @@ export default async function HabitsPage() {
 
   if (!program) {
     return (
-      <Screen title="Návyky">
+      <Screen eyebrow="Tvoje výzva" title="Návyky">
         <EmptyState
           title="Nemáš aktivní program"
           description="Návyky se zadávají k výzvě. Honza ti ji založí."
@@ -34,10 +34,7 @@ export default async function HabitsPage() {
   );
 
   return (
-    <Screen
-      title="Návyky"
-      subtitle="Co chceš dělat každý den. Kdykoli můžeš upravit."
-    >
+    <Screen eyebrow="Co děláš každý den" title="Návyky">
       <HabitList
         programId={program.id}
         habits={habits}

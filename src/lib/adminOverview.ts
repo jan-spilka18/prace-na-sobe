@@ -28,6 +28,8 @@ export type ClientRow = {
   yesterday: DayOutcome;
   streak: number;
   patterns: Pattern[];
+  /** Dny programu za posledních HISTORY_DAYS dní, dnešek včetně. */
+  history: DayOutcome[];
 };
 
 type Input = {
@@ -90,6 +92,7 @@ export function buildOverview({
         name,
         history.filter((d) => d.date <= yesterday),
       ),
+      history,
     };
   });
 }

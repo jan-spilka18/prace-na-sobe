@@ -1,10 +1,11 @@
+import { cn } from "@/lib/cn";
 import { formatTotal, type HabitStat } from "@/lib/habitStats";
 
 /**
  * Návyky jeden po druhém: jak jdou a kolik toho klient nasbíral.
  *
- * Proužek je vždycky tyrkysový, i u návyku, který drhne. Červená nebo černá
- * by z něj udělala známku ze školy — a cílem je vidět, kde to vázne,
+ * Návyk, který drhne (pod 70 %), dostane žlutou, ne červenou ani černou.
+ * Ty by z něj udělaly známku ze školy — cílem je vidět, kde to vázne,
  * ne se za to stydět.
  */
 export function HabitStatsList({
@@ -17,72 +18,75 @@ export function HabitStatsList({
   if (stats.length === 0) return null;
 
   return (
-    <section className="space-y-2.5">
-      <h2 className="px-1 font-display text-[21px] font-bold tracking-tight text-ink">
+    <section className="space-y-3">
+      <h2 className="px-1 font-display text-[22px] font-extrabold tracking-tight text-ink">
         {title}
       </h2>
 
-      <div className="space-y-2">
-        {stats.map((stat) => (
-          <article
-            key={stat.habitId}
-            className="rounded-group border border-hairline bg-surface px-4 py-3.5"
-          >
-            <div className="flex items-baseline justify-between gap-3">
-              <h3
-                className={
-                  stat.archived
-                    ? "min-w-0 truncate text-[17px] font-semibold text-ink-500"
-                    : "min-w-0 truncate text-[17px] font-semibold text-ink"
+      <div className="rounded-[24px] bg-surface px-5">
+        {stats.map((stat, index) => {
+          const struggling = stat.rate !== null && stat.rate < 70;
+          return (
+            <article
+              key={stat.habitId}
+              className={cn("py-4", index > 0 && "border-t border-hairline")}
+            >
+              <div className="flex items-baseline justify-between gap-3">
+                <h3
+                  className={cn(
+                    "min-w-0 truncate text-[17px] font-bold",
+                    stat.archived ? "text-ink-500" : "text-ink",
+                  )}
+                >
+                  {stat.title}
+                </h3>
+
+                <p
+                  className={cn(
+                    "shrink-0 font-display text-[22px] font-extrabold leading-none tabular-nums",
+                    stat.rate === null
+                      ? "text-ink-400"
+                      : struggling
+                        ? "text-sun-700"
+                        : "text-turquoise-700",
+                  )}
+                >
+                  {stat.rate === null ? "—" : `${stat.rate} %`}
+                </p>
+              </div>
+
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <span className="rounded-full bg-canvas px-2.5 py-1 text-[12px] font-bold tabular-nums text-ink-600">
+                  {stat.scheduled === 0
+                    ? "hodnotí se od zítřka"
+                    : `${stat.done} z ${stat.scheduled} dní`}
+                </span>
+                <span className="rounded-full bg-canvas px-2.5 py-1 text-[12px] font-bold text-ink-600">
+                  {stat.archived && "Ukončený · "}
+                  {formatTotal(stat.type, stat.total)}
+                </span>
+              </div>
+
+              <div
+                className="mt-3 h-1.5 overflow-hidden rounded-full bg-canvas"
+                role="img"
+                aria-label={
+                  stat.rate === null
+                    ? "Zatím bez hodnocení"
+                    : `Úspěšnost ${stat.rate} procent`
                 }
               >
-                {stat.title}
-              </h3>
-
-              <p className="shrink-0 font-display tabular-nums text-ink">
-                {stat.rate === null ? (
-                  <span className="text-[15px] text-ink-400">—</span>
-                ) : (
-                  <>
-                    <span className="text-[22px] font-bold leading-none">
-                      {stat.rate}
-                    </span>
-                    <span className="ml-0.5 text-[13px] font-semibold text-ink-500">
-                      %
-                    </span>
-                  </>
-                )}
-              </p>
-            </div>
-
-            <div className="mt-1 flex items-baseline justify-between gap-3 text-[14px] text-ink-500">
-              <span className="min-w-0 truncate">
-                {stat.archived && "Ukončený · "}
-                {formatTotal(stat.type, stat.total)}
-              </span>
-              <span className="shrink-0 tabular-nums">
-                {stat.scheduled === 0
-                  ? "hodnotí se od zítřka"
-                  : `${stat.done} z ${stat.scheduled} dní`}
-              </span>
-            </div>
-
-            <div
-              className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-canvas"
-              role="img"
-              aria-label={
-                stat.rate === null
-                  ? "Zatím bez hodnocení"
-                  : `Úspěšnost ${stat.rate} procent`
-              }
-            >
-              <div
-                className="h-full rounded-full bg-turquoise"
-                style={{ width: `${stat.rate ?? 0}%` }}
-              />
-            </div>
-          </article>
-        ))}
+                <div
+                  className={cn(
+                    "h-full rounded-full",
+                    struggling ? "bg-sun-600" : "bg-turquoise",
+                  )}
+                  style={{ width: `${stat.rate ?? 0}%` }}
+                />
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
   );

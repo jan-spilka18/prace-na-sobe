@@ -6,42 +6,39 @@ import { cn } from "@/lib/cn";
 
 type Tab = { href: string; label: string; icon: React.ReactNode };
 
+/*
+  Ikony říkají, co sekce dělá: slunce = tenhle den, rostoucí sloupce =
+  jak mi to jde, bublina s tečkami = rozhovor s Honzou, šipky dokola =
+  co opakuju. Dřív tu byla fajfka, mřížka a čáry, které nic neříkaly.
+*/
 const TABS: Tab[] = [
   {
     href: "/",
     label: "Dnes",
     icon: (
-      <path d="M4 12.5l5 5 11-11" />
+      <>
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+      </>
     ),
   },
   {
     href: "/prehled",
     label: "Přehled",
-    icon: (
-      <>
-        <rect x="3" y="3" width="7" height="7" rx="1.5" />
-        <rect x="14" y="3" width="7" height="7" rx="1.5" />
-        <rect x="3" y="14" width="7" height="7" rx="1.5" />
-        <rect x="14" y="14" width="7" height="7" rx="1.5" />
-      </>
-    ),
+    icon: <path d="M3 20h18M6 16v-3M11 16V9M16 16V5" />,
   },
   {
     href: "/sezeni",
     label: "Sezení",
     icon: (
-      <>
-        <path d="M4 5.5A1.5 1.5 0 015.5 4h13A1.5 1.5 0 0120 5.5v9A1.5 1.5 0 0118.5 16H9l-5 4z" />
-      </>
+      <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.8-.9L3 20l1.1-4.3A8.4 8.4 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5zM8 11.5h.01M12 11.5h.01M16 11.5h.01" />
     ),
   },
   {
     href: "/navyky",
     label: "Návyky",
     icon: (
-      <>
-        <path d="M4 6h16M4 12h16M4 18h10" />
-      </>
+      <path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3" />
     ),
   },
 ];
@@ -75,19 +72,25 @@ export function TabBar({
                 className={cn(
                   // Stisk je vidět okamžitě, ještě než se obrazovka načte —
                   // jinak klepnutí působí, jako by se nic nestalo.
-                  "flex min-h-[49px] flex-col items-center justify-center gap-1 py-1.5",
+                  "flex min-h-[52px] flex-col items-center justify-center gap-1 py-1.5",
                   "transition-[opacity,transform] duration-100 active:scale-95 active:opacity-60",
                   active ? "text-turquoise-700" : "text-ink-500",
                 )}
               >
-                <span className="relative">
+                {/* Aktivní ikona sedí v tyrkysové kapsli — vidět i periferně. */}
+                <span
+                  className={cn(
+                    "relative flex h-[30px] w-14 items-center justify-center rounded-full transition-colors",
+                    active && "bg-turquoise-100",
+                  )}
+                >
                   <svg
                     viewBox="0 0 24 24"
                     aria-hidden
-                    className="h-6 w-6"
+                    className="h-[22px] w-[22px]"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth={active ? 2.4 : 1.8}
+                    strokeWidth={active ? 2.3 : 1.8}
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
@@ -95,7 +98,14 @@ export function TabBar({
                   </svg>
                   {badge > 0 && <Badge count={badge} />}
                 </span>
-                <span className="text-[10px] font-medium">{tab.label}</span>
+                <span
+                  className={cn(
+                    "text-[11px]",
+                    active ? "font-extrabold" : "font-medium",
+                  )}
+                >
+                  {tab.label}
+                </span>
               </Link>
             </li>
           );
@@ -115,7 +125,7 @@ export function TabBar({
  */
 function Badge({ count }: { count: number }) {
   return (
-    <span aria-hidden className="absolute -right-2.5 -top-1.5 flex">
+    <span aria-hidden className="absolute -top-1.5 right-1 flex">
       <span className="absolute inset-0 rounded-full bg-badge motion-safe:animate-badge-pulse" />
       <span className="relative flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-badge px-1 text-[11px] font-bold leading-none tabular-nums text-white ring-2 ring-surface">
         {count > 9 ? "9+" : count}

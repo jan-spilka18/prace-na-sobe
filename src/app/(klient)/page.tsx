@@ -28,6 +28,7 @@ import { DayHero } from "@/components/habits/DayHero";
 import { VisionQuote } from "@/components/VisionCard";
 import { WeekStrip } from "@/components/habits/WeekStrip";
 import { DayStateProvider } from "@/components/habits/DayState";
+import { LastSessionFocus } from "@/components/session/LastSessionFocus";
 import { runningStreak } from "@/lib/habits";
 
 export default async function TodayPage({ searchParams }: PageProps<"/">) {
@@ -37,10 +38,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
 
   if (!program) {
     return (
-      <Screen
-        title="Práce na sobě"
-        action={<SettingsLink />}
-      >
+      <Screen eyebrow="Vítej" title="Práce na sobě" action={<SettingsLink />}>
         <EmptyState
           title="Zatím tu nic není"
           description="Honza ti výzvu založí před začátkem programu. Až bude připravená, objeví se tady."
@@ -59,16 +57,26 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
   const date = clampToProgram(requested, program.start_date, lastDate, today);
 
   /*
-    Čtyři na sobě nezávislé dotazy najednou, ne jeden po druhém. Dřív
-    obrazovka čekala na každý zvlášť a jejich čas se sčítal; teď trvá
-    jen tak dlouho jako ten nejpomalejší.
+    Nezávislé dotazy najednou, ne jeden po druhém. Dřív obrazovka čekala
+    na každý zvlášť a jejich čas se sčítal; teď trvá jen tak dlouho jako
+    ten nejpomalejší.
   */
-  const [habits, days, vision, everyHabit] = await Promise.all([
-    habitsForDay(supabase, profile.id, date),
-    programGrid(supabase, profile.id, program),
-    visionFor(supabase, program.id),
-    allHabits(supabase, profile.id),
-  ]);
+  const [habits, days, vision, everyHabit, { data: lastSession }] =
+    await Promise.all([
+      habitsForDay(supabase, profile.id, date),
+      programGrid(supabase, profile.id, program),
+      visionFor(supabase, program.id),
+      allHabits(supabase, profile.id),
+      // Poslední publikované sezení (koncepty klient nevidí) — kvůli
+      // fokusu a úkolům do příště.
+      supabase
+        .from("sessions")
+        .select("id, content")
+        .eq("client_id", profile.id)
+        .order("session_date", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
   // Rozlišuje „ještě si žádné nezadal" od „na dnešek žádný nepřipadá".
   const hasHabits = everyHabit.some((habit) => !habit.archived_at);
   const streak = runningStreak(days, date, addDays(date, -1));
@@ -84,14 +92,15 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
 
   return (
     <Screen
-      title={capitalize(describeDay(date, today))}
-      subtitle={
-        notStarted ? (
-          `Program začíná ${formatCzechDate(program.start_date)}`
-        ) : (
-          <DateLine date={date} titleIsDate={daysBack > 2} />
-        )
+      eyebrow={
+        notStarted
+          ? `Program začíná ${formatCzechDate(program.start_date)}`
+          : // U starších dnů nese datum už sám nadpis, zbyde den v týdnu.
+            daysBack > 2
+            ? formatCzechWeekday(date)
+            : `${formatCzechWeekday(date)} · ${formatCzechDayMonth(date)}`
       }
+      title={capitalize(describeDay(date, today))}
       action={<SettingsLink />}
     >
       {/*
@@ -105,7 +114,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
           habits.map((habit) => [habit.id, habit.entry?.status ?? null]),
         )}
       >
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="space-y-1.5">
             <WeekStrip
               days={days}
@@ -114,7 +123,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
               hrefPrefix="/?den="
             />
             {daysBack > 0 && (
-              <p className="text-center text-[13px] text-ink-500">
+              <p className="pt-1 text-center text-[13px] font-medium text-ink-500">
                 {daysBack === 1
                   ? "Doplňuješ včerejšek"
                   : `Doplňuješ ${daysBack} dní zpět`}
@@ -146,11 +155,17 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
                 title="Dneska máš volno"
                 description="Na tenhle den sis žádný návyk nenaplánoval. Sérii ti to nezlomí."
               />
+              {lastSession && (
+                <LastSessionFocus
+                  sessionId={lastSession.id}
+                  content={lastSession.content ?? {}}
+                />
+              )}
               <VisionQuote body={vision} />
             </>
           ) : (
             <CelebrationProvider>
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <DayHero
                   dayNumber={dayNumber}
                   durationDays={program.duration_days}
@@ -160,7 +175,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
                 />
                 <section className="space-y-2.5">
                   <div className="flex items-baseline justify-between gap-3 px-1">
-                    <h2 className="font-display text-[21px] font-bold tracking-tight text-ink">
+                    <h2 className="font-display text-[22px] font-extrabold tracking-tight text-ink">
                       Tvoje dnešní kroky
                     </h2>
                     <span className="shrink-0 text-[14px] text-ink-500">
@@ -185,9 +200,16 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
                 </section>
 
                 {/*
-                  Vize je pod návyky schválně. Odškrtnutí je jediná věc, kvůli
-                  které sem člověk denně chodí — nemá kvůli ní nic přeskakovat.
+                  Fokus a vize jsou pod návyky schválně. Odškrtnutí je jediná
+                  věc, kvůli které sem člověk denně chodí — nemá kvůli ní nic
+                  přeskakovat.
                 */}
+                {lastSession && (
+                  <LastSessionFocus
+                    sessionId={lastSession.id}
+                    content={lastSession.content ?? {}}
+                  />
+                )}
                 <VisionQuote body={vision} />
               </div>
             </CelebrationProvider>
@@ -199,44 +221,6 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
 }
 
 
-
-/**
- * Datum pod titulkem.
- *
- * Není to věta, ale složená linka: den s měsícem výrazným písmem, za ním verzálkami
- * den v týdnu. Rok tu nikdo nehledá — devadesátidenní výzva se vejde do
- * jednoho a v Přehledu stojí celý rozsah.
- *
- * U starších dnů nese datum už sám titulek, takže by se tu jen opakovalo
- * a zbyde z něj den v týdnu.
- */
-function DateLine({
-  date,
-  titleIsDate,
-}: {
-  date: string;
-  titleIsDate: boolean;
-}) {
-  const weekday = (
-    <span className="text-[12px] font-semibold uppercase tracking-[0.1em] text-ink-500">
-      {formatCzechWeekday(date)}
-    </span>
-  );
-
-  if (titleIsDate) return weekday;
-
-  return (
-    <span className="flex items-baseline gap-2">
-      <span className="font-display text-[17px] font-semibold text-ink">
-        {formatCzechDayMonth(date)}
-      </span>
-      <span aria-hidden className="text-ink-300">
-        ·
-      </span>
-      {weekday}
-    </span>
-  );
-}
 
 function clampToProgram(
   requested: string,

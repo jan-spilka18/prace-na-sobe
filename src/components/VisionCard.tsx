@@ -39,7 +39,7 @@ export function VisionCard({
 
   if (editing) {
     return (
-      <section className="space-y-3 rounded-group bg-surface p-4">
+      <section className="space-y-3 rounded-[24px] bg-surface p-5">
         <h2 className="font-display text-[19px] font-semibold text-ink">
           Moje vize
         </h2>
@@ -79,7 +79,7 @@ export function VisionCard({
 
   if (saved === "") {
     return (
-      <section className="rounded-group bg-surface p-5 text-center">
+      <section className="rounded-[24px] bg-surface p-5 text-center">
         <h2 className="font-display text-[19px] font-semibold text-ink">
           Moje vize
         </h2>
@@ -100,7 +100,7 @@ export function VisionCard({
   }
 
   return (
-    <section className="rounded-group bg-surface p-5">
+    <section className="rounded-[24px] bg-sun-surface p-5">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-500">
           Moje vize
@@ -137,34 +137,17 @@ export function VisionQuote({ body }: { body: string }) {
       type="button"
       onClick={() => setExpanded((value) => !value)}
       aria-expanded={expanded}
-      className="mt-2 flex w-full items-start gap-3 rounded-group bg-sun-surface px-4 py-3.5 text-left"
+      className="flex w-full flex-col gap-2.5 rounded-[24px] bg-sun-surface px-5 py-5 text-left"
     >
-      <span className="min-w-0 flex-1">
-        <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink/55">
+      <span className="flex w-full items-center justify-between gap-3">
+        <span className="text-[12px] font-bold uppercase tracking-[0.12em] text-ink/60">
           Připomeň si vizi a důvod proč
         </span>
-        {/*
-          `line-clamp` si nastavuje vlastní display, takže se s `block`
-          perou o to, který vyhraje. Buď jedno, nebo druhé — nikdy obojí.
-        */}
-        <span
-          className={cn(
-            "mt-1.5 whitespace-pre-line font-display text-[17px] font-semibold leading-snug text-ink",
-            expanded ? "block" : "line-clamp-2",
-          )}
-        >
-          {body}
-        </span>
-      </span>
-
-      <span
-        aria-hidden
-        className="-mr-1 flex h-7 w-7 shrink-0 items-center justify-center text-ink/45"
-      >
         <svg
           viewBox="0 0 24 24"
+          aria-hidden
           className={cn(
-            "h-5 w-5 transition-transform duration-200",
+            "h-5 w-5 shrink-0 text-ink/45 transition-transform duration-200",
             expanded && "rotate-180",
           )}
           fill="none"
@@ -175,6 +158,27 @@ export function VisionQuote({ body }: { body: string }) {
         >
           <path d="M6 9l6 6 6-6" />
         </svg>
+      </span>
+
+      <span className="flex gap-2.5">
+        <span
+          aria-hidden
+          className="-mt-1 shrink-0 font-display text-[44px] font-extrabold leading-none text-ink"
+        >
+          „
+        </span>
+        {/*
+          `line-clamp` si nastavuje vlastní display, takže se s `block`
+          perou o to, který vyhraje. Buď jedno, nebo druhé — nikdy obojí.
+        */}
+        <span
+          className={cn(
+            "min-w-0 whitespace-pre-line font-display text-[18px] font-bold leading-snug text-ink",
+            expanded ? "block" : "line-clamp-3",
+          )}
+        >
+          {body}
+        </span>
       </span>
     </button>
   );

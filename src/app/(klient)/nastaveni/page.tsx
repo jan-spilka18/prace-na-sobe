@@ -18,7 +18,7 @@ export default async function SettingsPage() {
   const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
 
   return (
-    <Screen title="Nastavení" subtitle={profile.full_name || profile.email}>
+    <Screen eyebrow={profile.full_name || profile.email} title="Nastavení">
       <div className="space-y-5">
         {/*
           Dokud na serveru nejsou klíče, notifikace nikdo zapnout nemůže.

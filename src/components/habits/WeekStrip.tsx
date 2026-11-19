@@ -169,7 +169,33 @@ export function WeekStrip({
   const shownMonday = weeks[index] ?? mondayOf(selected);
 
   return (
-    <nav aria-label="Dny v týdnu">
+    <nav aria-label="Dny v týdnu" className="rounded-[24px] bg-surface px-3 pb-3 pt-4">
+      {/*
+        Nahoře rozsah právě ukázaného týdne. Když klient odlistuje jinam,
+        místo pořadí týdne se nabídne cesta zpátky.
+      */}
+      <div className="mb-3 flex min-h-[30px] items-center justify-between gap-3 px-1.5">
+        <span
+          className="font-display text-[16px] font-extrabold text-ink"
+          aria-live="polite"
+        >
+          {weekRange(shownMonday)}
+        </span>
+        {away ? (
+          <button
+            type="button"
+            onClick={() => setIndex(home)}
+            className="rounded-full bg-turquoise-100 px-3 py-1.5 text-[12px] font-bold text-turquoise-700 transition-opacity active:opacity-60"
+          >
+            {selected === today ? "Zpět na dnešek" : "Zpět na vybraný den"}
+          </button>
+        ) : (
+          <span className="rounded-full bg-turquoise-100 px-2.5 py-1 text-[12px] font-bold text-turquoise-700">
+            Týden {index + 1} z {weeks.length}
+          </span>
+        )}
+      </div>
+
       {/*
         contain-inline-size: šířku určuje stránka, ne obsah. Bez toho by
         čtrnáct týdnů vedle sebe roztáhlo rodiče na šířku víc týdnů.
@@ -233,20 +259,6 @@ export function WeekStrip({
         </button>
       </div>
 
-      {away && (
-        <div className="mt-1 flex items-center justify-between gap-3 px-1">
-          <span className="text-[13px] font-medium text-ink-500" aria-live="polite">
-            {weekRange(shownMonday)}
-          </span>
-          <button
-            type="button"
-            onClick={() => setIndex(home)}
-            className="rounded-full bg-turquoise-50 px-3 py-1.5 text-[13px] font-semibold text-turquoise-700 transition-opacity active:opacity-60"
-          >
-            {selected === today ? "Zpět na dnešek" : "Zpět na vybraný den"}
-          </button>
-        </div>
-      )}
     </nav>
   );
 }
@@ -296,7 +308,7 @@ function Day({
       }[day.status],
     // Vybraný den se obtáhne, ne přebarví — jinak by se zvýraznění pralo
     // se stavem dne a nedalo by se přečíst obojí najednou.
-    isSelected && "ring-2 ring-turquoise-700 ring-offset-2 ring-offset-canvas",
+    isSelected && "ring-2 ring-turquoise-700 ring-offset-2 ring-offset-surface",
   );
 
   const label = day

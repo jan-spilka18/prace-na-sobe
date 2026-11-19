@@ -3,17 +3,24 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Screen } from "@/components/ui/Screen";
 import { EmptyState, ListGroup, ListRow } from "@/components/ui/List";
+import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/Button";
 import { SignOutButton } from "@/components/SignOutButton";
-import { addDays, formatCzechDate, todayISO } from "@/lib/date";
 import {
-  allPatterns,
+  addDays,
+  daysBetween,
+  formatCzechDayMonth,
+  formatCzechWeekday,
+  formatShortDate,
+  todayISO,
+} from "@/lib/date";
+import {
   buildOverview,
   HISTORY_DAYS,
   yesterdayScore,
   type ClientRow,
 } from "@/lib/adminOverview";
-import { describeOutcome, isRestDay } from "@/lib/summary";
+import { isRestDay, type DayOutcome } from "@/lib/summary";
 import { upcomingBirthdays } from "@/lib/profile";
 import { cookies } from "next/headers";
 import { ThemePicker } from "@/components/ThemePicker";
@@ -74,14 +81,65 @@ export default async function AdminPage() {
     today,
   });
 
-  const patterns = allPatterns(rows);
   const score = yesterdayScore(rows);
   const yesterday = addDays(today, -1);
 
+  // Posledních sedm uzavřených dní: kolik procent aktivních klientů splnilo
+  // všechno. Dnešek se nepočítá — ráno by vždycky vypadal jako propad.
+  const week = Array.from({ length: 7 }, (_, index) => {
+    const date = addDays(today, index - 7);
+    const counted = rows
+      .map((row) => row.history.find((day) => day.date === date))
+      .filter((day): day is DayOutcome => !!day && !isRestDay(day));
+    const complete = counted.filter((day) => day.missed + day.empty === 0).length;
+    return {
+      date,
+      percent: counted.length === 0 ? null : Math.round((complete / counted.length) * 100),
+    };
+  });
+
+  const phoneById = new Map(
+    (clients ?? []).map((client) => [client.id, client.phone ?? null]),
+  );
+  const nameById = new Map(rows.map((row) => [row.clientId, row.name]));
+  const needYou = rows.filter((row) => row.patterns.length > 0);
+
+  const latestQuote = [...(feedback ?? [])]
+    .filter((row) => (row.takeaway ?? "").trim() !== "")
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+
+  // Programy, které brzy končí — čas domluvit závěrečné sezení.
+  const ending = rows
+    .filter((row) => row.program && row.dayNumber && row.dayNumber > 0)
+    .map((row) => ({
+      name: row.name,
+      left: daysBetween(
+        today,
+        addDays(row.program!.start_date, row.program!.duration_days - 1),
+      ),
+    }))
+    .filter((item) => item.left >= 0 && item.left <= 10);
+
+  const todayItems = [
+    ...birthdays.map((birthday) => ({
+      key: `b-${birthday.name}`,
+      title: `${birthday.when === "dnes" ? "Dnes" : "Zítra"} má narozeniny ${birthday.name}`,
+      hint: "Pošli mu přání",
+    })),
+    ...ending.map((item) => ({
+      key: `e-${item.name}`,
+      title:
+        item.left === 0
+          ? `${item.name} má dnes poslední den`
+          : `${item.name} končí za ${item.left} ${item.left === 1 ? "den" : item.left < 5 ? "dny" : "dní"}`,
+      hint: "Domluv si závěrečné sezení",
+    })),
+  ];
+
   return (
     <Screen
-      title="Klienti"
-      subtitle={`${rows.length} aktivních`}
+      eyebrow={`${formatCzechWeekday(today)} · ${formatCzechDayMonth(today)}`}
+      title="Ranní přehled"
       action={<SignOutButton />}
     >
       <div className="space-y-5">
@@ -102,85 +160,193 @@ export default async function AdminPage() {
               nic nemá, a kdyby tu svítila nula ze tří, vypadalo by to jako
               průšvih každé ráno.
             */}
-            {birthdays.length > 0 && (
-              <section className="rounded-group bg-sun-surface px-4 py-3.5">
-                {birthdays.map((birthday) => (
-                  <p
-                    key={birthday.name + birthday.when}
-                    className="text-[15px] leading-relaxed text-ink"
-                  >
-                    <span className="font-semibold">
-                      {birthday.when === "dnes" ? "Dnes" : "Zítra"}
-                    </span>{" "}
-                    má narozeniny{" "}
-                    <span className="font-display font-semibold">{birthday.name}</span>
-                  </p>
-                ))}
-              </section>
-            )}
-
-            <section className="rounded-group bg-night p-4 text-white">
-              <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-white/55">
-                Včera · {formatCzechDate(yesterday)}
+            <section className="rounded-[24px] bg-night px-5 py-5 text-white">
+              <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-sun">
+                Včera · {formatCzechWeekday(yesterday)} {formatShortDate(yesterday)}
               </p>
-              <p className="mt-1.5 flex items-baseline gap-2 font-display">
-                <span className="text-[31px] font-bold leading-none tabular-nums">
-                  {score.complete}
-                </span>
-                <span className="text-[17px] font-semibold text-white/70">
-                  z {score.active} splnilo všechno
-                </span>
-              </p>
-
-              {patterns.length > 0 && (
-                <ul className="mt-3.5 space-y-1.5 border-t border-white/12 pt-3">
-                  {patterns.map((pattern, index) => (
-                    <li key={index} className="flex gap-2 text-[14px]">
-                      <span aria-hidden className="text-sun">
-                        •
+              <div className="mt-2 flex items-end justify-between gap-4">
+                <p className="flex items-baseline gap-2 font-display">
+                  <span className="text-[52px] font-extrabold leading-none tabular-nums">
+                    {score.complete}
+                  </span>
+                  <span className="text-[16px] font-bold leading-tight text-white/70">
+                    z {score.active}
+                    <br />
+                    splnilo všechno
+                  </span>
+                </p>
+                <div className="flex items-end gap-1.5" aria-label="Posledních sedm dní">
+                  {week.map((day, index) => (
+                    <div key={day.date} className="flex flex-col items-center gap-1">
+                      <div className="flex h-12 items-end">
+                        <div
+                          className={cn(
+                            "w-3.5 rounded-[4px]",
+                            index === week.length - 1 ? "bg-turquoise" : "bg-white/25",
+                          )}
+                          style={{ height: `${Math.max(4, ((day.percent ?? 0) / 100) * 48)}px` }}
+                          title={day.percent === null ? "Volno" : `${day.percent} %`}
+                        />
+                      </div>
+                      <span className="text-[9px] font-bold uppercase text-white/55">
+                        {formatCzechWeekday(day.date).slice(0, 2)}
                       </span>
-                      <span className="text-white/90">{pattern.text}</span>
-                    </li>
+                    </div>
                   ))}
-                </ul>
-              )}
+                </div>
+              </div>
             </section>
 
-            <ListGroup title="Dnes">
-              {rows.map((row) => (
-                <ClientLine key={row.clientId} row={row} />
-              ))}
-            </ListGroup>
-
-            <Link href="/admin/klienti/novy" className="block">
-              <Button full>Nový klient</Button>
-            </Link>
+            {needYou.length > 0 && (
+              <section className="rounded-[24px] bg-sun-surface px-5 py-5">
+                <h2 className="flex items-center gap-2 font-display text-[20px] font-extrabold tracking-tight text-ink">
+                  Potřebují tě
+                  <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-badge px-1.5 text-[13px] text-white">
+                    {needYou.length}
+                  </span>
+                </h2>
+                <ul className="mt-3 space-y-3">
+                  {needYou.map((row) => {
+                    const phone = phoneById.get(row.clientId);
+                    return (
+                      <li key={row.clientId} className="rounded-[18px] bg-surface p-3.5">
+                        <Link
+                          href={`/admin/klienti/${row.clientId}`}
+                          className="flex items-start gap-3"
+                        >
+                          <Avatar name={row.name} alert={false} />
+                          <span className="min-w-0 flex-1">
+                            <span className="block font-bold text-ink">{row.name}</span>
+                            {row.patterns.map((pattern, index) => (
+                              <span
+                                key={index}
+                                className="mt-0.5 block text-[14px] leading-snug text-ink-600"
+                              >
+                                {withoutName(pattern.text, row.name)}
+                              </span>
+                            ))}
+                          </span>
+                        </Link>
+                        {phone && (
+                          <div className="mt-3 flex gap-2">
+                            <a
+                              href={`tel:${phone.replace(/\s+/g, "")}`}
+                              className="flex-1 rounded-full bg-night py-2.5 text-center text-[14px] font-extrabold text-white"
+                            >
+                              Zavolat
+                            </a>
+                            <a
+                              href={`sms:${phone.replace(/\s+/g, "")}`}
+                              className="flex-1 rounded-full bg-canvas py-2.5 text-center text-[14px] font-extrabold text-ink"
+                            >
+                              Napsat
+                            </a>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            )}
           </>
         )}
 
-        <ListGroup title="Od klientů">
-          <ListRow
-            title="Zpětná vazba"
-            subtitle={
-              feedbackSummary.count === 0
-                ? "Zatím nikdo neodpověděl"
-                : [
-                    feedbackSummary.average !== null
-                      ? `Průměr ${formatRating(feedbackSummary.average)}/10`
-                      : null,
-                    feedbackSummary.lastWeek > 0
-                      ? `${feedbackSummary.lastWeek} za týden`
-                      : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ") || `${feedbackSummary.count} odpovědí`
-            }
-            trailing={
-              feedbackSummary.count > 0 ? String(feedbackSummary.count) : undefined
-            }
-            href="/admin/zpetna-vazba"
-          />
-        </ListGroup>
+        <Link
+          href="/admin/zpetna-vazba"
+          className="block rounded-[24px] bg-turquoise px-5 py-5 text-on-sun transition-opacity active:opacity-85"
+        >
+          <span className="flex items-center justify-between gap-3">
+            <span className="text-[12px] font-bold uppercase tracking-[0.12em]">
+              Zpětná vazba od kluků
+            </span>
+            {feedbackSummary.lastWeek > 0 && (
+              <span className="shrink-0 whitespace-nowrap rounded-full bg-white/85 px-2.5 py-1 text-[12px] font-bold">
+                {feedbackSummary.lastWeek} za týden
+              </span>
+            )}
+          </span>
+          {feedbackSummary.count === 0 ? (
+            <span className="mt-2 block text-[16px] font-semibold">
+              Zatím nikdo neodpověděl.
+            </span>
+          ) : (
+            <>
+              {feedbackSummary.average !== null && (
+                <span className="mt-2 flex items-baseline gap-2 font-display">
+                  <span className="text-[44px] font-extrabold leading-none tabular-nums">
+                    {formatRating(feedbackSummary.average)}
+                  </span>
+                  <span className="text-[15px] font-bold opacity-75">/ 10 průměr</span>
+                </span>
+              )}
+              {latestQuote && (
+                <span className="mt-3 block rounded-[16px] bg-white/60 px-4 py-3">
+                  <span className="line-clamp-3 block font-display text-[16px] font-bold leading-snug">
+                    „{latestQuote.takeaway.trim()}“
+                  </span>
+                  <span className="mt-1.5 block text-[12px] font-bold opacity-70">
+                    {nameById.get(latestQuote.client_id) ?? "Klient"} ·{" "}
+                    {formatShortDate(latestQuote.created_at.slice(0, 10))}
+                    {latestQuote.rating ? ` · ${latestQuote.rating}/10` : ""}
+                  </span>
+                </span>
+              )}
+            </>
+          )}
+          <span className="mt-3 inline-flex rounded-full bg-white/50 px-3 py-1.5 text-[13px] font-bold">
+            Všechny odpovědi →
+          </span>
+        </Link>
+
+        {todayItems.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="px-1 font-display text-[22px] font-extrabold tracking-tight text-ink">
+              Dnes
+            </h2>
+            <ul className="rounded-[24px] bg-surface px-5">
+              {todayItems.map((item, index) => (
+                <li
+                  key={item.key}
+                  className={cn("py-3.5", index > 0 && "border-t border-hairline")}
+                >
+                  <p className="text-[16px] font-bold text-ink">{item.title}</p>
+                  <p className="mt-0.5 text-[14px] text-ink-500">{item.hint}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {rows.length > 0 && (
+          <section className="space-y-3">
+            <div className="flex items-baseline justify-between gap-3 px-1">
+              <h2 className="font-display text-[22px] font-extrabold tracking-tight text-ink">
+                Klienti
+              </h2>
+              <span className="text-[13px] font-semibold text-ink-500">
+                {rows.length} aktivních
+              </span>
+            </div>
+            <div className="rounded-[24px] bg-surface px-4">
+              {rows.map((row, index) => (
+                <ClientLine
+                  key={row.clientId}
+                  row={row}
+                  today={today}
+                  first={index === 0}
+                />
+              ))}
+            </div>
+            <Link
+              href="/admin/klienti/novy"
+              className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-night px-5 text-[16px] font-extrabold text-white transition-opacity active:opacity-80"
+            >
+              <span aria-hidden className="text-[20px] leading-none">+</span>
+              Nový klient
+            </Link>
+          </section>
+        )}
 
         <ThemePicker initial={theme} />
 
@@ -197,45 +363,81 @@ export default async function AdminPage() {
   );
 }
 
-function ClientLine({ row }: { row: ClientRow }) {
-  const todayLabel = !row.program
+function ClientLine({
+  row,
+  today,
+  first,
+}: {
+  row: ClientRow;
+  today: string;
+  first: boolean;
+}) {
+  // Posledních sedm uzavřených dní jako tečky: plná = všechno, světlá =
+  // něco, šedá = nic. Volno tečku nemá, ať nevypadá jako výpadek.
+  const last7 = Array.from({ length: 7 }, (_, index) => {
+    const date = addDays(today, index - 7);
+    return { date, day: row.history.find((day) => day.date === date) };
+  });
+  const counted = last7.filter(({ day }) => day && !isRestDay(day));
+  const complete = counted.filter(
+    ({ day }) => day && day.missed + day.empty === 0,
+  ).length;
+  const percent =
+    counted.length === 0 ? null : Math.round((complete / counted.length) * 100);
+
+  const subtitle = !row.program
     ? "Bez programu"
     : row.dayNumber === 0
-      ? `Začíná ${formatCzechDate(row.program.start_date)}`
-      : isRestDay(row.today)
-        ? "Volno"
-        : describeOutcome(row.today);
-
-  const complete =
-    row.program !== null &&
-    !isRestDay(row.today) &&
-    row.today.done > 0 &&
-    row.today.missed + row.today.empty === 0;
+      ? `Začíná ${formatShortDate(row.program.start_date)}`
+      : `Den ${row.dayNumber} z ${row.program.duration_days}`;
 
   return (
-    <ListRow
+    <Link
       href={`/admin/klienti/${row.clientId}`}
-      leading={<Avatar name={row.name} alert={row.patterns.length > 0} />}
-      title={row.name}
-      subtitle={
-        row.program && row.dayNumber && row.dayNumber > 0
-          ? `Den ${row.dayNumber} z ${row.program.duration_days}${
-              row.streak >= 2 ? ` · ${row.streak} dní v řadě` : ""
-            }`
-          : undefined
-      }
-      trailing={
-        <span
-          className={
-            complete
-              ? "text-[15px] font-semibold text-turquoise-700"
-              : "text-[15px] tabular-nums text-ink-500"
-          }
-        >
-          {todayLabel}
+      className={cn(
+        "flex items-center gap-3 py-3.5",
+        !first && "border-t border-hairline",
+      )}
+    >
+      <Avatar name={row.name} alert={row.patterns.length > 0} />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate font-bold text-ink">{row.name}</span>
+        <span className="mt-0.5 flex items-center gap-2">
+          <span className="whitespace-nowrap text-[13px] text-ink-500">{subtitle}</span>
+          {row.program && row.dayNumber !== 0 && (
+            <span className="flex shrink-0 gap-[3px]" aria-hidden>
+              {last7.map(({ date, day }) => (
+                <span
+                  key={date}
+                  className={cn(
+                    "h-2 w-2 rounded-full",
+                    !day || isRestDay(day)
+                      ? "bg-canvas"
+                      : day.missed + day.empty === 0
+                        ? "bg-turquoise"
+                        : day.done > 0
+                          ? "bg-turquoise-200"
+                          : "bg-ink-300",
+                  )}
+                />
+              ))}
+            </span>
+          )}
         </span>
-      }
-    />
+      </span>
+      <span
+        className={cn(
+          "shrink-0 font-display text-[16px] font-extrabold tabular-nums",
+          percent === null
+            ? "text-ink-400"
+            : percent >= 80
+              ? "text-turquoise-700"
+              : "text-ink",
+        )}
+      >
+        {percent === null ? "—" : `${percent} %`}
+      </span>
+    </Link>
   );
 }
 
@@ -250,15 +452,22 @@ function Avatar({ name, alert }: { name: string; alert: boolean }) {
 
   return (
     <div className="relative">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-turquoise-100 text-[15px] font-semibold text-turquoise-700">
+      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-turquoise-100 font-display text-[15px] font-extrabold text-turquoise-700">
         {initials}
       </div>
       {alert && (
         <span
           aria-label="Něco drhne"
-          className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full bg-sun ring-2 ring-surface"
+          className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full bg-badge ring-2 ring-surface"
         />
       )}
     </div>
   );
+}
+
+/** Vzorec začíná jménem klienta — pod jeho jménem by se opakovalo. */
+function withoutName(text: string, name: string): string {
+  if (!text.startsWith(name)) return text;
+  const rest = text.slice(name.length).trim();
+  return rest.charAt(0).toUpperCase() + rest.slice(1);
 }

@@ -10,12 +10,12 @@ export function SettingsLink() {
     <Link
       href="/nastaveni"
       aria-label="Nastavení"
-      className="-mr-2 flex h-11 w-11 items-center justify-center text-turquoise-700 active:opacity-60"
+      className="flex h-11 w-11 items-center justify-center rounded-full bg-surface text-turquoise-700 active:opacity-60"
     >
       <svg
         viewBox="0 0 24 24"
         aria-hidden
-        className="h-6 w-6"
+        className="h-[22px] w-[22px]"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.8"

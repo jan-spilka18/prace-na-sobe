@@ -7,7 +7,7 @@ import type { GridDay } from "@/lib/queries";
 const WEEKDAYS = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
 
 const CELL: Record<GridDay["status"], string> = {
-  complete: "bg-turquoise text-white",
+  complete: "bg-turquoise text-on-sun",
   incomplete: "bg-ink text-on-ink",
   empty: "bg-canvas text-ink-500",
   // Volno je bez výplně — ať je vidět, že tam nic nebylo, ne že se něco
@@ -40,11 +40,11 @@ export function DayGrid({
 
   return (
     <div className="space-y-3">
-      <div className="rounded-group bg-surface p-4">
+      <div className="rounded-[24px] bg-surface p-5">
         {(title || range) && (
-          <div className="mb-3 flex items-baseline justify-between gap-3">
+          <div className="mb-4 flex items-baseline justify-between gap-3">
             {title && (
-              <h2 className="truncate font-display text-[17px] font-bold text-ink">
+              <h2 className="truncate font-display text-[20px] font-extrabold tracking-tight text-ink">
                 {title}
               </h2>
             )}
@@ -62,7 +62,7 @@ export function DayGrid({
           a většinu karty zabíraly prázdné budoucí dny. Menší buňka drží
           celý program v jednom pohledu; 32 px pořád jde trefit prstem.
         */}
-        <div className="mx-auto grid max-w-[16rem] grid-cols-7 gap-1">
+        <div className="mx-auto grid max-w-[19rem] grid-cols-7 gap-1.5">
           {WEEKDAYS.map((day) => (
             <div
               key={day}
@@ -106,7 +106,7 @@ function Cell({
   }${isToday ? " (dnes)" : ""}`;
 
   const className = cn(
-    "flex aspect-square items-center justify-center rounded-[0.35rem] text-[10px] font-semibold tabular-nums",
+    "flex aspect-square items-center justify-center rounded-[8px] text-[11px] font-bold tabular-nums",
     day.isFuture ? "bg-canvas/60 text-ink-400" : CELL[day.status],
     // Dnešek se obtáhne, ne vybarví — jinak by se pletl se stavem dne.
     isToday && "ring-2 ring-turquoise ring-offset-1 ring-offset-surface",
@@ -157,9 +157,9 @@ function Legend({ days }: { days: GridDay[] }) {
 
   return (
     <div className="space-y-2">
-      <dl className="flex flex-wrap gap-x-4 gap-y-2 px-1">
+      <dl className="flex flex-wrap gap-1.5 px-1">
         {shown.map((status) => (
-          <div key={status} className="flex items-center gap-2">
+          <div key={status} className="flex items-center gap-2 rounded-full bg-surface py-1.5 pl-2 pr-3">
             <span
               aria-hidden
               className={cn(
