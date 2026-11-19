@@ -89,7 +89,9 @@ export async function GET(request: NextRequest) {
   for (const [userId, devices] of byUser) {
     const { data: habits, error: habitsError } = await supabase
       .from("habits")
-      .select("id, title, weekdays, reminder_enabled, reminder_time, archived_at")
+      // Hvězdička: starts_on přibyl migrací 0012 a výčet by před jejím
+      // spuštěním spadl na neexistujícím sloupci.
+      .select("*")
       .eq("client_id", userId)
       .eq("reminder_enabled", true);
 
@@ -119,7 +121,13 @@ export async function GET(request: NextRequest) {
     const filled = new Set((entries ?? []).map((entry) => entry.habit_id));
 
     const candidates: RemindableHabit[] = habits.map((habit) => ({
-      ...habit,
+      id: habit.id,
+      title: habit.title,
+      weekdays: habit.weekdays,
+      reminder_enabled: habit.reminder_enabled,
+      reminder_time: habit.reminder_time,
+      archived_at: habit.archived_at,
+      starts_on: habit.starts_on ?? null,
       filled: filled.has(habit.id),
     }));
 

@@ -13,6 +13,10 @@ type Props = {
   today: string;
   habit?: Habit;
   currentTarget?: number | null;
+  /** Admin smí návyku nastavit, od kdy platí. */
+  canSetStart?: boolean;
+  programStart?: string;
+  programEnd?: string;
   onDone: () => void;
 };
 
@@ -21,6 +25,9 @@ export function HabitForm({
   today,
   habit,
   currentTarget,
+  canSetStart = false,
+  programStart,
+  programEnd,
   onDone,
 }: Props) {
   const editing = Boolean(habit);
@@ -34,6 +41,14 @@ export function HabitForm({
   // V databázi je to time (00:00:00), v <input type="time"> jen hh:mm.
   const [reminderTime, setReminderTime] = useState(
     habit?.reminder_enabled ? (habit.reminder_time ?? "").slice(0, 5) : "",
+  );
+  // Nový návyk v běžící výzvě začíná dnes; před startem výzvy jejím začátkem.
+  const [startsOn, setStartsOn] = useState(
+    habit
+      ? (habit.starts_on ?? programStart ?? "")
+      : programStart && today < programStart
+        ? programStart
+        : today,
   );
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
@@ -53,6 +68,7 @@ export function HabitForm({
           linkUrl,
           weekdays,
           reminderTime,
+          startsOn: canSetStart ? startsOn || null : undefined,
         });
         if (result.error) return setError(result.error);
 
@@ -76,6 +92,7 @@ export function HabitForm({
           target: needsTarget ? Number(target) : null,
           weekdays,
           reminderTime,
+          startsOn: canSetStart ? startsOn || null : undefined,
         });
         if (result.error) return setError(result.error);
       }
@@ -147,6 +164,25 @@ export function HabitForm({
           Dny, na které návyk nepřipadá, se ti nenabídnou a sérii nezlomí.
         </p>
       </fieldset>
+
+      {canSetStart && (
+        <Field
+          label="Platí od"
+          hint={
+            programStart && startsOn && startsOn > programStart
+              ? "Dny před tímhle datem se návyku netýkají: nepočítají se do úspěšnosti ani do série."
+              : "Od začátku výzvy. Přidáváš-li návyk později, nastav den, kdy s ním klient začíná."
+          }
+        >
+          <TextInput
+            type="date"
+            value={startsOn}
+            min={programStart}
+            max={programEnd}
+            onChange={(event) => setStartsOn(event.target.value)}
+          />
+        </Field>
+      )}
 
       <Field
         label="Připomínka"

@@ -17,6 +17,8 @@ export type RemindableHabit = {
   reminder_enabled: boolean;
   reminder_time: string | null;
   archived_at: string | null;
+  /** První den, kdy návyk platí (migrace 0012). */
+  starts_on?: string | null;
   /** Návyk už je na dnešek vyplněný — připomínat ho nemá smysl. */
   filled: boolean;
 };
@@ -30,6 +32,7 @@ export function isDue(
   if (!habit.reminder_enabled || !habit.reminder_time) return false;
   if (habit.filled) return false;
   if (habit.archived_at && habit.archived_at.slice(0, 10) <= date) return false;
+  if (habit.starts_on && date < habit.starts_on) return false;
 
   // Prázdný nebo chybějící rozvrh bereme jako každý den — stejně jako
   // scheduledOn(), aby se obě cesty chovaly shodně.

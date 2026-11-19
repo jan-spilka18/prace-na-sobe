@@ -8,6 +8,7 @@ import { HABIT_TYPE_LABELS, describeWeekdays, formatTarget } from "@/lib/habits"
 import { archiveHabit, deleteHabit, restoreHabit } from "@/app/actions/habits";
 import type { Habit, HabitTarget } from "@/lib/database.types";
 import { HabitForm } from "./HabitForm";
+import { formatShortDate } from "@/lib/date";
 import { targetFor } from "@/lib/habits";
 
 export function HabitList({
@@ -15,12 +16,20 @@ export function HabitList({
   habits,
   targets,
   today,
+  canSetStart = false,
+  programStart,
+  programEnd,
 }: {
   programId: string;
   habits: Habit[];
   targets: HabitTarget[];
   today: string;
+  /** Jen admin: návyk může začít až v průběhu výzvy. */
+  canSetStart?: boolean;
+  programStart?: string;
+  programEnd?: string;
 }) {
+  const startProps = { canSetStart, programStart, programEnd };
   const [editing, setEditing] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
 
@@ -44,6 +53,7 @@ export function HabitList({
               today={today}
               habit={habit}
               currentTarget={targetFor(targets, habit.id, today)}
+              {...startProps}
               onDone={() => setEditing(null)}
             />
           ) : (
@@ -51,6 +61,7 @@ export function HabitList({
               key={habit.id}
               number={index + 1}
               habit={habit}
+              today={today}
               target={targetFor(targets, habit.id, today)}
               onEdit={() => setEditing(habit.id)}
             />
@@ -61,6 +72,7 @@ export function HabitList({
           <HabitForm
             programId={programId}
             today={today}
+            {...startProps}
             onDone={() => setAdding(false)}
           />
         ) : (
@@ -79,7 +91,7 @@ export function HabitList({
         Honzova zkušenost: kdo si naloží osm návyků, do týdne vzdá všechny.
         Tip se ukazuje, dokud je seznam krátký — pak už by jen kázal.
       */}
-      {active.length <= 3 && (
+      {!canSetStart && active.length <= 3 && (
         <aside className="rounded-[24px] bg-sun-surface px-5 py-4">
           <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-sun-700">
             Méně je víc
@@ -114,11 +126,13 @@ const ACTION =
 function HabitRow({
   number,
   habit,
+  today,
   target,
   onEdit,
 }: {
   number: number;
   habit: Habit;
+  today: string;
   target: number | null;
   onEdit: () => void;
 }) {
@@ -159,6 +173,12 @@ function HabitRow({
             <Chip>{describeWeekdays(habit.weekdays)}</Chip>
             <Chip>{HABIT_TYPE_LABELS[habit.type]}</Chip>
             {targetLabel && <Chip tone="sun">{targetLabel}</Chip>}
+            {habit.starts_on && (
+              <Chip>
+                {habit.starts_on > today ? "začne" : "od"}{" "}
+                {formatShortDate(habit.starts_on)}
+              </Chip>
+            )}
           </p>
           {habit.description && (
             <p className="mt-1.5 text-[14px] leading-snug text-ink-600">

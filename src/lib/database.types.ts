@@ -63,6 +63,11 @@ export type Habit = Timestamps & {
   created_by: string | null;
   /** Dny v týdnu podle ISO: 1 = pondělí … 7 = neděle. */
   weekdays: number[];
+  /**
+   * První den, kdy návyk platí. Null = od začátku programu. Migrace 0012 —
+   * nepovinné, dokud se SQL nespustí.
+   */
+  starts_on?: string | null;
 };
 
 export type HabitTarget = {

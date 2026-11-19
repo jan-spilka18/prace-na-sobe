@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 import { activeProgram, programGrid } from "@/lib/queries";
-import { streakEndingAt } from "@/lib/habits";
+import { normalizeStartsOn, streakEndingAt } from "@/lib/habits";
 import type { EntryStatus, HabitType } from "@/lib/database.types";
 import { safeUrl } from "@/lib/url";
+import { todayISO } from "@/lib/date";
 
 export type ActionResult = { error?: string };
 
@@ -98,7 +99,10 @@ export type HabitInput = {
   target: number | null;
   weekdays: number[];
   reminderTime?: string | null;
+  /** Od kdy návyk platí. Nastavit ho smí jen admin. */
+  startsOn?: string | null;
 };
+
 
 /** Rozvrh bez jediného dne by znamenal návyk, který nejde nikdy splnit. */
 function cleanWeekdays(weekdays: number[]): number[] | null {
@@ -140,6 +144,25 @@ export async function createHabit(input: HabitInput): Promise<ActionResult> {
   const weekdays = cleanWeekdays(input.weekdays);
   if (!weekdays) return { error: "Vyber aspoň jeden den v týdnu." };
 
+  const { data: program } = await supabase
+    .from("programs")
+    .select("start_date, duration_days")
+    .eq("id", input.programId)
+    .single();
+  if (!program) return { error: "Program nenalezen." };
+
+  /*
+    Návyk přidaný do běžící výzvy platí ode dneška, ne od jejího začátku —
+    jinak by dny před jeho přidáním vypadaly jako nesplněné. Jiné datum
+    může vybrat jen admin.
+  */
+  const requested =
+    profile.role === "admin" && input.startsOn !== undefined
+      ? input.startsOn
+      : todayISO();
+  const startsOn = normalizeStartsOn(requested, program);
+  if ("error" in startsOn) return { error: startsOn.error };
+
   const { data: last } = await supabase
     .from("habits")
     .select("position")
@@ -160,6 +183,8 @@ export async function createHabit(input: HabitInput): Promise<ActionResult> {
       weekdays,
       ...cleanReminder(input.reminderTime),
       created_by: profile.id,
+      // Jen když je co uložit: před migrací 0012 by sloupec chyběl.
+      ...(startsOn.value ? { starts_on: startsOn.value } : {}),
     })
     .select("id")
     .single();
@@ -168,17 +193,11 @@ export async function createHabit(input: HabitInput): Promise<ActionResult> {
 
   if (input.type !== "boolean" && input.target) {
     // Začátek programu, ne dnešek — jinak by dny před založením návyku
-    // zůstaly bez cíle.
-    const { data: program } = await supabase
-      .from("programs")
-      .select("start_date")
-      .eq("id", input.programId)
-      .single();
-
+    // zůstaly bez cíle, kdyby mu admin datum začátku později posunul.
     const { error: targetError } = await supabase.from("habit_targets").insert({
       habit_id: habit.id,
       target_value: input.target,
-      effective_from: program?.start_date ?? new Date().toISOString().slice(0, 10),
+      effective_from: program.start_date,
     });
 
     if (targetError) return { error: targetError.message };
@@ -195,8 +214,10 @@ export async function updateHabit(input: {
   linkUrl: string;
   weekdays: number[];
   reminderTime?: string | null;
+  /** Undefined = neměnit. Měnit ho smí jen admin. */
+  startsOn?: string | null;
 }): Promise<ActionResult> {
-  await requireProfile();
+  const profile = await requireProfile();
 
   const title = input.title.trim();
   if (!title) return { error: "Návyk potřebuje název." };
@@ -205,6 +226,28 @@ export async function updateHabit(input: {
   if (!weekdays) return { error: "Vyber aspoň jeden den v týdnu." };
 
   const supabase = await createClient();
+
+  let startsOn: { starts_on: string | null } | Record<string, never> = {};
+  if (profile.role === "admin" && input.startsOn !== undefined) {
+    const { data: habit } = await supabase
+      .from("habits")
+      .select("program_id")
+      .eq("id", input.habitId)
+      .single();
+    const { data: program } = habit
+      ? await supabase
+          .from("programs")
+          .select("start_date, duration_days")
+          .eq("id", habit.program_id)
+          .single()
+      : { data: null };
+    if (!program) return { error: "Program nenalezen." };
+
+    const normalized = normalizeStartsOn(input.startsOn, program);
+    if ("error" in normalized) return { error: normalized.error };
+    startsOn = { starts_on: normalized.value };
+  }
+
   const { error } = await supabase
     .from("habits")
     .update({
@@ -213,6 +256,7 @@ export async function updateHabit(input: {
       link_url: safeUrl(input.linkUrl),
       weekdays,
       ...cleanReminder(input.reminderTime),
+      ...startsOn,
     })
     .eq("id", input.habitId);
 

@@ -68,6 +68,18 @@ describe("habitStats — úspěšnost", () => {
     assert.equal(stat.rate, null);
   });
 
+  it("návyk přidaný v průběhu se počítá až od svého začátku", () => {
+    // Začal ve středu 7. 1. → uzavřené dny jsou jen St a Čt.
+    const [stat] = habitStats(
+      [habit({ starts_on: "2026-01-07" })],
+      [done("2026-01-07", 15), done("2026-01-08", 15)],
+      PROGRAM,
+      TODAY,
+    );
+    assert.equal(stat.scheduled, 2);
+    assert.equal(stat.rate, 100);
+  });
+
   it("respektuje dny v týdnu", () => {
     // Jen Po, St, Pá → z uzavřených Po–Čt připadají dva dny.
     const [stat] = habitStats(

@@ -12,6 +12,7 @@ import {
   successRate,
   targetFor,
   wasActiveOn,
+  normalizeStartsOn,
 } from "./habits";
 import type { Habit, HabitEntry, HabitTarget } from "./database.types";
 import type { HabitForDay } from "./habits";
@@ -321,6 +322,32 @@ describe("wasActiveOn", () => {
     // V den archivace už se nevyplňuje.
     assert.equal(wasActiveOn(archived, "2026-03-10"), false);
     assert.equal(wasActiveOn(archived, "2026-03-11"), false);
+  });
+
+  it("návyk přidaný v průběhu výzvy platí až od svého začátku", () => {
+    const late = { ...base, starts_on: "2026-03-01" };
+    assert.equal(wasActiveOn(late, "2026-02-28"), false);
+    assert.equal(wasActiveOn(late, "2026-03-01"), true);
+    assert.equal(appliesOn(late, "2026-02-15"), false);
+  });
+});
+
+describe("normalizeStartsOn", () => {
+  const program = { start_date: "2026-01-01", duration_days: 90 };
+
+  it("prázdné datum nebo začátek výzvy znamená od začátku", () => {
+    assert.deepEqual(normalizeStartsOn(null, program), { value: null });
+    assert.deepEqual(normalizeStartsOn("2026-01-01", program), { value: null });
+    assert.deepEqual(normalizeStartsOn("2025-12-20", program), { value: null });
+  });
+
+  it("datum uprostřed výzvy se uloží", () => {
+    assert.deepEqual(normalizeStartsOn("2026-03-01", program), { value: "2026-03-01" });
+  });
+
+  it("datum po konci výzvy nebo nesmysl se odmítne", () => {
+    assert.ok("error" in normalizeStartsOn("2026-04-01", program));
+    assert.ok("error" in normalizeStartsOn("1. 3.", program));
   });
 });
 

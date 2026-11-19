@@ -5,7 +5,7 @@ import { Screen } from "@/components/ui/Screen";
 import { EmptyState } from "@/components/ui/List";
 import { HabitList } from "@/components/habits/HabitList";
 import { activeProgram, allHabits, habitTargets } from "@/lib/queries";
-import { todayISO } from "@/lib/date";
+import { addDays, todayISO } from "@/lib/date";
 
 export default async function AdminHabitsPage({
   params,
@@ -54,6 +54,9 @@ export default async function AdminHabitsPage({
         habits={habits}
         targets={targets}
         today={todayISO()}
+        canSetStart
+        programStart={program.start_date}
+        programEnd={addDays(program.start_date, program.duration_days - 1)}
       />
     </Screen>
   );

@@ -74,6 +74,7 @@ export function habitStats(
     for (const entry of forHabit.values()) {
       if (entry.status !== "done") continue;
       if (entry.entry_date < program.start_date) continue;
+      if (habit.starts_on && entry.entry_date < habit.starts_on) continue;
       if (entry.entry_date > lastCounted) continue;
 
       /*

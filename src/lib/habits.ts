@@ -5,7 +5,7 @@ import type {
   HabitTarget,
   HabitType,
 } from "@/lib/database.types";
-import { isoWeekday } from "@/lib/date";
+import { addDays, isoWeekday } from "@/lib/date";
 
 export type HabitForDay = Habit & {
   /** Cíl platný pro daný den. U typu ano/ne vždy null. */
@@ -162,8 +162,17 @@ export function successRate(
   return Math.round((complete / counted.length) * 100);
 }
 
-/** Návyk ještě nebyl archivovaný — po archivaci se nenabízí k vyplnění. */
-export function wasActiveOn(habit: Habit, onDate: string): boolean {
+/**
+ * Návyk v ten den platil: už začal a ještě nebyl archivovaný.
+ *
+ * Návyk přidaný v průběhu výzvy se dny před svým začátkem netýká — jinak
+ * by se tvářily jako nesplněné a srazily úspěšnost i sérii.
+ */
+export function wasActiveOn(
+  habit: Pick<Habit, "archived_at" | "starts_on">,
+  onDate: string,
+): boolean {
+  if (habit.starts_on && onDate < habit.starts_on) return false;
   if (!habit.archived_at) return true;
   return habit.archived_at.slice(0, 10) > onDate;
 }
@@ -207,4 +216,24 @@ export function describeWeekdays(weekdays: number[]): string {
 
 function sameDays(a: number[], b: number[]): boolean {
   return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+
+type ProgramSpan = { start_date: string; duration_days: number };
+
+/**
+ * Den, od kterého návyk platí, jak se uloží do databáze.
+ *
+ * Null znamená „od začátku programu" — datum na začátku programu nebo před
+ * ním se tedy ukládá jako null, ať je jen jeden způsob, jak to říct.
+ */
+export function normalizeStartsOn(
+  value: string | null,
+  program: ProgramSpan,
+): { value: string | null } | { error: string } {
+  if (!value) return { value: null };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return { error: "Neplatné datum začátku." };
+  if (value <= program.start_date) return { value: null };
+  const lastDay = addDays(program.start_date, program.duration_days - 1);
+  if (value > lastDay) return { error: "Návyk nemůže začít až po konci výzvy." };
+  return { value };
 }
