@@ -2,7 +2,7 @@ import { escapeHtml } from "@/lib/email";
 import { parseInline, parseMarkdown, plainText, type InlineToken } from "@/lib/markdown";
 import { filledSections, sessionHeading } from "@/lib/sessionTemplate";
 import { parseTasks, refineTasks, type SessionTask } from "@/lib/sessionTasks";
-import { formatShortDate } from "@/lib/date";
+import { daysBetween, formatShortDate, todayISO, weekdayIndex } from "@/lib/date";
 import type { SessionKind } from "@/lib/database.types";
 
 /*
@@ -47,7 +47,24 @@ export type SessionEmailInput = {
   content: Record<string, string>;
   /** Adresa aplikace bez lomítka na konci, např. https://prace-na-sobe.vercel.app */
   appUrl: string;
+  /** Kdy se e-mail posílá — podle toho „dnešní", „včerejší" nebo datum. */
+  today?: string;
 };
+
+/** Ze kterého dne sezení je, v 2. pádě: „ze středy 18. 11.". */
+const FROM_DAY = ["z pondělí", "z úterý", "ze středy", "ze čtvrtka", "z pátku", "ze soboty", "z neděle"];
+
+/**
+ * Jak o sezení mluvit podle toho, kolik dní od něj uběhlo. Zápis často
+ * odchází až za den nebo dva — „díky za dnešek" by pak nedávalo smysl.
+ */
+export function sessionTiming(date: string, today: string = todayISO()) {
+  const ago = daysBetween(date, today);
+  if (ago <= 0) return { thanks: "díky za dnešek", which: "dnešní sezení" };
+  if (ago === 1) return { thanks: "díky za včerejšek", which: "včerejší sezení" };
+  const from = `${FROM_DAY[weekdayIndex(date)]} ${formatShortDate(date)}`;
+  return { thanks: `díky za naše sezení ${from}`, which: `sezení ${from}` };
+}
 
 export type SessionEmail = { subject: string; html: string; text: string };
 
@@ -56,6 +73,7 @@ export function sessionEmail(input: SessionEmailInput): SessionEmail {
   const sections = filledSections(content);
   const heading = sessionHeading(input.date, input.kind, input.order);
   const focus = (content.focus ?? "").trim();
+  const timing = sessionTiming(input.date, input.today);
 
   const sessionUrl = `${input.appUrl}/sezeni/${input.sessionId}`;
   const feedbackUrl = (rating?: number) =>
@@ -73,7 +91,7 @@ export function sessionEmail(input: SessionEmailInput): SessionEmail {
       `${brand()}
       ${eyebrow(`Zápis ze sezení · ${heading.title}`, C.turquoise700)}
       <h1 style="margin:6px 0 0;font-family:${DISPLAY};font-size:28px;line-height:1.15;font-weight:800;color:${C.ink}">${escapeHtml(heading.subtitle || "Sezení")}</h1>
-      <p style="margin:14px 0 0;font-family:${FONT};font-size:15px;line-height:1.55;color:${C.ink2}">Ahoj, díky za dnešek. Tady máš všechno, na čem jsme se domluvili, ať to máš po ruce.</p>`,
+      <p style="margin:14px 0 0;font-family:${FONT};font-size:15px;line-height:1.55;color:${C.ink2}">Ahoj, ${escapeHtml(timing.thanks)}. Tady máš všechno, na čem jsme se domluvili, ať to máš po ruce.</p>`,
     ),
   );
 
@@ -119,7 +137,7 @@ export function sessionEmail(input: SessionEmailInput): SessionEmail {
     );
   }
 
-  blocks.push(feedbackCard(feedbackUrl));
+  blocks.push(feedbackCard(feedbackUrl, timing.which));
 
   blocks.push(`<tr><td style="padding:8px 12px 0;text-align:center">
     <a href="${escapeHtml(sessionUrl)}" style="font-family:${FONT};font-size:15px;font-weight:700;color:${C.turquoise700};text-decoration:none">Otevřít zápis v aplikaci</a>
@@ -146,7 +164,7 @@ ${blocks.join("\n<tr><td style=\"height:12px;line-height:12px;font-size:0\">&nbs
 </body>
 </html>`;
 
-  return { subject, html, text: textVersion(heading, sections, sessionUrl, feedbackUrl()) };
+  return { subject, html, text: textVersion(heading, sections, sessionUrl, feedbackUrl(), timing) };
 }
 
 /* ─── Stavební kostky ─────────────────────────────────────────── */
@@ -266,7 +284,7 @@ function tasksHtml(tasksBody: string, recommendations: string): string {
   return parts.join("");
 }
 
-function feedbackCard(feedbackUrl: (rating?: number) => string): string {
+function feedbackCard(feedbackUrl: (rating?: number) => string, which: string): string {
   const cell = (n: number) =>
     `<td style="padding:3px"><a href="${escapeHtml(feedbackUrl(n))}" style="display:block;height:40px;line-height:40px;border-radius:12px;background:${C.surface};color:${C.ink};text-align:center;text-decoration:none;font-family:${DISPLAY};font-size:15px;font-weight:800">${n}</a></td>`;
   const row = (from: number) =>
@@ -275,7 +293,7 @@ function feedbackCard(feedbackUrl: (rating?: number) => string): string {
   return card(
     C.turquoise100,
     `${eyebrow("Tvoje zpětná vazba", C.turquoise700)}
-    <p style="margin:8px 0 0;font-family:${DISPLAY};font-size:22px;line-height:1.25;font-weight:800;color:${C.ink}">Jak ti dnešní sezení sedlo?</p>
+    <p style="margin:8px 0 0;font-family:${DISPLAY};font-size:22px;line-height:1.25;font-weight:800;color:${C.ink}">Jak ti ${escapeHtml(which)} sedlo?</p>
     <p style="margin:8px 0 12px;font-family:${FONT};font-size:14px;line-height:1.5;color:${C.ink2}">Klikni na číslo – otevře se aplikace s vybraným hodnocením a dopíšeš, co sis odnesl.</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="table-layout:fixed">${row(1)}${row(6)}</table>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:4px"><tr>
@@ -291,19 +309,20 @@ function textVersion(
   sections: Array<{ key: string; title: string; body: string }>,
   sessionUrl: string,
   feedbackUrl: string,
+  timing: { thanks: string; which: string },
 ): string {
   const lines = [
     `Zápis ze sezení · ${heading.title}`,
     heading.subtitle,
     "",
-    "Ahoj, díky za dnešek. Tady máš všechno, na čem jsme se domluvili.",
+    `Ahoj, ${timing.thanks}. Tady máš všechno, na čem jsme se domluvili.`,
     "",
   ];
   for (const section of sections) {
     lines.push(section.title.toUpperCase(), section.body.replace(/\*\*/g, ""), "");
   }
   lines.push(
-    "Jak ti dnešní sezení sedlo? Napiš mi zpětnou vazbu:",
+    `Jak ti ${timing.which} sedlo? Napiš mi zpětnou vazbu:`,
     feedbackUrl,
     "",
     `Celý zápis v aplikaci: ${sessionUrl}`,

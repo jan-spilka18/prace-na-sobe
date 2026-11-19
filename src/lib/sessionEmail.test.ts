@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 import assert from "node:assert/strict";
-import { sessionEmail } from "./sessionEmail";
+import { sessionEmail, sessionTiming } from "./sessionEmail";
 
 const base = {
   sessionId: "s1",
@@ -55,5 +55,19 @@ describe("sessionEmail", () => {
   it("má i textovou verzi s odkazem", () => {
     const { text } = sessionEmail(base);
     assert.ok(text.includes("https://prace-na-sobe.vercel.app/sezeni/s1#zpetna-vazba"));
+  });
+});
+
+describe("sessionTiming", () => {
+  // 18. 11. 2026 je středa.
+  it("v den sezení i den poté mluví o dnešku a včerejšku", () => {
+    assert.equal(sessionTiming("2026-11-18", "2026-11-18").which, "dnešní sezení");
+    assert.equal(sessionTiming("2026-11-18", "2026-11-19").thanks, "díky za včerejšek");
+  });
+
+  it("později jmenuje den a datum", () => {
+    const later = sessionTiming("2026-11-18", "2026-11-20");
+    assert.equal(later.which, "sezení ze středy 18. 11.");
+    assert.equal(later.thanks, "díky za naše sezení ze středy 18. 11.");
   });
 });
