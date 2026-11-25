@@ -5,6 +5,7 @@ import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
 import { Field, FormError, TextInput } from "@/components/ui/Field";
 import { CopyableSecret } from "@/components/CopyableSecret";
+import { SendAccessEmail } from "@/components/admin/SendAccessEmail";
 import { MIN_PASSWORD_LENGTH } from "@/lib/config";
 import {
   setClientPassword,
@@ -83,7 +84,16 @@ export function ContactForm({
   );
 }
 
-export function PasswordForm({ clientId }: { clientId: string }) {
+export function PasswordForm({
+  clientId,
+  email,
+  emailReady,
+}: {
+  clientId: string;
+  /** Kam jdou přístupy e-mailem — klientova přihlašovací adresa. */
+  email: string;
+  emailReady: boolean;
+}) {
   const [state, formAction] = useActionState<PasswordState, FormData>(
     setClientPassword,
     {},
@@ -102,6 +112,13 @@ export function PasswordForm({ clientId }: { clientId: string }) {
             <p className="px-1 text-[13px] leading-snug text-ink-500">
               Staré heslo přestalo platit. Předej klientovi tohle.
             </p>
+            {/* key: nové heslo = nové tlačítko, ne „Odesláno" od minula. */}
+            <SendAccessEmail
+              key={state.password}
+              email={email}
+              password={state.password}
+              ready={emailReady}
+            />
           </div>
         )}
 

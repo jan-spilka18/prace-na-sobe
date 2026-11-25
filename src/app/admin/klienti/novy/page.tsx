@@ -2,6 +2,7 @@ import { requireAdmin } from "@/lib/auth";
 import { Screen } from "@/components/ui/Screen";
 import { NewClientForm } from "./NewClientForm";
 import { todayISO } from "@/lib/date";
+import { emailConfigured } from "@/lib/email";
 
 export const metadata = { title: "Nový klient" };
 
@@ -10,11 +11,11 @@ export default async function NewClientPage() {
 
   return (
     <Screen
+      eyebrow="Účet i program najednou"
       title="Nový klient"
-      subtitle="Založí účet i program. Heslo uvidíš jen jednou."
       back={{ href: "/admin", label: "Klienti" }}
     >
-      <NewClientForm today={todayISO()} />
+      <NewClientForm today={todayISO()} emailReady={emailConfigured()} />
     </Screen>
   );
 }

@@ -1,3 +1,4 @@
+import { emailConfigured } from "@/lib/email";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -40,7 +41,11 @@ export default async function CredentialsPage({
           email={client.email}
           phone={client.phone ?? ""}
         />
-        <PasswordForm clientId={id} />
+        <PasswordForm
+          clientId={id}
+          email={client.email}
+          emailReady={emailConfigured()}
+        />
       </div>
     </Screen>
   );

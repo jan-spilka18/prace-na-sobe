@@ -5,6 +5,9 @@ import { requireAdmin } from "@/lib/auth";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { generatePassword } from "@/lib/password";
 import { cleanPhone } from "@/lib/profile";
+import { emailConfigured, sendEmail } from "@/lib/email";
+import { accessEmail } from "@/lib/accessEmail";
+import { appUrl } from "@/lib/appUrl";
 import {
   DEFAULT_PROGRAM_DURATION_DAYS,
   DEFAULT_PROGRAM_TITLE,
@@ -176,6 +179,49 @@ export async function setClientPassword(
   if (error) return { error: describeAuthError(error, "Heslo") };
 
   return { password };
+}
+
+export type AccessEmailState = { error?: string; sentTo?: string };
+
+/**
+ * Pošle klientovi e-mail s odkazem na aplikaci a přihlašovacími údaji.
+ *
+ * Heslo se nikde neukládá, takže ho sem posílá obrazovka, na které ho
+ * Honza právě vidí (po založení klienta nebo po nastavení nového hesla).
+ * E-mail jde vždy jen na adresu klientova účtu — akce nejde použít
+ * k rozeslání čehokoli komukoli.
+ */
+export async function sendAccessEmail(input: {
+  email: string;
+  password: string;
+}): Promise<AccessEmailState> {
+  await requireAdmin();
+
+  if (!emailConfigured()) {
+    return { error: "E-maily zatím nejsou nastavené — chybí propojení s Gmailem ve Vercelu." };
+  }
+
+  const email = input.email.trim().toLowerCase();
+  const password = input.password;
+  if (!EMAIL.test(email) || password.length < MIN_PASSWORD_LENGTH) {
+    return { error: "Chybí e-mail nebo heslo." };
+  }
+
+  const { data: client } = await createAdminClient()
+    .from("profiles")
+    .select("id, role, email")
+    .eq("email", email)
+    .maybeSingle();
+  if (!client || client.role !== "client") return { error: "Klient s tímhle e-mailem neexistuje." };
+
+  const sent = await sendEmail({
+    to: client.email,
+    fromName: "Honza · Práce na sobě",
+    ...accessEmail({ email: client.email, password, appUrl: await appUrl() }),
+  });
+  if (!sent.ok) return { error: `E-mail neodešel: ${sent.error ?? "neznámá chyba"}` };
+
+  return { sentTo: client.email };
 }
 
 function describeAuthError(

@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { SESSION_SECTIONS } from "@/lib/sessionTemplate";
 import { refineTasks } from "@/lib/sessionTasks";
 import type { SessionKind } from "@/lib/database.types";
-import { headers } from "next/headers";
+import { appUrl } from "@/lib/appUrl";
 import { emailConfigured, sendEmail } from "@/lib/email";
 import { sessionEmail } from "@/lib/sessionEmail";
 
@@ -169,16 +169,6 @@ export async function resendSessionEmail(sessionId: string): Promise<PublishResu
   const result = await deliverSessionEmail(supabase, sessionId);
   revalidatePath("/", "layout");
   return result.error ? { emailError: result.error } : { emailedTo: result.sentTo };
-}
-
-/** Adresa aplikace pro odkazy v e-mailu. */
-async function appUrl(): Promise<string> {
-  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  if (configured) return configured.replace(/\/+$/, "");
-  const list = await headers();
-  const host = list.get("x-forwarded-host") ?? list.get("host") ?? "prace-na-sobe.vercel.app";
-  const proto = list.get("x-forwarded-proto") ?? "https";
-  return `${proto}://${host}`;
 }
 
 async function deliverSessionEmail(
