@@ -49,11 +49,11 @@ export function FeedbackView({
             <section className="space-y-4 rounded-group bg-night p-5 text-white">
               <div className="flex items-end justify-between gap-4">
                 <div>
-                  <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-white/60">
+                  <p className="text-[13px] font-bold text-white/60">
                     Průměrné hodnocení
                   </p>
                   <p className="mt-1.5 flex items-baseline gap-1.5 font-display">
-                    <span className="text-[44px] font-extrabold leading-none tracking-tight">
+                    <span className="text-[44px] font-black leading-none tracking-tight">
                       {summary.average === null ? "–" : formatRating(summary.average)}
                     </span>
                     <span className="text-[17px] font-semibold text-white/60">/ 10</span>

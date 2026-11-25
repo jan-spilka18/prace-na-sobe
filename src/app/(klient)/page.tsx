@@ -1,3 +1,4 @@
+import { APP_NAME } from "@/lib/config";
 import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -38,7 +39,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
 
   if (!program) {
     return (
-      <Screen eyebrow="Vítej" title="Práce na sobě" action={<SettingsLink />}>
+      <Screen brand eyebrow="Vítej" title={APP_NAME} action={<SettingsLink />}>
         <EmptyState
           title="Zatím tu nic není"
           description="Honza ti výzvu založí před začátkem programu. Až bude připravená, objeví se tady."
@@ -92,13 +93,14 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
 
   return (
     <Screen
+      brand
       eyebrow={
         notStarted
           ? `Program začíná ${formatCzechDate(program.start_date)}`
           : // U starších dnů nese datum už sám nadpis, zbyde den v týdnu.
             daysBack > 2
-            ? formatCzechWeekday(date)
-            : `${formatCzechWeekday(date)} · ${formatCzechDayMonth(date)}`
+            ? capitalize(formatCzechWeekday(date))
+            : `${capitalize(formatCzechWeekday(date))} ${formatCzechDayMonth(date)}`
       }
       title={capitalize(describeDay(date, today))}
       action={<SettingsLink />}
@@ -175,7 +177,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
                 />
                 <section className="space-y-2.5">
                   <div className="flex items-baseline justify-between gap-3 px-1">
-                    <h2 className="font-display text-[22px] font-extrabold tracking-tight text-ink">
+                    <h2 className="font-display text-[20px] font-bold tracking-tight text-ink">
                       Tvoje dnešní kroky
                     </h2>
                     <span className="shrink-0 text-[14px] text-ink-500">

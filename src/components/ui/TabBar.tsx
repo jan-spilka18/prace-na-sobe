@@ -101,7 +101,8 @@ export function TabBar({
                 <span
                   className={cn(
                     "text-[11px]",
-                    active ? "font-extrabold" : "font-medium",
+                    // Font manuál: spodní lišta Inter 11 px / 600.
+                    "font-semibold",
                   )}
                 >
                   {tab.label}

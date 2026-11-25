@@ -216,7 +216,7 @@ export async function sendAccessEmail(input: {
 
   const sent = await sendEmail({
     to: client.email,
-    fromName: "Honza · Práce na sobě",
+    fromName: "Honza Spilka · Higher Self",
     ...accessEmail({ email: client.email, password, appUrl: await appUrl() }),
   });
   if (!sent.ok) return { error: `E-mail neodešel: ${sent.error ?? "neznámá chyba"}` };

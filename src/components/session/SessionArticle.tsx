@@ -81,7 +81,7 @@ function Heading({
   return (
     <h2
       className={cn(
-        "font-display text-[22px] font-extrabold tracking-tight text-ink",
+        "font-display text-[20px] font-bold tracking-tight text-ink",
         className,
       )}
     >
@@ -156,7 +156,7 @@ function Commitments({ section }: { section: FilledSection }) {
           line.kind === "label" ? (
             <p
               key={index}
-              className="pt-1.5 text-[12px] font-bold uppercase tracking-[0.1em] text-turquoise-700"
+              className="pt-1.5 text-[13px] font-bold text-turquoise-700"
             >
               {line.text}
             </p>
@@ -181,7 +181,7 @@ function Commitments({ section }: { section: FilledSection }) {
 function Focus({ section }: { section: FilledSection }) {
   return (
     <section className="space-y-2.5 rounded-card bg-turquoise px-4 py-5 text-on-sun">
-      <h2 className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.12em]">
+      <h2 className="flex items-center gap-2 text-[13px] font-bold">
         <svg
           viewBox="0 0 24 24"
           aria-hidden
@@ -217,7 +217,7 @@ function Question({ section }: { section: FilledSection }) {
       >
         ?
       </span>
-      <h2 className="text-[12px] font-bold uppercase tracking-[0.12em] text-ink-500">
+      <h2 className="text-[13px] font-bold text-ink-500">
         {section.title}
       </h2>
       <Markdown
@@ -283,7 +283,7 @@ function TasksAndRecommendations({
 
       {tips.length > 0 && (
         <div className="space-y-2.5 rounded-card bg-surface/70 px-3.5 py-3">
-          <p className="text-[12px] font-bold uppercase tracking-[0.1em] text-ink/60">
+          <p className="text-[13px] font-bold text-ink/60">
             Doporučení · nepovinné
           </p>
           <ul className="space-y-2.5">
@@ -316,7 +316,7 @@ function TaskGroup({
   return (
     <div className="space-y-2.5">
       {label && (
-        <p className="text-[12px] font-bold uppercase tracking-[0.1em] text-ink/60">
+        <p className="text-[13px] font-bold text-ink/60">
           {label}
         </p>
       )}

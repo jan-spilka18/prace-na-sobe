@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
+import { BrandLogo } from "@/components/Brand";
 
 /**
  * Obrazovka: malý štítek nad velkým nadpisem a obsah pod ním.
@@ -14,11 +15,17 @@ export function Screen({
   subtitle,
   back,
   action,
+  brand = false,
   children,
   className,
 }: {
-  /** Malý tyrkysový štítek nad nadpisem, verzálkami. */
+  /**
+   * Doprovodný řádek pod nadpisem (datum, jméno klienta). Font manuál
+   * nechce malé verzálkové nadtitulky, proto je pod nadpisem a běžným písmem.
+   */
   eyebrow?: React.ReactNode;
+  /** Logo nad nadpisem — jen na hlavních obrazovkách. */
+  brand?: boolean;
   /** Text, nebo při načítání kostra místo něj. */
   title: React.ReactNode;
   subtitle?: React.ReactNode;
@@ -73,18 +80,23 @@ export function Screen({
           className,
         )}
       >
+        {brand && !back && (
+          <div className="px-1 pt-4">
+            <BrandLogo className="h-[22px]" />
+          </div>
+        )}
         <div className={cn("mb-6 flex items-end gap-3 px-1", !back && "pt-5")}>
           <div className="min-w-0 flex-1">
+            <h1 className="font-display text-[28px] font-bold leading-[1.15] text-ink">
+              {title}
+            </h1>
             {eyebrow && (
-              <div className="mb-1 text-[12px] font-bold uppercase tracking-[0.12em] text-turquoise-700">
+              <div className="mt-1 text-[14px] leading-snug text-ink-600">
                 {eyebrow}
               </div>
             )}
-            <h1 className="font-display text-[34px] font-extrabold leading-[1.08] tracking-tight text-ink">
-              {title}
-            </h1>
             {subtitle && (
-              <p className="mt-1.5 text-[15px] text-ink-600">{subtitle}</p>
+              <p className="mt-0.5 text-[14px] leading-snug text-ink-600">{subtitle}</p>
             )}
           </div>
           {!back && action && <div className="shrink-0">{action}</div>}

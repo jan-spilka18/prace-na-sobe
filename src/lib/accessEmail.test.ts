@@ -11,7 +11,7 @@ const input = {
 describe("accessEmail", () => {
   it("obsahuje odkaz, e-mail i heslo", () => {
     const { html, text, subject } = accessEmail(input);
-    assert.equal(subject, "Tvůj přístup do aplikace Práce na sobě");
+    assert.equal(subject, "Tvůj přístup do aplikace Higher Self");
     for (const body of [html, text]) {
       assert.ok(body.includes("https://prace-na-sobe.vercel.app"));
       assert.ok(body.includes("petr@example.com"));

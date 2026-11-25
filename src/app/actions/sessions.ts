@@ -209,7 +209,7 @@ async function deliverSessionEmail(
     appUrl: await appUrl(),
   });
 
-  const sent = await sendEmail({ to: client.email, fromName: "Honza · Práce na sobě", ...email });
+  const sent = await sendEmail({ to: client.email, fromName: "Honza Spilka · Higher Self", ...email });
   if (!sent.ok) return { error: `E-mail neodešel: ${sent.error ?? "neznámá chyba"}` };
 
   // Bez migrace 0013 sloupec chybí — e-mail ale odešel, to je podstatné.

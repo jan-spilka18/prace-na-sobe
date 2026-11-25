@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/components/Brand";
 import { requireProfile } from "@/lib/auth";
 import { Screen } from "@/components/ui/Screen";
 import { ListGroup, ListRow } from "@/components/ui/List";
@@ -32,7 +33,7 @@ export default async function SettingsPage() {
           jako v průvodci, ať se nemusí učit dva.
         */}
         <section className="space-y-2">
-          <h2 className="px-4 text-[13px] font-semibold uppercase tracking-wide text-ink-500">
+          <h2 className="px-4 text-[14px] font-semibold text-ink-500">
             O tobě
           </h2>
           <ProfileForm
@@ -69,11 +70,16 @@ export default async function SettingsPage() {
               <SignOutButton />
             </div>
           </div>
-          <p className="px-4 text-[13px] leading-snug text-ink-500">
+          <p className="px-4 text-[14px] leading-snug text-ink-500">
             Odhlásí jen tenhle telefon. {APP_NAME} na ostatních zařízeních
             zůstane přihlášená.
           </p>
         </section>
+
+        <div className="flex flex-col items-center gap-2 pt-4">
+          <BrandLogo className="h-5 opacity-80" />
+          <p className="text-[14px] text-ink-500">{APP_NAME}</p>
+        </div>
       </div>
     </Screen>
   );

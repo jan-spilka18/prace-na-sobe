@@ -395,7 +395,7 @@ export function SessionEditor({
                 className="space-y-3 rounded-[24px] bg-surface p-4"
               >
                 <div className="flex items-center justify-between gap-2 px-1">
-                  <h2 className="flex min-w-0 items-center gap-2.5 font-display text-[17px] font-extrabold tracking-tight text-ink">
+                  <h2 className="flex min-w-0 items-center gap-2.5 font-display text-[17px] font-semibold tracking-tight text-ink">
                     {/* Plná tečka = sekce má obsah; prázdná se klientovi neukáže. */}
                     <span
                       aria-hidden
@@ -456,7 +456,7 @@ export function SessionEditor({
             pro klienta se neukazuje.
           */}
           <section className="space-y-2.5 rounded-[24px] bg-night p-5 text-white">
-            <h2 className="flex items-center gap-2 font-display text-[17px] font-extrabold tracking-tight">
+            <h2 className="flex items-center gap-2 font-display text-[17px] font-semibold tracking-tight">
               <svg
                 viewBox="0 0 24 24"
                 aria-hidden
@@ -511,7 +511,7 @@ export function SessionEditor({
               </svg>
             </span>
             <div className="min-w-0">
-              <p className="font-display text-[18px] font-extrabold tracking-tight text-ink">
+              <p className="font-display text-[17px] font-semibold tracking-tight text-ink">
                 Klient zápis vidí
               </p>
               <p className="text-[14px] leading-snug text-ink-600">
@@ -570,7 +570,7 @@ export function SessionEditor({
       ) : (
         <section className="space-y-4 rounded-[24px] bg-surface p-5">
           <div>
-            <p className="font-display text-[18px] font-extrabold tracking-tight text-ink">
+            <p className="font-display text-[17px] font-semibold tracking-tight text-ink">
               Pustit zápis klientovi
             </p>
             <p className="mt-0.5 text-[14px] leading-snug text-ink-600">
@@ -742,7 +742,7 @@ function LinkAdder({ onAdd }: { onAdd: (label: string, url: string) => void }) {
 
 function Step({ number, title }: { number: number; title: string }) {
   return (
-    <p className="flex items-center gap-2 px-1 pt-1 text-[12px] font-bold uppercase tracking-[0.12em] text-ink-500">
+    <p className="flex items-center gap-2 px-1 pt-1 text-[13px] font-bold text-ink-500">
       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-ink text-[11px] font-extrabold tracking-normal text-on-ink">
         {number}
       </span>
@@ -852,7 +852,7 @@ function FeedbackSummary({ feedback }: { feedback: SessionFeedback }) {
 
   return (
     <section className="space-y-3 rounded-[24px] bg-turquoise px-5 py-5 text-on-sun">
-      <p className="text-[12px] font-bold uppercase tracking-[0.12em]">
+      <p className="text-[13px] font-bold">
         Zpětná vazba klienta
       </p>
       {feedback.takeaway && (
@@ -916,7 +916,7 @@ function DeleteSession({
 
   return (
     <div className="space-y-3 rounded-[24px] bg-surface p-5">
-      <p className="font-display text-[18px] font-extrabold tracking-tight text-ink">
+      <p className="font-display text-[17px] font-semibold tracking-tight text-ink">
         Opravdu smazat?
       </p>
       <p className="text-[15px] leading-snug text-ink-600">

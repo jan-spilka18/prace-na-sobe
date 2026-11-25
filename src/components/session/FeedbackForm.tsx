@@ -74,7 +74,7 @@ export function FeedbackForm({
       {editing ? (
         <div className="space-y-6">
           <div className="space-y-1.5">
-            <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-sun">
+            <p className="text-[13px] font-bold text-sun">
               Tvoje zpětná vazba
             </p>
             <h2 className="font-display text-[24px] font-extrabold leading-tight tracking-tight">
@@ -248,7 +248,7 @@ function Sent({
           <path d="M5 12.5l4.5 4.5L19 7.5" />
         </svg>
       </span>
-      <h2 className="font-display text-[22px] font-extrabold tracking-tight">
+      <h2 className="font-display text-[20px] font-bold tracking-tight">
         Díky, Honza to má
       </h2>
       {takeaway && (

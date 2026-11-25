@@ -92,7 +92,7 @@ export function NotesSection({
                 className="rounded-card border border-white/12 bg-white/5 p-3"
               >
                 <div className="flex items-baseline justify-between gap-3">
-                  <time className="text-[12px] font-semibold uppercase tracking-wide text-white/45">
+                  <time className="text-[14px] font-semibold text-white/45">
                     {formatCzechDate(note.created_at.slice(0, 10))}
                   </time>
 

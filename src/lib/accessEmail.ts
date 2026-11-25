@@ -23,8 +23,8 @@ const C = {
   sun: "#fff0a6",
 };
 
-const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
-const DISPLAY = "Montserrat,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
+const FONT = "Outfit,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
+const DISPLAY = "Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 const MONO = "ui-monospace,SFMono-Regular,Menlo,Consolas,monospace";
 
 export type AccessEmailInput = {
@@ -39,14 +39,14 @@ export function accessEmail(input: AccessEmailInput): {
   html: string;
   text: string;
 } {
-  const subject = "Tvůj přístup do aplikace Práce na sobě";
+  const subject = "Tvůj přístup do aplikace Higher Self";
   const url = escapeHtml(input.appUrl);
 
   const card = (background: string, inner: string) =>
     `<tr><td style="background:${background};border-radius:22px;padding:20px">${inner}</td></tr>`;
   const gap = `<tr><td style="height:12px;line-height:12px;font-size:0">&nbsp;</td></tr>`;
   const eyebrow = (text: string, color: string) =>
-    `<div style="font-family:${FONT};font-size:11px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;color:${color}">${text}</div>`;
+    `<div style="font-family:${DISPLAY};font-size:13px;font-weight:700;color:${color}">${text}</div>`;
   const field = (label: string, value: string, font: string) =>
     `<div style="margin-top:10px;padding:12px 14px;border-radius:14px;background:${C.canvas}">
       <div style="font-family:${FONT};font-size:12px;font-weight:700;color:${C.muted}">${label}</div>
@@ -57,19 +57,19 @@ export function accessEmail(input: AccessEmailInput): {
     card(
       C.surface,
       `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:14px"><tr>
-        <td style="width:26px;height:26px;background:${C.turquoise};border-radius:8px;text-align:center;font-size:15px;line-height:26px">☀︎</td>
-        <td style="padding-left:8px;font-family:${DISPLAY};font-size:14px;font-weight:800;color:${C.ink}">Práce na sobě</td>
+<td style="width:30px"><img src="${url}/brand/ikona-tmava-96.png" width="30" height="30" alt="hs." style="display:block;border:0;border-radius:8px"></td>
+    <td style="padding-left:9px;font-family:${DISPLAY};font-size:15px;font-weight:700;letter-spacing:-0.3px;color:${C.ink}">Higher Self</td>
       </tr></table>
       ${eyebrow("Tvoje výzva začíná", C.turquoise700)}
-      <h1 style="margin:6px 0 0;font-family:${DISPLAY};font-size:28px;line-height:1.15;font-weight:800;color:${C.ink}">Vítej v aplikaci</h1>
+      <h1 style="margin:6px 0 0;font-family:${DISPLAY};font-size:28px;line-height:1.15;font-weight:700;color:${C.ink}">Vítej v aplikaci</h1>
       <p style="margin:14px 0 0;font-family:${FONT};font-size:15px;line-height:1.55;color:${C.ink2}">Ahoj, posílám ti přístup do aplikace. Budeš si v ní každý den odškrtávat návyky, uvidíš, jak ti výzva jde, a najdeš tam zápisy z našich sezení.</p>`,
     ),
     card(
       C.surface,
-      `<h2 style="margin:0;font-family:${DISPLAY};font-size:18px;font-weight:800;color:${C.ink}">Tvoje přihlašovací údaje</h2>
+      `<h2 style="margin:0;font-family:${DISPLAY};font-size:18px;font-weight:700;color:${C.ink}">Tvoje přihlašovací údaje</h2>
       ${field("E-mail", input.email, FONT)}
       ${field("Heslo", input.password, MONO)}
-      <a href="${url}" style="display:block;margin-top:16px;height:50px;line-height:50px;border-radius:25px;background:${C.turquoise};color:${C.ink};text-align:center;text-decoration:none;font-family:${FONT};font-size:16px;font-weight:800">Otevřít aplikaci →</a>
+      <a href="${url}" style="display:block;margin-top:16px;height:50px;line-height:50px;border-radius:25px;background:${C.turquoise};color:${C.ink};text-align:center;text-decoration:none;font-family:${FONT};font-size:16px;font-weight:700">Otevřít aplikaci →</a>
       <p style="margin:10px 0 0;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};text-align:center">${url.replace(/^https?:\/\//, "")}</p>`,
     ),
     card(
@@ -103,7 +103,7 @@ ${blocks.join(`\n${gap}\n`)}
 </html>`;
 
   const text = [
-    "Ahoj, posílám ti přístup do aplikace Práce na sobě.",
+    "Ahoj, posílám ti přístup do aplikace Higher Self.",
     "",
     `Aplikace: ${input.appUrl}`,
     `E-mail: ${input.email}`,

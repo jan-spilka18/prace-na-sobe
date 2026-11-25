@@ -56,7 +56,7 @@ export default async function AdminSessionsPage({
         ) : (
           <section className="space-y-3">
             <div className="flex items-baseline justify-between gap-3 px-1">
-              <h2 className="font-display text-[22px] font-extrabold tracking-tight text-ink">
+              <h2 className="font-display text-[20px] font-bold tracking-tight text-ink">
                 {sessions.length === 1 ? "Jedno sezení" : "Všechna sezení"}
               </h2>
               {drafts > 0 && (
@@ -95,7 +95,7 @@ export default async function AdminSessionsPage({
                             : "bg-sun-surface text-ink",
                         )}
                       >
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider opacity-70">
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider opacity-70">
                           {formatCzechWeekday(session.session_date).slice(0, 2)}
                         </span>
                         <span className="mt-1 whitespace-nowrap text-[14px] font-extrabold tabular-nums">
@@ -103,7 +103,7 @@ export default async function AdminSessionsPage({
                         </span>
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate font-display text-[18px] font-extrabold tracking-tight text-ink">
+                        <span className="block truncate font-display text-[17px] font-semibold tracking-tight text-ink">
                           {SESSION_KIND_LABELS[session.kind]}
                         </span>
                         <span className="block text-[13px] font-semibold text-ink-500">

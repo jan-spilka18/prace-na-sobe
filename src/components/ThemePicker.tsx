@@ -21,7 +21,7 @@ export function ThemePicker({ initial }: { initial: Theme }) {
 
   return (
     <section className="space-y-2">
-      <h2 className="px-4 text-[13px] font-semibold uppercase tracking-wide text-ink-500">
+      <h2 className="px-4 text-[14px] font-semibold text-ink-500">
         Vzhled
       </h2>
 

@@ -41,7 +41,7 @@ function DeleteClient({
   if (!open) {
     return (
       <div className="space-y-3">
-        <h2 className="px-4 text-[13px] font-semibold uppercase tracking-wide text-ink-500">
+        <h2 className="px-4 text-[14px] font-semibold text-ink-500">
           Smazání klienta
         </h2>
         <div className="space-y-3 rounded-group bg-surface p-4">
@@ -59,7 +59,7 @@ function DeleteClient({
 
   return (
     <form action={formAction} className="space-y-3">
-      <h2 className="px-4 text-[13px] font-semibold uppercase tracking-wide text-ink-500">
+      <h2 className="px-4 text-[14px] font-semibold text-ink-500">
         Smazání klienta
       </h2>
 

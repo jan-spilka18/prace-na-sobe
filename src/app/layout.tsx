@@ -1,22 +1,29 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
-import { Montserrat } from "next/font/google";
+import { Inter, Outfit } from "next/font/google";
 import { THEME_COOKIE, parseTheme } from "@/lib/theme";
 import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME } from "@/lib/config";
 import "./globals.css";
 
 /*
-  Montserrat nese nadpisy, velká čísla a texty, kterými aplikace mluví
-  (vize, úvodní průvodce). Běžný text v seznamech a tlačítkách zůstává
-  systémový — na iOS je to SF Pro, které se v malých velikostech čte
-  rychleji a nepůsobí jako web.
+  Dvě písma podle font manuálu Honzy Spilky:
+  - Inter: nadpisy, tlačítka, čísla, štítky — všechno tučné.
+  - Outfit: běžný text, popisky, odstavce.
 
   latin-ext je kvůli české diakritice; bez něj by ě, š, ř spadly na
   náhradní písmo a nadpis by se rozpadl.
 */
-const montserrat = Montserrat({
+const inter = Inter({
   subsets: ["latin", "latin-ext"],
-  variable: "--font-montserrat",
+  weight: ["300", "600", "700", "900"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const outfit = Outfit({
+  subsets: ["latin", "latin-ext"],
+  weight: ["300", "400", "500"],
+  variable: "--font-outfit",
   display: "swap",
 });
 
@@ -52,7 +59,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="cs"
       data-theme={theme === "auto" ? undefined : theme}
-      className={`${montserrat.variable} h-full antialiased`}
+      className={`${inter.variable} ${outfit.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">{children}</body>
     </html>

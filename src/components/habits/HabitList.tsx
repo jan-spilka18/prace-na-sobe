@@ -93,7 +93,7 @@ export function HabitList({
       */}
       {!canSetStart && active.length <= 3 && (
         <aside className="rounded-[24px] bg-sun-surface px-5 py-4">
-          <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-sun-700">
+          <p className="text-[13px] font-bold text-sun-700">
             Méně je víc
           </p>
           <p className="mt-1 text-[15px] leading-snug text-ink">
@@ -166,7 +166,7 @@ function HabitRow({
           {number}
         </span>
         <div className="min-w-0 flex-1 pt-1">
-          <h3 className="font-display text-[18px] font-extrabold leading-snug tracking-tight text-ink">
+          <h3 className="font-display text-[17px] font-semibold leading-snug tracking-tight text-ink">
             {habit.title}
           </h3>
           <p className="mt-2 flex flex-wrap gap-1.5">

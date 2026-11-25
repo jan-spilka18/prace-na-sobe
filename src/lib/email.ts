@@ -65,7 +65,7 @@ async function sendViaGmail(input: {
     });
 
     await transport.sendMail({
-      from: { name: input.fromName ?? "Práce na sobě", address: user },
+      from: { name: input.fromName ?? "Higher Self", address: user },
       to: input.to,
       subject: input.subject,
       text: input.text,

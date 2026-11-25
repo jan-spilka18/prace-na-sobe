@@ -116,7 +116,7 @@ export function VisionStep({
             vision === "" && "opacity-50",
           )}
         >
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink/55">
+          <p className="text-[13px] font-bold text-ink/55">
             Takhle ji uvidíš každý den
           </p>
           <p className="mt-1.5 font-display text-[17px] font-semibold leading-snug text-ink">
@@ -254,7 +254,7 @@ export function HabitsStep({
 
       <Rise i={3} className="mt-6">
         {existing.length > 0 && (
-          <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-500">
+          <h2 className="mb-2 px-1 text-[13px] font-bold text-ink-500">
             Přidat další
           </h2>
         )}

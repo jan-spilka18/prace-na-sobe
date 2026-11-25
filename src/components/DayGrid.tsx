@@ -66,7 +66,7 @@ export function DayGrid({
           {WEEKDAYS.map((day) => (
             <div
               key={day}
-              className="pb-1 text-center text-[10px] font-semibold uppercase tracking-wide text-ink-400"
+              className="pb-1 text-center text-[11px] font-semibold uppercase tracking-wide text-ink-400"
             >
               {day}
             </div>

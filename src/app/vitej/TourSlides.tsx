@@ -240,7 +240,7 @@ export function OverviewSlide() {
                   aria-label={`${day.label} ${day.day}.`}
                   className="flex flex-col items-center gap-1.5"
                 >
-                  <span className={cn("text-[10px] font-semibold uppercase", picked === index ? "text-turquoise-700" : "text-ink-400")}>
+                  <span className={cn("text-[11px] font-semibold uppercase", picked === index ? "text-turquoise-700" : "text-ink-400")}>
                     {day.label}
                   </span>
                   <span
@@ -274,7 +274,7 @@ export function OverviewSlide() {
               Celkem {Math.floor(minutes / 60)} h {minutes % 60} min
             </p>
           </div>
-          <p className="font-display text-[22px] font-bold tabular-nums text-ink">
+          <p className="font-display text-[20px] font-bold tabular-nums text-ink">
             92<span className="ml-0.5 text-[13px] text-ink-500">%</span>
           </p>
         </div>
@@ -333,7 +333,7 @@ export function VisionSlide() {
           className="flex w-full items-start gap-3 rounded-group bg-sun-surface px-4 py-3.5 text-left"
         >
           <span className="min-w-0 flex-1">
-            <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink/55">
+            <span className="block text-[13px] font-bold text-ink/55">
               Připomeň si vizi a důvod proč
             </span>
             <span className={cn("mt-1.5 font-display text-[17px] font-semibold leading-snug text-ink", open ? "block" : "line-clamp-2")}>

@@ -11,14 +11,14 @@
   --color-turquoise-300: #8fd8e0;
   --color-turquoise: #5fc3ce;
   --color-turquoise-600: #3da5b1;
-  --color-turquoise-700: #2d7d87;
+  --color-turquoise-700: #1f7a85;
 
   /* Tmavá tyrkysová pro přechod karty dne. V tmavém režimu se nemění,
      jinak by bílé písmo na zesvětlené kartě zmizelo. */
-  --color-turquoise-deep: #2d7d87;
+  --color-turquoise-deep: #1f7a85;
 
   --color-sun-100: #fffbe0;
-  --color-sun: #fff0a6;
+  --color-sun: #f2de6b;
   --color-sun-600: #d6c25a;
   --color-sun-700: #8a7b21;
   /* Žlutá jako plocha (vize, úkoly). V tmavém režimu se tlumí — jasně
@@ -30,8 +30,8 @@
 
   /* Barva textu. V tmavém režimu se otáčí na světlou. */
   --color-ink: #171717;
-  --color-ink-600: #5c5c5e;
-  --color-ink-500: #8a8a8e;
+  --color-ink-600: #555555;
+  --color-ink-500: #6b6b6b;
   --color-ink-400: #aeaeb2;
   --color-ink-300: #c7c7cc;
   /* Písmo na výplni bg-ink (nesplněné dny). Otáčí se spolu s ní. */
@@ -52,12 +52,19 @@
      a stejný v obou režimech — na tmavém pozadí vynikne i tak. */
   --color-badge: #d63027;
 
+  /*
+    Font manuál: co je tučné, je Inter; co je běžný text, je Outfit.
+    Pravidlo pod @theme ho vynucuje pro celou aplikaci najednou.
+  */
   --font-sans:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+    var(--font-outfit), var(--font-inter), system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+  --font-display:
+    var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  /* Nadpisy a velká čísla. Běžný text zůstává systémový. */
-  --font-display: var(--font-montserrat), "Helvetica Neue", Arial, sans-serif;
+  /* Inter se používá ve vahách 600, 700 a 900. Nadpisy jsou 700 —
+     extrabold (800) se proto mapuje na 700, aby se nedopočítával. */
+  --font-weight-extrabold: 700;
 
   /* iOS poloměry: karty 16, listy 20, sheet 28 */
   --radius-card: 1rem;
@@ -102,8 +109,8 @@ html {
     --color-sun-surface: #3a3520;
 
     --color-ink: #f2f2f7;
-    --color-ink-600: #aeaeb2;
-    --color-ink-500: #8e8e93;
+    --color-ink-600: #b5b5b5;
+    --color-ink-500: #9a9a9a;
     --color-ink-400: #636366;
     --color-ink-300: #48484a;
     --color-on-ink: #0b0b0d;
@@ -133,8 +140,8 @@ html {
   --color-sun-surface: #3a3520;
 
   --color-ink: #f2f2f7;
-  --color-ink-600: #aeaeb2;
-  --color-ink-500: #8e8e93;
+  --color-ink-600: #b5b5b5;
+  --color-ink-500: #9a9a9a;
   --color-ink-400: #636366;
   --color-ink-300: #48484a;
   --color-on-ink: #0b0b0d;
@@ -156,6 +163,50 @@ body {
   font-family: var(--font-sans);
   /* iOS: nechceme gumové přetažení celé stránky pod tab barem */
   overscroll-behavior-y: none;
+}
+
+/*
+  Font manuál, základní pravidlo: co je tučné, je Inter. Co je běžný text,
+  je Outfit. Tučný Outfit se nepoužívá — proto každá tučná váha přepne
+  písmo na Inter, ať je napsaná kdekoli v aplikaci.
+*/
+@layer utilities {
+  .font-semibold,
+  .font-bold,
+  .font-extrabold,
+  .font-black {
+    font-family: var(--font-display);
+  }
+}
+strong,
+b {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+.font-display {
+  letter-spacing: -0.02em;
+}
+
+/*
+  Logo má dvě verze: tmavé na světlé pozadí a bílé na tmavé. Která se
+  ukáže, řídí stejná pravidla jako barvy — podle telefonu, nebo ruční volby.
+*/
+.brand-on-dark {
+  display: none;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .brand-on-light {
+    display: none;
+  }
+  :root:not([data-theme="light"]) .brand-on-dark {
+    display: block;
+  }
+}
+:root[data-theme="dark"] .brand-on-light {
+  display: none;
+}
+:root[data-theme="dark"] .brand-on-dark {
+  display: block;
 }
 
 /* Bezpečné zóny pro iPhone s home indicatorem */

@@ -15,7 +15,7 @@ import {
 } from "@/app/admin/actions";
 
 const HEADING =
-  "px-4 text-[13px] font-semibold uppercase tracking-wide text-ink-500";
+  "px-4 text-[14px] font-semibold text-ink-500";
 
 export function ContactForm({
   clientId,

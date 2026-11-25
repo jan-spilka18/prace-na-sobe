@@ -36,8 +36,8 @@ const C = {
   sun700: "#8a7b21",
 };
 
-const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
-const DISPLAY = "Montserrat,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
+const FONT = "Outfit,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
+const DISPLAY = "Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 
 export type SessionEmailInput = {
   sessionId: string;
@@ -77,9 +77,9 @@ export function sessionEmail(input: SessionEmailInput): SessionEmail {
   blocks.push(
     card(
       C.surface,
-      `${brand()}
+      `${brand(input.appUrl)}
       ${eyebrow(`Zápis ze sezení · ${heading.title}`, C.turquoise700)}
-      <h1 style="margin:6px 0 0;font-family:${DISPLAY};font-size:28px;line-height:1.15;font-weight:800;color:${C.ink}">${escapeHtml(heading.subtitle || "Sezení")}</h1>
+      <h1 style="margin:6px 0 0;font-family:${DISPLAY};font-size:28px;line-height:1.15;font-weight:700;color:${C.ink}">${escapeHtml(heading.subtitle || "Sezení")}</h1>
       <p style="margin:14px 0 0;font-family:${FONT};font-size:15px;line-height:1.55;color:${C.ink2}">Ahoj, díky za společné sezení. Tady máš všechno, na čem jsme se domluvili, ať to máš po ruce.</p>`,
     ),
   );
@@ -126,7 +126,7 @@ export function sessionEmail(input: SessionEmailInput): SessionEmail {
     blocks.push(
       card(
         C.surface,
-        `<h2 style="margin:0 0 10px;font-family:${DISPLAY};font-size:18px;font-weight:800;color:${C.ink}">${escapeHtml(section.title)}</h2>
+        `<h2 style="margin:0 0 10px;font-family:${DISPLAY};font-size:18px;font-weight:700;color:${C.ink}">${escapeHtml(section.title)}</h2>
         ${markdownHtml(section.body, C.ink2)}`,
       ),
     );
@@ -136,7 +136,7 @@ export function sessionEmail(input: SessionEmailInput): SessionEmail {
 
   blocks.push(`<tr><td style="padding:8px 12px 0;text-align:center">
     <a href="${escapeHtml(sessionUrl)}" style="font-family:${FONT};font-size:15px;font-weight:700;color:${C.turquoise700};text-decoration:none">Otevřít zápis v aplikaci</a>
-    <p style="margin:8px 0 0;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted}">Tenhle e-mail ti přišel, protože ti Honza zveřejnil zápis ze sezení v aplikaci Práce na sobě.</p>
+    <p style="margin:8px 0 0;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted}">Tenhle e-mail ti přišel, protože ti Honza zveřejnil zápis ze sezení v aplikaci Higher Self.</p>
   </td></tr>`);
 
   const html = `<!doctype html>
@@ -169,13 +169,18 @@ function card(background: string, inner: string): string {
 }
 
 function eyebrow(text: string, color: string): string {
-  return `<div style="font-family:${FONT};font-size:11px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;color:${color}">${escapeHtml(text)}</div>`;
+  return `<div style="font-family:${DISPLAY};font-size:13px;font-weight:700;color:${color}">${escapeHtml(text)}</div>`;
 }
 
-function brand(): string {
+/**
+ * Hlavička e-mailu: miniatura „hs." a název aplikace. Miniatura má vlastní
+ * tmavou dlaždici, takže je čitelná i v tmavém režimu Gmailu — tmavý
+ * wordmark by tam zmizel.
+ */
+function brand(appUrl: string): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:14px"><tr>
-    <td style="width:26px;height:26px;background:${C.turquoise};border-radius:8px;text-align:center;font-size:15px;line-height:26px">☀︎</td>
-    <td style="padding-left:8px;font-family:${DISPLAY};font-size:14px;font-weight:800;color:${C.ink}">Práce na sobě</td>
+    <td style="width:30px"><img src="${escapeHtml(appUrl)}/brand/ikona-tmava-96.png" width="30" height="30" alt="hs." style="display:block;border:0;border-radius:8px"></td>
+    <td style="padding-left:9px;font-family:${DISPLAY};font-size:15px;font-weight:700;letter-spacing:-0.3px;color:${C.ink}">Higher Self</td>
   </tr></table>`;
 }
 
@@ -207,7 +212,7 @@ function markdownHtml(
       return block.items
         .map(
           (item, index) => `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px"><tr>
-            <td valign="top" style="width:20px;padding-top:${block.kind === "bullets" ? "8px" : "0"};font-family:${FONT};font-size:14px;font-weight:800;color:${C.turquoise700}">${
+            <td valign="top" style="width:20px;padding-top:${block.kind === "bullets" ? "8px" : "0"};font-family:${FONT};font-size:14px;font-weight:700;color:${C.turquoise700}">${
               block.kind === "bullets"
                 ? `<div style="width:6px;height:6px;border-radius:3px;background:${C.turquoise}"></div>`
                 : `${index + 1}.`
@@ -249,12 +254,12 @@ function tasksHtml(tasksBody: string, recommendations: string): string {
 
   const parts: string[] = [];
   if (mine.length > 0) {
-    parts.push(`<h2 style="margin:0 0 8px;font-family:${DISPLAY};font-size:18px;font-weight:800;color:${C.ink}">Úkoly do příště</h2>
+    parts.push(`<h2 style="margin:0 0 8px;font-family:${DISPLAY};font-size:18px;font-weight:700;color:${C.ink}">Úkoly do příště</h2>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${mine
       .map((task, index) =>
         taskRow(
           task,
-          `<div style="width:24px;height:24px;border-radius:12px;background:${C.turquoise};color:${C.ink};text-align:center;font-family:${FONT};font-size:12px;font-weight:800;line-height:24px">${index + 1}</div>`,
+          `<div style="width:24px;height:24px;border-radius:12px;background:${C.turquoise};color:${C.ink};text-align:center;font-family:${FONT};font-size:12px;font-weight:700;line-height:24px">${index + 1}</div>`,
         ),
       )
       .join("")}</table>`);
@@ -297,26 +302,26 @@ function linksHtml(title: string, body: string): string {
     )
     .join("");
 
-  return `<h2 style="margin:0 0 4px;font-family:${DISPLAY};font-size:18px;font-weight:800;color:${C.ink}">${escapeHtml(title)}</h2>${rows}`;
+  return `<h2 style="margin:0 0 4px;font-family:${DISPLAY};font-size:18px;font-weight:700;color:${C.ink}">${escapeHtml(title)}</h2>${rows}`;
 }
 
 function feedbackCard(feedbackUrl: (rating?: number) => string): string {
   const cell = (n: number) =>
-    `<td style="padding:3px"><a href="${escapeHtml(feedbackUrl(n))}" style="display:block;height:40px;line-height:40px;border-radius:12px;background:${C.surface};color:${C.ink};text-align:center;text-decoration:none;font-family:${DISPLAY};font-size:15px;font-weight:800">${n}</a></td>`;
+    `<td style="padding:3px"><a href="${escapeHtml(feedbackUrl(n))}" style="display:block;height:40px;line-height:40px;border-radius:12px;background:${C.surface};color:${C.ink};text-align:center;text-decoration:none;font-family:${DISPLAY};font-size:15px;font-weight:700">${n}</a></td>`;
   const row = (from: number) =>
     `<tr>${[0, 1, 2, 3, 4].map((i) => cell(from + i)).join("")}</tr>`;
 
   return card(
     C.turquoise100,
     `${eyebrow("Tvoje zpětná vazba", C.turquoise700)}
-    <p style="margin:8px 0 0;font-family:${DISPLAY};font-size:22px;line-height:1.25;font-weight:800;color:${C.ink}">Jak ti naše sezení sedlo?</p>
+    <p style="margin:8px 0 0;font-family:${DISPLAY};font-size:22px;line-height:1.25;font-weight:700;color:${C.ink}">Jak ti naše sezení sedlo?</p>
     <p style="margin:8px 0 12px;font-family:${FONT};font-size:14px;line-height:1.5;color:${C.ink2}">Klikni na číslo – otevře se aplikace s vybraným hodnocením a dopíšeš, co sis odnesl.</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="table-layout:fixed">${row(1)}${row(6)}</table>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:4px"><tr>
       <td style="font-family:${FONT};font-size:12px;color:${C.turquoise700}">nic moc</td>
       <td style="font-family:${FONT};font-size:12px;color:${C.turquoise700};text-align:right">pecka</td>
     </tr></table>
-    <a href="${escapeHtml(feedbackUrl())}" style="display:block;margin-top:14px;height:50px;line-height:50px;border-radius:25px;background:${C.turquoise};color:${C.ink};text-align:center;text-decoration:none;font-family:${FONT};font-size:16px;font-weight:800">Napsat zpětnou vazbu →</a>`,
+    <a href="${escapeHtml(feedbackUrl())}" style="display:block;margin-top:14px;height:50px;line-height:50px;border-radius:25px;background:${C.turquoise};color:${C.ink};text-align:center;text-decoration:none;font-family:${FONT};font-size:16px;font-weight:700">Napsat zpětnou vazbu →</a>`,
   );
 }
 

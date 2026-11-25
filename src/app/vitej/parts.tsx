@@ -80,7 +80,7 @@ export function Mark({ children }: { children: React.ReactNode }) {
  */
 export function TryHint({ children = "Zkus si to" }: { children?: string }) {
   return (
-    <p className="mb-2 flex items-center gap-1.5 px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-turquoise-700">
+    <p className="mb-2 flex items-center gap-1.5 px-1 text-[13px] font-bold text-turquoise-700">
       <svg viewBox="0 0 24 24" aria-hidden className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M9 11V5.5a1.5 1.5 0 013 0V10m0-1.5a1.5 1.5 0 013 0V11m0-1a1.5 1.5 0 013 0v4.5a6 6 0 01-6 6h-.6a6 6 0 01-4.9-2.6L4.2 14a1.5 1.5 0 012.4-1.8L9 14.5" />
       </svg>

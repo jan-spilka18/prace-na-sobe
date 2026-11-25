@@ -29,7 +29,7 @@ export function LastSessionFocus({
       href={`/sezeni/${sessionId}`}
       className="block space-y-2.5 rounded-[24px] bg-turquoise px-5 py-5 text-on-sun transition-opacity active:opacity-80"
     >
-      <span className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.12em]">
+      <span className="flex items-center gap-2 text-[13px] font-bold">
         <svg
           viewBox="0 0 24 24"
           aria-hidden

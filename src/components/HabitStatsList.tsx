@@ -19,7 +19,7 @@ export function HabitStatsList({
 
   return (
     <section className="space-y-3">
-      <h2 className="px-1 font-display text-[22px] font-extrabold tracking-tight text-ink">
+      <h2 className="px-1 font-display text-[20px] font-bold tracking-tight text-ink">
         {title}
       </h2>
 
@@ -43,7 +43,7 @@ export function HabitStatsList({
 
                 <p
                   className={cn(
-                    "shrink-0 font-display text-[22px] font-extrabold leading-none tabular-nums",
+                    "shrink-0 font-display text-[20px] font-bold leading-none tabular-nums",
                     stat.rate === null
                       ? "text-ink-400"
                       : struggling

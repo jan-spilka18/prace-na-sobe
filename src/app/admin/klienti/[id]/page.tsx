@@ -117,7 +117,7 @@ export default async function ClientDetailPage({
 
         {program && (
           <section className="rounded-[24px] bg-night px-5 py-5 text-white">
-            <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-sun">
+            <p className="text-[13px] font-bold text-sun">
               {program.title || "Program"}
             </p>
             {day === 0 ? (
@@ -128,7 +128,7 @@ export default async function ClientDetailPage({
               <>
                 <p className="mt-2 flex items-baseline gap-2 font-display">
                   <span className="text-[17px] font-bold text-white/70">Den</span>
-                  <span className="text-[48px] font-extrabold leading-none tabular-nums">
+                  <span className="text-[44px] font-black leading-none tabular-nums">
                     {day}
                   </span>
                   <span className="text-[17px] font-bold text-white/70">
@@ -169,7 +169,7 @@ export default async function ClientDetailPage({
 
         <section className="space-y-3">
           <div className="flex items-baseline justify-between gap-3 px-1">
-            <h2 className="font-display text-[22px] font-extrabold tracking-tight text-ink">
+            <h2 className="font-display text-[20px] font-bold tracking-tight text-ink">
               Sezení
             </h2>
             <Link
@@ -185,7 +185,7 @@ export default async function ClientDetailPage({
               href={`/admin/zpetna-vazba?klient=${id}`}
               className="block rounded-[24px] bg-turquoise px-5 py-4 text-on-sun"
             >
-              <span className="block text-[12px] font-bold uppercase tracking-[0.12em]">
+              <span className="block text-[13px] font-bold">
                 Naposledy si odnesl
               </span>
               <span className="mt-1.5 line-clamp-3 block font-display text-[17px] font-bold leading-snug">
@@ -249,7 +249,7 @@ export default async function ClientDetailPage({
           href={`/admin/klienti/${id}/soukrome`}
           className="block rounded-[24px] bg-night px-5 py-4 text-white"
         >
-          <span className="block text-[12px] font-bold uppercase tracking-[0.12em] text-sun">
+          <span className="block text-[13px] font-bold text-sun">
             Jen pro tebe
           </span>
           <span className="mt-1 block text-[15px] leading-snug text-white/85">

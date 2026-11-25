@@ -20,10 +20,10 @@ self.addEventListener("push", (event) => {
   try {
     payload = event.data ? event.data.json() : {};
   } catch {
-    payload = { title: "Práce na sobě", body: event.data ? event.data.text() : "" };
+    payload = { title: "Higher Self", body: event.data ? event.data.text() : "" };
   }
 
-  const title = payload.title || "Práce na sobě";
+  const title = payload.title || "Higher Self";
 
   event.waitUntil(
     self.registration.showNotification(title, {

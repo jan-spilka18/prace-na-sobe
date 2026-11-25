@@ -42,13 +42,13 @@ export default async function ClientSessionsPage() {
               href={`/sezeni/${oldestWaiting.id}#zpetna-vazba`}
               className="block rounded-[24px] bg-night px-5 py-5 text-white transition-opacity active:opacity-85"
             >
-              <span className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.12em] text-sun">
+              <span className="flex items-center gap-2 text-[13px] font-bold text-sun">
                 <span className="h-2 w-2 rounded-full bg-badge" aria-hidden />
                 {waiting.length > 1
                   ? `Čekají na tebe ${waiting.length}`
                   : "Čeká na tebe"}
               </span>
-              <span className="mt-2 block font-display text-[21px] font-extrabold leading-snug tracking-tight">
+              <span className="mt-2 block font-display text-[20px] font-bold leading-snug tracking-tight">
                 Co sis odnesl ze sezení?
               </span>
               <span className="mt-1 block text-[14px] font-semibold text-white/65">
@@ -63,7 +63,7 @@ export default async function ClientSessionsPage() {
           )}
 
           <section className="space-y-3">
-            <h2 className="px-1 font-display text-[22px] font-extrabold tracking-tight text-ink">
+            <h2 className="px-1 font-display text-[20px] font-bold tracking-tight text-ink">
               {sessions.length === 1 ? "Jedno sezení" : "Všechna sezení"}
             </h2>
 
@@ -96,7 +96,7 @@ export default async function ClientSessionsPage() {
                             : "bg-canvas text-ink",
                         )}
                       >
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider opacity-70">
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider opacity-70">
                           {formatCzechWeekday(session.session_date).slice(0, 2)}
                         </span>
                         <span className="mt-1 whitespace-nowrap text-[14px] font-extrabold tabular-nums">
@@ -104,7 +104,7 @@ export default async function ClientSessionsPage() {
                         </span>
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate font-display text-[18px] font-extrabold tracking-tight text-ink">
+                        <span className="block truncate font-display text-[17px] font-semibold tracking-tight text-ink">
                           {SESSION_KIND_LABELS[session.kind]}
                         </span>
                         <span className="block text-[13px] font-semibold text-ink-500">
@@ -127,7 +127,7 @@ export default async function ClientSessionsPage() {
 
                     {focus ? (
                       <span className="mt-3 block rounded-[16px] bg-turquoise-100 px-3.5 py-3">
-                        <span className="block text-[11px] font-bold uppercase tracking-[0.12em] text-turquoise-700">
+                        <span className="block text-[13px] font-bold text-turquoise-700">
                           Fokus do příštího sezení
                         </span>
                         <span className="mt-1 line-clamp-3 block text-[15px] font-semibold leading-snug text-ink">

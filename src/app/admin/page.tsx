@@ -138,7 +138,8 @@ export default async function AdminPage() {
 
   return (
     <Screen
-      eyebrow={`${formatCzechWeekday(today)} · ${formatCzechDayMonth(today)}`}
+      brand
+      eyebrow={`${formatCzechWeekday(today).replace(/^./, (c) => c.toUpperCase())} ${formatCzechDayMonth(today)}`}
       title="Ranní přehled"
       action={<SignOutButton />}
     >
@@ -161,12 +162,12 @@ export default async function AdminPage() {
               průšvih každé ráno.
             */}
             <section className="rounded-[24px] bg-night px-5 py-5 text-white">
-              <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-sun">
+              <p className="text-[13px] font-bold text-sun">
                 Včera · {formatCzechWeekday(yesterday)} {formatShortDate(yesterday)}
               </p>
               <div className="mt-2 flex items-end justify-between gap-4">
                 <p className="flex items-baseline gap-2 font-display">
-                  <span className="text-[52px] font-extrabold leading-none tabular-nums">
+                  <span className="text-[44px] font-black leading-none tabular-nums">
                     {score.complete}
                   </span>
                   <span className="text-[16px] font-bold leading-tight text-white/70">
@@ -188,7 +189,7 @@ export default async function AdminPage() {
                           title={day.percent === null ? "Volno" : `${day.percent} %`}
                         />
                       </div>
-                      <span className="text-[9px] font-bold uppercase text-white/55">
+                      <span className="text-[11px] font-bold uppercase text-white/55">
                         {formatCzechWeekday(day.date).slice(0, 2)}
                       </span>
                     </div>
@@ -257,7 +258,7 @@ export default async function AdminPage() {
           className="block rounded-[24px] bg-turquoise px-5 py-5 text-on-sun transition-opacity active:opacity-85"
         >
           <span className="flex items-center justify-between gap-3">
-            <span className="text-[12px] font-bold uppercase tracking-[0.12em]">
+            <span className="text-[13px] font-bold">
               Zpětná vazba od kluků
             </span>
             {feedbackSummary.lastWeek > 0 && (
@@ -274,7 +275,7 @@ export default async function AdminPage() {
             <>
               {feedbackSummary.average !== null && (
                 <span className="mt-2 flex items-baseline gap-2 font-display">
-                  <span className="text-[44px] font-extrabold leading-none tabular-nums">
+                  <span className="text-[44px] font-black leading-none tabular-nums">
                     {formatRating(feedbackSummary.average)}
                   </span>
                   <span className="text-[15px] font-bold opacity-75">/ 10 průměr</span>
@@ -301,7 +302,7 @@ export default async function AdminPage() {
 
         {todayItems.length > 0 && (
           <section className="space-y-3">
-            <h2 className="px-1 font-display text-[22px] font-extrabold tracking-tight text-ink">
+            <h2 className="px-1 font-display text-[20px] font-bold tracking-tight text-ink">
               Dnes
             </h2>
             <ul className="rounded-[24px] bg-surface px-5">
@@ -321,7 +322,7 @@ export default async function AdminPage() {
         {rows.length > 0 && (
           <section className="space-y-3">
             <div className="flex items-baseline justify-between gap-3 px-1">
-              <h2 className="font-display text-[22px] font-extrabold tracking-tight text-ink">
+              <h2 className="font-display text-[20px] font-bold tracking-tight text-ink">
                 Klienti
               </h2>
               <span className="text-[13px] font-semibold text-ink-500">

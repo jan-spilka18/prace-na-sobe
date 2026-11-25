@@ -83,7 +83,7 @@ export function NotificationSettings({ publicKey }: { publicKey: string }) {
 
   return (
     <section className="space-y-2">
-      <h2 className="px-4 text-[13px] font-semibold uppercase tracking-wide text-ink-500">
+      <h2 className="px-4 text-[14px] font-semibold text-ink-500">
         Připomínky
       </h2>
 

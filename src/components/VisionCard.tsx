@@ -102,7 +102,7 @@ export function VisionCard({
   return (
     <section className="rounded-[24px] bg-sun-surface p-5">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-500">
+        <h2 className="text-[13px] font-bold text-ink-500">
           Moje vize
         </h2>
         {canEdit && (
@@ -140,7 +140,7 @@ export function VisionQuote({ body }: { body: string }) {
       className="flex w-full flex-col gap-2.5 rounded-[24px] bg-sun-surface px-5 py-5 text-left"
     >
       <span className="flex w-full items-center justify-between gap-3">
-        <span className="text-[12px] font-bold uppercase tracking-[0.12em] text-ink/60">
+        <span className="text-[13px] font-bold text-ink/60">
           Připomeň si vizi a důvod proč
         </span>
         <svg
@@ -163,7 +163,7 @@ export function VisionQuote({ body }: { body: string }) {
       <span className="flex gap-2.5">
         <span
           aria-hidden
-          className="-mt-1 shrink-0 font-display text-[44px] font-extrabold leading-none text-ink"
+          className="-mt-1 shrink-0 font-display text-[44px] font-black leading-none text-ink"
         >
           „
         </span>

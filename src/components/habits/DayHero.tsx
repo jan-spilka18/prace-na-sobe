@@ -47,7 +47,7 @@ export function DayHero({
     >
       <p
         className={cn(
-          "text-[12px] font-bold uppercase tracking-[0.12em]",
+          "text-[13px] font-bold",
           complete ? "text-on-sun/75" : "text-sun",
         )}
       >
@@ -59,7 +59,7 @@ export function DayHero({
       <div className="flex items-end justify-between gap-3">
         {habits.length > 0 ? (
           <p className="flex items-baseline gap-2 font-display">
-            <span className="text-[52px] font-extrabold leading-none tracking-tight tabular-nums">
+            <span className="text-[44px] font-black leading-none tracking-tight tabular-nums">
               {done}
             </span>
             <span className={cn("text-[19px] font-bold", muted)}>

@@ -65,12 +65,12 @@ export default async function OverviewPage() {
       <div className="space-y-5">
         {/* Kde v programu je — jedna věta, jedno číslo, jeden proužek. */}
         <section className="rounded-[24px] bg-night px-5 py-5 text-white">
-          <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-sun">
+          <p className="text-[13px] font-bold text-sun">
             Průběh výzvy
           </p>
           <p className="mt-2 flex items-baseline gap-2 font-display">
             <span className="text-[17px] font-bold text-white/70">Den</span>
-            <span className="text-[52px] font-extrabold leading-none tracking-tight tabular-nums">
+            <span className="text-[44px] font-black leading-none tracking-tight tabular-nums">
               {notStarted ? 0 : dayNumber}
             </span>
             <span className="text-[17px] font-bold text-white/70">

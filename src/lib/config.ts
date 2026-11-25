@@ -1,5 +1,5 @@
-export const APP_NAME = "Práce na sobě";
-export const APP_SHORT_NAME = "Na sobě";
+export const APP_NAME = "Higher Self";
+export const APP_SHORT_NAME = "Higher Self";
 export const APP_DESCRIPTION =
   "Denní návyky, zápisy ze sezení a zpětná vazba na jednom místě.";
 
