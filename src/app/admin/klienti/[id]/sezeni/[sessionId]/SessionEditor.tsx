@@ -224,6 +224,26 @@ export function SessionEditor({
   }, [dirty]);
 
   const previewHref = `/admin/klienti/${clientId}/sezeni/${session.id}/email`;
+
+  /**
+   * Náhled e-mailu se skládá z uloženého zápisu. S neuloženými změnami
+   * (třeba opraveným datem) by ukázal starou verzi, proto se nejdřív uloží.
+   * Okno se otevírá hned při kliknutí — po čekání by ho prohlížeč zablokoval.
+   */
+  function openEmailPreview() {
+    const tab = window.open("", "_blank");
+    setError(undefined);
+    startTransition(async () => {
+      const failure = await persist();
+      if (failure) {
+        tab?.close();
+        return setError(failure);
+      }
+      setSaved(true);
+      if (tab) tab.location.href = previewHref;
+      else window.location.href = previewHref;
+    });
+  }
   const emailedLabel = emailedAt
     ? new Date(emailedAt).toLocaleString("cs-CZ", {
         day: "numeric",
@@ -507,7 +527,7 @@ export function SessionEditor({
           <MailNote note={mailNote} />
 
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <EmailPreviewLink href={previewHref} dirty={dirty} />
+            <EmailPreviewLink href={previewHref} dirty={dirty} onSaveAndOpen={openEmailPreview} />
             <button
               type="button"
               disabled={pending}
@@ -576,7 +596,7 @@ export function SessionEditor({
             </p>
           ) : (
             <div className="text-center">
-              <EmailPreviewLink href={previewHref} dirty={dirty} />
+              <EmailPreviewLink href={previewHref} dirty={dirty} onSaveAndOpen={openEmailPreview} />
             </div>
           )}
         </section>
@@ -674,19 +694,27 @@ function MailNote({ note }: { note?: { ok: boolean; text: string } }) {
   );
 }
 
-/** Náhled ukazuje uložený stav — s neuloženými změnami by mátl. */
-function EmailPreviewLink({ href, dirty }: { href: string; dirty: boolean }) {
+/** S neuloženými změnami náhled nejdřív uloží, jinak je to obyčejný odkaz. */
+function EmailPreviewLink({
+  href,
+  dirty,
+  onSaveAndOpen,
+}: {
+  href: string;
+  dirty: boolean;
+  onSaveAndOpen: () => void;
+}) {
+  const className = "inline-block text-[14px] font-bold text-turquoise-700";
+  if (dirty) {
+    return (
+      <button type="button" onClick={onSaveAndOpen} className={className}>
+        Uložit a ukázat náhled e-mailu ↗
+      </button>
+    );
+  }
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener"
-      className="inline-block text-[14px] font-bold text-turquoise-700"
-    >
+    <a href={href} target="_blank" rel="noopener" className={className}>
       Náhled e-mailu ↗
-      {dirty && (
-        <span className="font-normal text-ink-500"> (bez neuložených změn)</span>
-      )}
     </a>
   );
 }

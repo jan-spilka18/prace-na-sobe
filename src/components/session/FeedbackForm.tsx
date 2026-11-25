@@ -78,7 +78,7 @@ export function FeedbackForm({
               Tvoje zpětná vazba
             </p>
             <h2 className="font-display text-[24px] font-extrabold leading-tight tracking-tight">
-              Co si z dneška odnášíš?
+              Co si ze sezení odnášíš?
             </h2>
             <p className="text-[14px] leading-snug text-white/70">
               Jedna věc, kterou si chceš zapamatovat. Uvidí ji jen Honza.
@@ -86,17 +86,17 @@ export function FeedbackForm({
           </div>
 
           <textarea
-            aria-label="Co si z dneška odnášíš"
+            aria-label="Co si ze sezení odnášíš"
             value={takeaway}
             rows={4}
-            placeholder="Dnes jsem si uvědomil, že…"
+            placeholder="Uvědomil jsem si, že…"
             onChange={(event) => setTakeaway(event.target.value)}
             className={FIELD}
           />
 
           <fieldset className="space-y-2.5">
             <legend className="mb-2.5 text-[15px] font-semibold">
-              Jak hodnotíš dnešní sezení?
+              Jak sezení hodnotíš?
             </legend>
             {/* Dvě řady po pěti: deset koleček vedle sebe by bylo pod 44 px. */}
             <div className="grid grid-cols-5 gap-2">
@@ -126,7 +126,7 @@ export function FeedbackForm({
 
           <div className="space-y-2.5">
             <label htmlFor="bavilo" className="block text-[15px] font-semibold">
-              Co tě dnes bavilo nejvíc?
+              Co tě na sezení bavilo nejvíc?
             </label>
             <textarea
               id="bavilo"

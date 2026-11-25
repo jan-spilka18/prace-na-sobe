@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 import assert from "node:assert/strict";
-import { sessionEmail, sessionTiming } from "./sessionEmail";
+import { sessionEmail } from "./sessionEmail";
 
 const base = {
   sessionId: "s1",
@@ -58,16 +58,17 @@ describe("sessionEmail", () => {
   });
 });
 
-describe("sessionTiming", () => {
-  // 18. 11. 2026 je středa.
-  it("v den sezení i den poté mluví o dnešku a včerejšku", () => {
-    assert.equal(sessionTiming("2026-11-18", "2026-11-18").which, "dnešní sezení");
-    assert.equal(sessionTiming("2026-11-18", "2026-11-19").thanks, "díky za včerejšek");
+describe("sessionEmail — datum a pozdrav", () => {
+  it("v hlavičce je datum sezení, ne den odeslání", () => {
+    const { html } = sessionEmail({ ...base, date: "2026-11-04" });
+    assert.ok(html.includes("4. listopadu"));
   });
 
-  it("později jmenuje den a datum", () => {
-    const later = sessionTiming("2026-11-18", "2026-11-20");
-    assert.equal(later.which, "sezení ze středy 18. 11.");
-    assert.equal(later.thanks, "díky za naše sezení ze středy 18. 11.");
+  it("pozdrav nezávisí na dni odeslání", () => {
+    const { html, text } = sessionEmail(base);
+    assert.ok(html.includes("Ahoj, díky za společné sezení."));
+    assert.ok(html.includes("Jak ti naše sezení sedlo?"));
+    assert.ok(!html.includes("dnešek") && !html.includes("dnešní"));
+    assert.ok(!text.includes("dnešek") && !text.includes("dnešní"));
   });
 });
