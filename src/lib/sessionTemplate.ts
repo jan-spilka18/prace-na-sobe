@@ -166,6 +166,22 @@ export const SESSION_SECTIONS: SessionSection[] = [
       "bonus",
     ],
   },
+  {
+    key: "links",
+    title: "Odkazy a materiály",
+    hint: "Jeden odkaz na řádek: Název — https://…",
+    aliases: [
+      "odkazy a materialy",
+      "odkazy",
+      "odkaz",
+      "materialy",
+      "materialy k sezeni",
+      "videa a odkazy",
+      "ke stazeni",
+      "zdroje",
+      "linky",
+    ],
+  },
 ];
 
 export const SESSION_KIND_LABELS: Record<SessionKind, string> = {

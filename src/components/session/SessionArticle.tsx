@@ -1,6 +1,7 @@
 import { Markdown } from "@/components/Markdown";
 import { cn } from "@/lib/cn";
 import { parseTasks, type SessionTask } from "@/lib/sessionTasks";
+import { parseLinks, type SessionLinkKind } from "@/lib/sessionLinks";
 import type { SessionSection } from "@/lib/sessionTemplate";
 
 type FilledSection = SessionSection & { body: string };
@@ -55,6 +56,8 @@ function SectionBlock({ section }: { section: FilledSection }) {
       return <Question section={section} />;
     case "wins":
       return <Wins section={section} />;
+    case "links":
+      return <Links section={section} />;
     default:
       return (
         <section className="space-y-2.5">
@@ -346,7 +349,8 @@ function TaskItem({ task, number }: { task: SessionTask; number?: number }) {
           </div>
         )}
         {task.note && (
-          <p className="text-[14px] leading-snug text-ink/70">{task.note}</p>
+          // Přes Markdown, ať funguje odkaz v poznámce k úkolu.
+          <Markdown source={task.note} tone="sun" size="sm" className="opacity-75" />
         )}
       </div>
     </li>
@@ -407,6 +411,74 @@ function Wins({ section }: { section: FilledSection }) {
         {section.title}
       </h2>
       <Markdown source={section.body} />
+    </section>
+  );
+}
+
+/* ─── Odkazy a materiály ───────────────────────────────────────────────── */
+
+const LINK_ICON: Record<SessionLinkKind, string> = {
+  // Trojúhelník „přehrát", list papíru, řetěz.
+  video: "M8 5.5v13l11-6.5z",
+  doc: "M7 3.5h7l4 4v13H7zM14 3.5v4h4M9.5 12h6M9.5 16h4",
+  link: "M10 13.5a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10.5a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1",
+};
+
+/**
+ * Odkazy jako tlačítka: video, dokument k vyplnění, článek. Každý má
+ * název a pod ním, kam vede — klient ví, na co kliká, dřív než klikne.
+ */
+function Links({ section }: { section: FilledSection }) {
+  const links = parseLinks(section.body);
+  if (links.length === 0) return null;
+
+  return (
+    <section className="space-y-3">
+      <Heading>{section.title}</Heading>
+      <ul className="space-y-2">
+        {links.map((link, index) =>
+          link.url ? (
+            <li key={index}>
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 rounded-[18px] bg-canvas p-3 transition-colors active:bg-turquoise-100"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-turquoise text-on-sun">
+                  <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden
+                    className="h-5 w-5"
+                    fill={link.kind === "video" ? "currentColor" : "none"}
+                    stroke="currentColor"
+                    strokeWidth="1.9"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d={LINK_ICON[link.kind]} />
+                  </svg>
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[16px] font-bold leading-snug text-ink">
+                    {link.label}
+                  </span>
+                  <span className="block truncate text-[13px] text-ink-500">
+                    {link.host}
+                  </span>
+                </span>
+                <span aria-hidden className="shrink-0 pr-1 text-[17px] font-bold text-turquoise-700">
+                  ↗
+                </span>
+              </a>
+            </li>
+          ) : (
+            <li key={index} className="px-1 text-[15px] leading-snug text-ink-600">
+              {link.label}
+            </li>
+          ),
+        )}
+      </ul>
     </section>
   );
 }

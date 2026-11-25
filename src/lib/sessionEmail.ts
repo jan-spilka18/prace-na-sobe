@@ -2,6 +2,7 @@ import { escapeHtml } from "@/lib/email";
 import { parseInline, parseMarkdown, plainText, type InlineToken } from "@/lib/markdown";
 import { filledSections, sessionHeading } from "@/lib/sessionTemplate";
 import { parseTasks, refineTasks, type SessionTask } from "@/lib/sessionTasks";
+import { parseLinks } from "@/lib/sessionLinks";
 import { formatShortDate } from "@/lib/date";
 import type { SessionKind } from "@/lib/database.types";
 
@@ -108,6 +109,12 @@ export function sessionEmail(input: SessionEmailInput): SessionEmail {
       continue;
     }
 
+    if (section.key === "links") {
+      const html = linksHtml(section.title, section.body);
+      if (html) blocks.push(card(C.surface, html));
+      continue;
+    }
+
     if (section.key === "tasks" || section.key === "recommendations") {
       if (tasksDone) continue;
       tasksDone = true;
@@ -175,7 +182,9 @@ function brand(): string {
 function inlineHtml(tokens: InlineToken[]): string {
   return tokens
     .map((token) =>
-      token.kind === "strong"
+      token.kind === "link"
+        ? `<a href="${escapeHtml(token.href)}" style="color:${C.turquoise700};font-weight:700;text-decoration:underline">${escapeHtml(token.text)}</a>`
+        : token.kind === "strong"
         ? `<strong>${escapeHtml(token.text)}</strong>`
         : token.kind === "em"
           ? `<em>${escapeHtml(token.text)}</em>`
@@ -222,7 +231,7 @@ function taskRow(task: SessionTask, marker: string): string {
     <td style="padding:12px 0;border-top:1px solid #ececf0;font-family:${FONT};font-size:15px;line-height:1.45;font-weight:600;color:${C.ink}">
       ${inlineHtml(parseInline(task.task))}
       ${task.due || task.whoKind === "both" ? `<div>${task.due ? chip(task.due) : ""}${task.whoKind === "both" ? chip("Spolu s Honzou", C.turquoise100) : ""}</div>` : ""}
-      ${task.note ? `<div style="margin-top:6px;font-size:14px;font-weight:400;color:${C.ink2}">${escapeHtml(task.note)}</div>` : ""}
+      ${task.note ? `<div style="margin-top:6px;font-size:14px;font-weight:400;color:${C.ink2}">${inlineHtml(parseInline(task.note))}</div>` : ""}
     </td>
   </tr>`;
 }
@@ -270,6 +279,25 @@ function tasksHtml(tasksBody: string, recommendations: string): string {
     </div>`);
   }
   return parts.join("");
+}
+
+/** Odkazy jako velká tlačítka — v e-mailu se na ně kliká prstem. */
+function linksHtml(title: string, body: string): string {
+  const links = parseLinks(body);
+  if (links.length === 0) return "";
+
+  const rows = links
+    .map((link) =>
+      link.url
+        ? `<a href="${escapeHtml(link.url)}" style="display:block;margin-top:8px;padding:12px 14px;border-radius:16px;background:${C.canvas};text-decoration:none">
+        <span style="display:block;font-family:${FONT};font-size:15px;font-weight:700;line-height:1.35;color:${C.ink}">${link.kind === "video" ? "▶ " : ""}${escapeHtml(link.label)} ↗</span>
+        <span style="display:block;margin-top:2px;font-family:${FONT};font-size:12px;color:${C.muted}">${escapeHtml(link.host)}</span>
+      </a>`
+        : `<p style="margin:8px 0 0;font-family:${FONT};font-size:15px;line-height:1.5;color:${C.ink2}">${escapeHtml(link.label)}</p>`,
+    )
+    .join("");
+
+  return `<h2 style="margin:0 0 4px;font-family:${DISPLAY};font-size:18px;font-weight:800;color:${C.ink}">${escapeHtml(title)}</h2>${rows}`;
 }
 
 function feedbackCard(feedbackUrl: (rating?: number) => string): string {

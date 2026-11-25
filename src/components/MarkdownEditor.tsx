@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { Markdown } from "./Markdown";
+import { safeUrl } from "@/lib/url";
 
 /**
  * Pole pro zápis s lištou na odrážky a zvýraznění.
@@ -82,6 +83,29 @@ export function MarkdownEditor({
     });
   }
 
+  /** Vloží [text](adresa). Označený text se stane názvem odkazu. */
+  function insertLink() {
+    const field = ref.current;
+    if (!field) return;
+
+    const { selectionStart, selectionEnd } = field;
+    const selected = value.slice(selectionStart, selectionEnd);
+
+    const address = safeUrl(window.prompt("Vlož adresu odkazu (YouTube, dokument…)") ?? "");
+    if (!address) return;
+
+    const label = selected.trim() || window.prompt("Jak se má odkaz jmenovat?", "") || "";
+    const link = label.trim() ? `[${label.trim()}](${address})` : address;
+    const next = value.slice(0, selectionStart) + link + value.slice(selectionEnd);
+    onChange(next);
+
+    requestAnimationFrame(() => {
+      field.focus();
+      const caret = selectionStart + link.length;
+      field.setSelectionRange(caret, caret);
+    });
+  }
+
   return (
     <div className="overflow-hidden rounded-card border border-hairline bg-surface">
       <div className="flex items-center gap-1 border-b border-hairline px-1.5 py-1.5">
@@ -107,6 +131,10 @@ export function MarkdownEditor({
 
         <ToolbarButton label="Kurzíva" onClick={() => wrapSelection("*")}>
           <path d="M14 5h-4M14 19h-4M15 5l-4 14" />
+        </ToolbarButton>
+
+        <ToolbarButton label="Odkaz" onClick={insertLink}>
+          <path d="M10 13.5a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10.5a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1" />
         </ToolbarButton>
 
         <button

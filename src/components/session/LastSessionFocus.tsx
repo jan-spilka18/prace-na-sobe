@@ -51,6 +51,7 @@ export function LastSessionFocus({
           source={focus}
           tone="accent"
           size="xl"
+          links={false}
           className="font-display font-bold"
         />
       )}

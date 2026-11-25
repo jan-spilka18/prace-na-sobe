@@ -13,6 +13,7 @@ export function Markdown({
   tone = "default",
   size = "base",
   numbers = "plain",
+  links = true,
 }: {
   source: string;
   className?: string;
@@ -22,9 +23,11 @@ export function Markdown({
    */
   tone?: "default" | "sun" | "dark" | "accent";
   /** lg pro úvodní shrnutí a citáty, xl pro fokus a otázku k zamyšlení. */
-  size?: "base" | "lg" | "xl";
+  size?: "sm" | "base" | "lg" | "xl";
   /** badge: číslo v kolečku — pro úkoly, ať se dají odškrtávat očima. */
   numbers?: "plain" | "badge";
+  /** false tam, kde je celý blok sám odkazem — odkaz v odkazu nejde. */
+  links?: boolean;
 }) {
   const blocks = parseMarkdown(source);
   if (blocks.length === 0) return null;
@@ -60,7 +63,16 @@ export function Markdown({
       ? "text-[19px] leading-snug"
       : size === "lg"
         ? "text-[17px] leading-[1.6]"
+        : size === "sm"
+          ? "text-[14px] leading-snug"
         : "text-[16px] leading-relaxed";
+
+  // Na barevném podkladu odkaz drží barvu textu a pozná se podtržením.
+  const link = !links
+    ? null
+    : tone === "default"
+      ? "text-turquoise-700 underline decoration-turquoise/50 underline-offset-2"
+      : "underline underline-offset-2";
 
   return (
     <div className={cn("space-y-3", fontSize, text, className)}>
@@ -78,7 +90,7 @@ export function Markdown({
                     )}
                   />
                   <span className="min-w-0 flex-1">
-                    <Inline tokens={item} />
+                    <Inline tokens={item} link={link} />
                   </span>
                 </li>
               ))}
@@ -118,7 +130,7 @@ export function Markdown({
                     </span>
                   )}
                   <span className="min-w-0 flex-1">
-                    <Inline tokens={item} />
+                    <Inline tokens={item} link={link} />
                   </span>
                 </li>
               ))}
@@ -131,7 +143,7 @@ export function Markdown({
             {block.lines.map((line, lineIndex) => (
               <span key={lineIndex}>
                 {lineIndex > 0 && <br />}
-                <Inline tokens={line} />
+                <Inline tokens={line} link={link} />
               </span>
             ))}
           </p>
@@ -141,7 +153,7 @@ export function Markdown({
   );
 }
 
-function Inline({ tokens }: { tokens: InlineToken[] }) {
+function Inline({ tokens, link }: { tokens: InlineToken[]; link: string | null }) {
   return (
     <>
       {tokens.map((token, index) => {
@@ -154,6 +166,19 @@ function Inline({ tokens }: { tokens: InlineToken[] }) {
         }
         if (token.kind === "em") {
           return <em key={index}>{token.text}</em>;
+        }
+        if (token.kind === "link" && link) {
+          return (
+            <a
+              key={index}
+              href={token.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn("break-words font-semibold", link)}
+            >
+              {token.text}
+            </a>
+          );
         }
         return <span key={index}>{token.text}</span>;
       })}

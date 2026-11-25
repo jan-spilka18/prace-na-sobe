@@ -9,6 +9,8 @@ import { cn } from "@/lib/cn";
 import { SESSION_KIND_LABELS, SESSION_SECTIONS } from "@/lib/sessionTemplate";
 import type { SortResult } from "@/lib/sessionSort";
 import { refineTasks } from "@/lib/sessionTasks";
+import { linkLine } from "@/lib/sessionLinks";
+import { safeUrl } from "@/lib/url";
 import { PasteSorter } from "./PasteSorter";
 import { ClientPreview } from "./ClientPreview";
 import {
@@ -416,6 +418,18 @@ export function SessionEditor({
                     )
                   )}
                 </div>
+                {section.key === "links" && (
+                  <LinkAdder
+                    onAdd={(label, url) =>
+                      setSection(
+                        "links",
+                        [(content.links ?? "").trim(), linkLine(label, url)]
+                          .filter(Boolean)
+                          .join("\n"),
+                      )
+                    }
+                  />
+                )}
                 <MarkdownEditor
                   value={content[section.key] ?? ""}
                   onChange={(value) => setSection(section.key, value)}
@@ -658,6 +672,70 @@ export function SessionEditor({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Přidání odkazu dvěma políčky. Do zápisu se uloží jako řádek
+ * „Název — adresa", který jde v poli níž dál upravit nebo smazat.
+ */
+function LinkAdder({ onAdd }: { onAdd: (label: string, url: string) => void }) {
+  const [label, setLabel] = useState("");
+  const [address, setAddress] = useState("");
+  const [problem, setProblem] = useState<string>();
+
+  function add() {
+    const url = safeUrl(address);
+    if (!url) return setProblem("Tohle nevypadá jako adresa. Zkopíruj ji celou z prohlížeče.");
+    onAdd(label, url);
+    setLabel("");
+    setAddress("");
+    setProblem(undefined);
+  }
+
+  const field =
+    "w-full rounded-[14px] border border-transparent bg-surface px-3.5 py-2.5 text-[16px] text-ink placeholder:text-ink-400 focus:border-turquoise focus:outline-none";
+
+  return (
+    <div className="space-y-2 rounded-[18px] bg-turquoise-100 p-3">
+      <p className="px-1 text-[13px] leading-snug text-ink-600">
+        Video, které jsi slíbil, nebo dokument s úkolem. Klient ho uvidí jako
+        tlačítko v zápisu i v e-mailu.
+      </p>
+      <input
+        aria-label="Název odkazu"
+        value={label}
+        placeholder="Název, např. Dechové cvičení"
+        onChange={(event) => setLabel(event.target.value)}
+        className={field}
+      />
+      <input
+        aria-label="Adresa odkazu"
+        type="url"
+        inputMode="url"
+        autoCapitalize="none"
+        autoCorrect="off"
+        value={address}
+        placeholder="https://youtube.com/…"
+        onChange={(event) => setAddress(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            add();
+          }
+        }}
+        className={field}
+      />
+      {problem && <p className="px-1 text-[13px] font-semibold text-danger">{problem}</p>}
+      <button
+        type="button"
+        disabled={address.trim() === ""}
+        onClick={add}
+        className="min-h-[44px] w-full rounded-full bg-night px-5 text-[15px] font-extrabold text-white transition-opacity active:opacity-80 disabled:opacity-40"
+      >
+        + Přidat odkaz
+      </button>
     </div>
   );
 }

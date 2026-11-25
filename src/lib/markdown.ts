@@ -12,10 +12,13 @@
   nebude co převádět.
 */
 
+import { safeUrl } from "@/lib/url";
+
 export type InlineToken =
   | { kind: "text"; text: string }
   | { kind: "strong"; text: string }
-  | { kind: "em"; text: string };
+  | { kind: "em"; text: string }
+  | { kind: "link"; text: string; href: string };
 
 export type Block =
   | { kind: "paragraph"; lines: InlineToken[][] }
@@ -59,15 +62,46 @@ export function parseMarkdown(source: string): Block[] {
   return blocks;
 }
 
-// Nejdřív dvojité hvězdičky, pak jednoduché — jinak by `**text**` spadlo
-// do kurzívy a zbyly by osamělé hvězdičky.
-const INLINE = /(\*\*[^*\n]+\*\*|\*[^*\n]+\*)/g;
+// Nejdřív odkazy ([text](adresa) a holá adresa), ať se hvězdička uvnitř
+// adresy nebere jako kurzíva. Pak dvojité hvězdičky a až potom jednoduché —
+// jinak by `**text**` spadlo do kurzívy a zbyly by osamělé hvězdičky.
+const INLINE =
+  /(\[[^\]\n]+\]\([^)\s]+\)|https?:\/\/[^\s<>]+|\*\*[^*\n]+\*\*|\*[^*\n]+\*)/g;
+const MD_LINK = /^\[([^\]\n]+)\]\(([^)\s]+)\)$/;
+
+/** Holá adresa bez „https://" a bez lomítka na konci — tak se líp čte. */
+export function prettyUrl(href: string): string {
+  const short = href.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "");
+  return short.length > 48 ? `${short.slice(0, 45)}…` : short;
+}
 
 export function parseInline(text: string): InlineToken[] {
   const tokens: InlineToken[] = [];
 
   for (const part of text.split(INLINE)) {
     if (part === "") continue;
+
+    const mdLink = part.match(MD_LINK);
+    if (mdLink) {
+      const href = safeUrl(mdLink[2]);
+      // Nepovolená adresa (javascript: apod.) zůstane obyčejným textem.
+      tokens.push(href ? { kind: "link", text: mdLink[1], href } : { kind: "text", text: mdLink[1] });
+      continue;
+    }
+
+    if (/^https?:\/\//i.test(part)) {
+      // Tečka nebo čárka za adresou patří k větě, ne k odkazu.
+      const trailing = part.match(/[.,;:!?)]+$/)?.[0] ?? "";
+      const raw = trailing ? part.slice(0, -trailing.length) : part;
+      const href = safeUrl(raw);
+      if (href) {
+        tokens.push({ kind: "link", text: prettyUrl(raw), href });
+        if (trailing) tokens.push({ kind: "text", text: trailing });
+      } else {
+        tokens.push({ kind: "text", text: part });
+      }
+      continue;
+    }
 
     if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
       tokens.push({ kind: "strong", text: part.slice(2, -2) });
@@ -88,6 +122,7 @@ export function plainText(source: string): string {
     .split("\n")
     .map((line) => line.replace(BULLET, "").replace(NUMBER, ""))
     .join(" ")
+    .replace(/\[([^\]\n]+)\]\([^)\s]+\)/g, "$1")
     .replace(/\*\*([^*\n]+)\*\*/g, "$1")
     .replace(/\*([^*\n]+)\*/g, "$1")
     .replace(/\s+/g, " ")
