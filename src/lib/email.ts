@@ -47,6 +47,11 @@ async function sendViaGmail(input: {
   fromName?: string;
 }): Promise<EmailResult> {
   const user = process.env.GMAIL_USER!.trim();
+  // Google heslo pro aplikace zobrazuje s mezerami; SMTP je nechce.
+  const pass = process.env.GMAIL_APP_PASSWORD!.replace(/\s+/g, "");
+
+  const problem = gmailSetupProblem(user, pass);
+  if (problem) return { ok: false, error: problem };
 
   try {
     const transport = nodemailer.createTransport({
@@ -55,8 +60,7 @@ async function sendViaGmail(input: {
       secure: true,
       auth: {
         user,
-        // Google heslo pro aplikace zobrazuje s mezerami; SMTP je nechce.
-        pass: process.env.GMAIL_APP_PASSWORD!.replace(/\s+/g, ""),
+        pass,
       },
     });
 
@@ -71,8 +75,31 @@ async function sendViaGmail(input: {
     return { ok: true };
   } catch (error) {
     // Text chyby od Googlu nikdy neobsahuje heslo, jen kód a popis.
-    return { ok: false, error: (error as Error).message.slice(0, 300) };
+    const message = (error as Error).message;
+    if (/535|Username and Password not accepted|BadCredentials/i.test(message)) {
+      return {
+        ok: false,
+        error:
+          "Gmail přihlášení odmítl. Zkontroluj ve Vercelu, že GMAIL_USER je tvoje gmailová adresa a GMAIL_APP_PASSWORD je heslo pro aplikace (16 písmen), ne heslo k účtu. Pak dej Redeploy.",
+      };
+    }
+    return { ok: false, error: message.slice(0, 300) };
   }
+}
+
+/**
+ * Zjevné chyby v nastavení ještě před pokusem o odeslání. Gmail je jinak
+ * hlásí nesrozumitelně („command line too long"). Vrací jen délku a tvar,
+ * nikdy samotnou hodnotu.
+ */
+export function gmailSetupProblem(user: string, pass: string): string | null {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user)) {
+    return "GMAIL_USER ve Vercelu nevypadá jako e-mailová adresa. Má tam být jen adresa, např. jmeno@gmail.com. Oprav ji a dej Redeploy.";
+  }
+  if (pass.length !== 16) {
+    return `GMAIL_APP_PASSWORD ve Vercelu má ${pass.length} znaků, heslo pro aplikace jich má přesně 16 (čtyři čtveřice písmen). Vlož tam jen ten kód z Googlu a dej Redeploy.`;
+  }
+  return null;
 }
 
 async function sendViaResend(input: {
