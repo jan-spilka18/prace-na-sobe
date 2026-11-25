@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/Button";
-import { Field, FormError, Select, TextInput } from "@/components/ui/Field";
+import { Field, FormError, Select, TextInput, Toggle } from "@/components/ui/Field";
 import { MarkdownEditor } from "@/components/MarkdownEditor";
 import { Markdown } from "@/components/Markdown";
 import { cn } from "@/lib/cn";
@@ -32,6 +31,7 @@ export function SessionEditor({
   order,
   coachNote: initialCoachNote,
   email,
+  prep,
 }: {
   session: SessionRecord;
   feedback: SessionFeedback | null;
@@ -42,6 +42,8 @@ export function SessionEditor({
   coachNote: string;
   /** E-mail se zápisem: jestli je Gmail nastavený a komu půjde. */
   email: { ready: boolean; to: string; name: string };
+  /** Příprava na sezení — vlastní blok, který se ukládá sám. */
+  prep: React.ReactNode;
 }) {
   const router = useRouter();
   const [sessionDate, setSessionDate] = useState(session.session_date);
@@ -56,7 +58,10 @@ export function SessionEditor({
   // Poslat e-mail při zveřejnění: zapnuté, dokud jeden neodešel.
   const [sendMail, setSendMail] = useState(email.ready && !session.emailed_at);
   const [mailNote, setMailNote] = useState<{ ok: boolean; text: string }>();
-  const [saved, setSaved] = useState(false);
+  // clean = nic se nezměnilo, dirty = neuložené změny, saved = právě uloženo.
+  const [saveState, setSaveState] = useState<"clean" | "dirty" | "saved">("clean");
+  const dirty = saveState === "dirty";
+  const setSaved = (value: boolean) => setSaveState(value ? "saved" : "dirty");
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
   // Po rozřazení: co se našlo a jak vypadal zápis předtím, ať jde
@@ -210,15 +215,47 @@ export function SessionEditor({
     });
   }
 
+  // Zavření záložky s rozepsaným zápisem: prohlížeč se zeptá, jestli opravdu.
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
   const previewHref = `/admin/klienti/${clientId}/sezeni/${session.id}/email`;
+  const emailedLabel = emailedAt
+    ? new Date(emailedAt).toLocaleString("cs-CZ", {
+        day: "numeric",
+        month: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
 
   return (
     <div className="space-y-5">
-      <div className="space-y-4 rounded-group bg-surface p-4">
+      {/* Stav na první pohled: co klient vidí a co už proběhlo. */}
+      <div className="flex flex-wrap gap-1.5 px-1">
+        <StatusChip tone={published ? "turquoise" : "sun"}>
+          {published ? "Zveřejněno" : "Koncept · klient ho nevidí"}
+        </StatusChip>
+        {emailedLabel && <StatusChip>E-mail odeslán {emailedLabel}</StatusChip>}
+        {feedback && (
+          <StatusChip tone="turquoise">
+            {feedback.rating ? `Zpětná vazba · ${feedback.rating}/10` : "Zpětná vazba ✓"}
+          </StatusChip>
+        )}
+      </div>
+
+      {prep}
+
+      <div className="grid gap-3 rounded-[24px] bg-surface p-4 min-[360px]:grid-cols-2">
         <Field label="Datum">
           <TextInput
             type="date"
             value={sessionDate}
+            className="px-3 text-[16px]"
             onChange={(event) => {
               setSessionDate(event.target.value);
               setSaved(false);
@@ -229,6 +266,7 @@ export function SessionEditor({
         <Field label="Typ">
           <Select
             value={kind}
+            className="px-3 text-[16px]"
             onChange={(event) => {
               setKind(event.target.value as SessionKind);
               setSaved(false);
@@ -243,24 +281,25 @@ export function SessionEditor({
         </Field>
       </div>
 
+      <Step number={1} title="Vlož zápis" />
       <PasteSorter hasContent={hasContent} onSorted={applySorted} />
 
       {sorted && (
         <div
           className={cn(
-            "flex items-start gap-3 rounded-group px-4 py-3.5",
+            "flex items-start gap-3 rounded-[24px] px-5 py-4",
             sorted.found.length > 0 ? "bg-turquoise-100" : "bg-sun-surface",
           )}
         >
           <div className="min-w-0 flex-1 space-y-0.5">
-            <p className="text-[15px] font-semibold text-ink">
+            <p className="text-[15px] font-bold text-ink">
               {sorted.found.length > 0
                 ? `Rozřazeno do ${sorted.found.length} ${sectionsWord(sorted.found.length)}`
                 : "V textu jsem nenašel nadpisy"}
             </p>
             <p className="text-[14px] leading-snug text-ink-600">
               {sorted.found.length > 0
-                ? "Zkontroluj sekce níž a co nesedí, přepiš. Uloží se, až klikneš na Uložit."
+                ? "Zkontroluj sekce níž a co nesedí, přepiš."
                 : "Všechno je ve Shrnutí sezení. Úkoly a body přesuň do jejich sekcí ručně."}
             </p>
             {sorted.fromHeader && (
@@ -277,22 +316,23 @@ export function SessionEditor({
           <button
             type="button"
             onClick={undoSorted}
-            className="shrink-0 rounded-full bg-surface px-3 py-1.5 text-[13px] font-semibold text-turquoise-700 active:opacity-60"
+            className="shrink-0 rounded-full bg-surface px-3.5 py-2 text-[13px] font-bold text-turquoise-700 active:opacity-60"
           >
             Vrátit zpět
           </button>
         </div>
       )}
 
+      <Step number={2} title="Zkontroluj a uprav" />
       <div
         role="tablist"
         aria-label="Zobrazení zápisu"
-        className="grid grid-cols-2 gap-1 rounded-full bg-hairline p-1"
+        className="grid grid-cols-2 gap-1 rounded-full bg-surface p-1"
       >
         {(
           [
             ["edit", "Úpravy"],
-            ["preview", "Náhled pro klienta"],
+            ["preview", "Jak to uvidí klient"],
           ] as const
         ).map(([value, label]) => (
           <button
@@ -302,9 +342,9 @@ export function SessionEditor({
             aria-selected={view === value}
             onClick={() => setView(value)}
             className={cn(
-              "h-10 rounded-full text-[15px] font-semibold transition-colors",
+              "h-11 rounded-full text-[15px] font-bold transition-colors",
               view === value
-                ? "bg-surface text-ink shadow-sm"
+                ? "bg-ink text-on-ink"
                 : "text-ink-600 active:opacity-60",
             )}
           >
@@ -325,61 +365,81 @@ export function SessionEditor({
           {SESSION_SECTIONS.filter(
             // Starší sekce jen tam, kde v nich něco zůstalo.
             (section) => !section.legacy || (content[section.key] ?? "").trim() !== "",
-          ).map((section) => (
-            <section key={section.key} className="space-y-1.5">
-              <div className="flex items-center justify-between gap-2 px-1">
-                <h2 className="text-[13px] font-semibold text-ink-600">
-                  {section.title}
-                </h2>
-                {sorted && (
-                  <SortChip
-                    filled={(content[section.key] ?? "").trim() !== ""}
-                    found={sorted.found.includes(section.key)}
-                  />
+          ).map((section) => {
+            const filled = (content[section.key] ?? "").trim() !== "";
+            return (
+              <section
+                key={section.key}
+                className="space-y-3 rounded-[24px] bg-surface p-4"
+              >
+                <div className="flex items-center justify-between gap-2 px-1">
+                  <h2 className="flex min-w-0 items-center gap-2.5 font-display text-[17px] font-extrabold tracking-tight text-ink">
+                    {/* Plná tečka = sekce má obsah; prázdná se klientovi neukáže. */}
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "h-2.5 w-2.5 shrink-0 rounded-full",
+                        filled
+                          ? "bg-turquoise"
+                          : "ring-2 ring-inset ring-ink-300",
+                      )}
+                    />
+                    <span className="truncate">{section.title}</span>
+                  </h2>
+                  {sorted ? (
+                    <SortChip filled={filled} found={sorted.found.includes(section.key)} />
+                  ) : (
+                    !filled && (
+                      <span className="shrink-0 text-[12px] font-semibold text-ink-400">
+                        prázdné
+                      </span>
+                    )
+                  )}
+                </div>
+                <MarkdownEditor
+                  value={content[section.key] ?? ""}
+                  onChange={(value) => setSection(section.key, value)}
+                  onBlur={
+                    section.key === "tasks" || section.key === "recommendations"
+                      ? recheckTasks
+                      : undefined
+                  }
+                  placeholder={section.hint}
+                  rows={rowsFor(content[section.key], section.key === "summary" ? 5 : 3)}
+                />
+                {section.key === "tasks" && taskNotice && (
+                  <p className="px-1 text-[13px] font-semibold leading-snug text-turquoise-700">
+                    {taskNotice}
+                  </p>
                 )}
-              </div>
-              <MarkdownEditor
-                value={content[section.key] ?? ""}
-                onChange={(value) => setSection(section.key, value)}
-                onBlur={
-                  section.key === "tasks" || section.key === "recommendations"
-                    ? recheckTasks
-                    : undefined
-                }
-                placeholder={section.hint}
-                rows={rowsFor(content[section.key], section.key === "summary" ? 6 : 4)}
-              />
-              {section.key === "tasks" && taskNotice && (
-                <p className="px-1 text-[13px] font-semibold leading-snug text-turquoise-700">
-                  {taskNotice}
-                </p>
-              )}
-            </section>
-          ))}
+              </section>
+            );
+          })}
 
           {/*
             Poznámka pro Honzu: část zápisu „POZNÁMKA PRO HONZU (neposílat)".
             Ukládá se zvlášť do tabulky, kterou klient nepřečte, a v náhledu
             pro klienta se neukazuje.
           */}
-          <section className="space-y-2 rounded-group bg-night p-4 text-white">
-            <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+          <section className="space-y-2.5 rounded-[24px] bg-night p-5 text-white">
+            <h2 className="flex items-center gap-2 font-display text-[17px] font-extrabold tracking-tight">
               <svg
                 viewBox="0 0 24 24"
                 aria-hidden
-                className="h-4 w-4 text-sun"
+                className="h-5 w-5 text-sun"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
-                <path d="M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3" />
+                <rect x="4" y="10.5" width="16" height="10" rx="2.5" />
+                <path d="M8 10.5V7a4 4 0 018 0v3.5" />
               </svg>
               Poznámka jen pro tebe
             </h2>
             <p className="text-[13px] leading-snug text-white/65">
-              Věci k ověření a citlivá místa. Klient ji nikdy neuvidí.
+              Věci k ověření a citlivá místa. Klient ji nikdy neuvidí, ani v e-mailu.
             </p>
             <textarea
               aria-label="Poznámka jen pro tebe"
@@ -390,7 +450,7 @@ export function SessionEditor({
                 setCoachNote(event.target.value);
                 setSaved(false);
               }}
-              className="w-full rounded-card border border-white/15 bg-white/[0.08] px-3.5 py-3 text-[15px] leading-relaxed text-white placeholder:text-white/40 focus:border-turquoise focus:outline-none focus:ring-2 focus:ring-turquoise/30"
+              className="w-full rounded-[16px] border border-white/15 bg-white/[0.08] px-3.5 py-3 text-[16px] leading-relaxed text-white placeholder:text-white/40 focus:border-sun focus:outline-none"
             />
           </section>
         </>
@@ -398,106 +458,129 @@ export function SessionEditor({
 
       <FormError>{error}</FormError>
 
-      <div className="space-y-3 rounded-group bg-surface p-4">
-        <div className="flex items-baseline justify-between">
-          <span className="text-[15px] font-semibold text-ink">
-            {published ? "Publikováno" : "Koncept"}
-          </span>
-          {saved && (
-            <span className="text-[14px] text-turquoise-700">Uloženo</span>
+      <Step number={3} title={published ? "Zveřejněno" : "Zveřejni"} />
+      {published ? (
+        <section className="space-y-4 rounded-[24px] bg-turquoise-100 p-5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-turquoise text-on-sun">
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12.5l4.5 4.5L19 7.5" />
+              </svg>
+            </span>
+            <div className="min-w-0">
+              <p className="font-display text-[18px] font-extrabold tracking-tight text-ink">
+                Klient zápis vidí
+              </p>
+              <p className="text-[14px] leading-snug text-ink-600">
+                Změny se mu projeví hned po uložení.
+              </p>
+            </div>
+          </div>
+
+          {email.ready && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-[16px] bg-surface px-4 py-3">
+              <p className="min-w-0 text-[14px] leading-snug text-ink-600">
+                {emailedLabel
+                  ? `E-mail se zápisem odešel ${emailedLabel}.`
+                  : "E-mail se zápisem zatím neodešel."}
+              </p>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={resend}
+                className="shrink-0 rounded-full bg-night px-4 py-2 text-[13px] font-extrabold text-white disabled:opacity-50"
+              >
+                {emailedLabel ? "Poslat znovu" : "Poslat teď"}
+              </button>
+            </div>
           )}
-        </div>
 
-        <p className="text-[14px] leading-snug text-ink-600">
-          {published
-            ? "Klient zápis vidí. Změny se projeví hned po uložení."
-            : "Klient tenhle zápis nevidí, dokud ho nepublikuješ."}
-        </p>
+          <MailNote note={mailNote} />
 
-        {!published && (
-          <label
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <EmailPreviewLink href={previewHref} dirty={dirty} />
+            <button
+              type="button"
+              disabled={pending}
+              onClick={togglePublished}
+              className="text-[14px] font-bold text-ink-600 underline-offset-2 active:opacity-60 disabled:opacity-50"
+            >
+              Vrátit do konceptu
+            </button>
+          </div>
+        </section>
+      ) : (
+        <section className="space-y-4 rounded-[24px] bg-surface p-5">
+          <div>
+            <p className="font-display text-[18px] font-extrabold tracking-tight text-ink">
+              Pustit zápis klientovi
+            </p>
+            <p className="mt-0.5 text-[14px] leading-snug text-ink-600">
+              Teď je to koncept a klient ho nevidí. Po zveřejnění se mu objeví
+              v aplikaci.
+            </p>
+          </div>
+
+          <div
             className={cn(
-              "flex items-start gap-3 rounded-card bg-canvas px-3.5 py-3",
+              "flex items-center gap-3 rounded-[16px] bg-canvas px-4 py-3",
               !email.ready && "opacity-60",
             )}
           >
-            <input
-              type="checkbox"
-              className="mt-0.5 h-5 w-5 shrink-0 accent-[#5fc3ce]"
-              checked={sendMail}
-              disabled={!email.ready}
-              onChange={(event) => setSendMail(event.target.checked)}
-            />
-            <span className="min-w-0">
-              <span className="block text-[15px] font-semibold text-ink">
-                Poslat e-mail se zápisem
+            <span className="min-w-0 flex-1">
+              <span className="block text-[15px] font-bold text-ink">
+                Poslat i e-mail se zápisem
               </span>
               <span className="block text-[13px] leading-snug text-ink-500">
                 {!email.ready
                   ? "Zatím nejde — chybí propojení s Gmailem ve Vercelu."
                   : emailedAt
-                    ? `Už jednou odešel. Zaškrtni, jen když ho chceš poslat znovu.`
-                    : `Na ${email.to} hned po zveřejnění. Tvoje soukromá poznámka v něm nebude.`}
+                    ? "Už jednou odešel. Zapni, jen když ho chceš poslat znovu."
+                    : `Na ${email.to}, hned po zveřejnění.`}
               </span>
             </span>
-          </label>
-        )}
+            <Toggle
+              checked={sendMail}
+              onChange={setSendMail}
+              label="Poslat e-mail se zápisem"
+              disabled={!email.ready}
+            />
+          </div>
 
-        {published && email.ready && (
-          <p className="text-[13px] leading-snug text-ink-500">
-            {emailedAt
-              ? `E-mail se zápisem odešel ${new Date(emailedAt).toLocaleString("cs-CZ", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}.`
-              : "E-mail se zápisem zatím neodešel."}{" "}
-            <button
-              type="button"
-              disabled={pending}
-              onClick={resend}
-              className="font-semibold text-turquoise-700"
-            >
-              {emailedAt ? "Poslat znovu" : "Poslat teď"}
-            </button>
-          </p>
-        )}
+          <MailNote note={mailNote} />
 
-        {mailNote && (
-          <p
-            className={cn(
-              "rounded-card px-3.5 py-2.5 text-[14px] leading-snug",
-              mailNote.ok ? "bg-turquoise-100 text-turquoise-700" : "bg-sun-surface text-ink",
-            )}
-          >
-            {mailNote.text}
-          </p>
-        )}
-
-        <a
-          href={previewHref}
-          target="_blank"
-          rel="noopener"
-          className="inline-block text-[14px] font-semibold text-turquoise-700"
-        >
-          Náhled e-mailu ↗
-        </a>
-
-        <div className="flex gap-3">
-          <Button
-            variant="quiet"
-            className="flex-1"
-            disabled={pending}
-            onClick={() => save()}
-          >
-            {pending ? "Ukládám…" : "Uložit"}
-          </Button>
-          <Button
-            variant={published ? "quiet" : "primary"}
-            className="flex-1"
-            disabled={pending}
+          <button
+            type="button"
+            disabled={pending || !hasContent}
             onClick={togglePublished}
+            className="flex min-h-[52px] w-full items-center justify-center rounded-full bg-night px-5 text-[16px] font-extrabold text-white transition-opacity active:opacity-80 disabled:opacity-40"
           >
-            {published ? "Vrátit do konceptu" : "Uložit a publikovat"}
-          </Button>
-        </div>
-      </div>
+            {pending
+              ? "Zveřejňuju…"
+              : sendMail
+                ? "Zveřejnit a poslat e-mail"
+                : "Zveřejnit"}
+          </button>
+          {!hasContent ? (
+            <p className="text-center text-[13px] text-ink-500">
+              Nejdřív vlož nebo napiš zápis.
+            </p>
+          ) : (
+            <div className="text-center">
+              <EmailPreviewLink href={previewHref} dirty={dirty} />
+            </div>
+          )}
+        </section>
+      )}
 
       {feedback && <FeedbackSummary feedback={feedback} />}
 
@@ -505,7 +588,106 @@ export function SessionEditor({
         sessionId={session.id}
         onDeleted={() => router.push(`/admin/klienti/${clientId}/sezeni`)}
       />
+
+      {/*
+        Uložit je pořád po ruce. Zápis je dlouhý a tlačítko na jeho konci
+        znamenalo po každé opravě sjet až dolů.
+      */}
+      <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+12px)] z-20">
+        <div className="flex items-center gap-3 rounded-full bg-night py-2 pl-5 pr-2 text-white shadow-[0_8px_24px_rgba(0,0,0,0.25)] ring-1 ring-white/10">
+          <span
+            aria-hidden
+            className={cn(
+              "h-2.5 w-2.5 shrink-0 rounded-full",
+              dirty ? "bg-sun" : "bg-turquoise",
+            )}
+          />
+          <span role="status" className="min-w-0 flex-1 truncate text-[14px] font-bold">
+            {pending
+              ? "Ukládám…"
+              : dirty
+                ? "Neuložené změny"
+                : saveState === "saved"
+                  ? "Uloženo"
+                  : published
+                    ? "Zveřejněno · beze změn"
+                    : "Koncept · beze změn"}
+          </span>
+          <button
+            type="button"
+            disabled={pending || !dirty}
+            onClick={() => save()}
+            className="h-11 shrink-0 rounded-full bg-turquoise px-6 text-[15px] font-extrabold text-on-sun transition-opacity active:opacity-80 disabled:bg-white/15 disabled:text-white/50"
+          >
+            Uložit
+          </button>
+        </div>
+      </div>
     </div>
+  );
+}
+
+function Step({ number, title }: { number: number; title: string }) {
+  return (
+    <p className="flex items-center gap-2 px-1 pt-1 text-[12px] font-bold uppercase tracking-[0.12em] text-ink-500">
+      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-ink text-[11px] font-extrabold tracking-normal text-on-ink">
+        {number}
+      </span>
+      {title}
+    </p>
+  );
+}
+
+function StatusChip({
+  children,
+  tone = "plain",
+}: {
+  children: React.ReactNode;
+  tone?: "plain" | "turquoise" | "sun";
+}) {
+  return (
+    <span
+      className={cn(
+        "rounded-full px-3 py-1.5 text-[13px] font-bold",
+        tone === "turquoise" && "bg-turquoise-100 text-turquoise-700",
+        tone === "sun" && "bg-sun-surface text-ink",
+        tone === "plain" && "bg-surface text-ink-600",
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+function MailNote({ note }: { note?: { ok: boolean; text: string } }) {
+  if (!note) return null;
+  return (
+    <p
+      role="status"
+      className={cn(
+        "rounded-[16px] px-4 py-3 text-[14px] font-semibold leading-snug",
+        note.ok ? "bg-turquoise text-on-sun" : "bg-sun-surface text-ink",
+      )}
+    >
+      {note.text}
+    </p>
+  );
+}
+
+/** Náhled ukazuje uložený stav — s neuloženými změnami by mátl. */
+function EmailPreviewLink({ href, dirty }: { href: string; dirty: boolean }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener"
+      className="inline-block text-[14px] font-bold text-turquoise-700"
+    >
+      Náhled e-mailu ↗
+      {dirty && (
+        <span className="font-normal text-ink-500"> (bez neuložených změn)</span>
+      )}
+    </a>
   );
 }
 
@@ -540,36 +722,47 @@ function SortChip({ filled, found }: { filled: boolean; found: boolean }) {
 }
 
 function FeedbackSummary({ feedback }: { feedback: SessionFeedback }) {
-  const rows = [
-    feedback.rating ? { label: "Hodnocení", value: `${feedback.rating}/10` } : null,
-    feedback.feeling ? { label: "Po sezení", value: feedback.feeling } : null,
-  ].filter((row) => row !== null);
+  const chips = [
+    feedback.rating ? `${feedback.rating}/10` : null,
+    feedback.feeling || null,
+  ].filter((chip): chip is string => Boolean(chip));
 
-  if (rows.length === 0 && !feedback.takeaway && !feedback.favorite_topic) return null;
+  if (chips.length === 0 && !feedback.takeaway && !feedback.favorite_topic) return null;
 
   return (
-    <section className="space-y-3 rounded-group bg-surface p-4">
-      <h2 className="font-display text-[19px] font-semibold text-ink">
+    <section className="space-y-3 rounded-[24px] bg-turquoise px-5 py-5 text-on-sun">
+      <p className="text-[12px] font-bold uppercase tracking-[0.12em]">
         Zpětná vazba klienta
-      </h2>
+      </p>
       {feedback.takeaway && (
         <div>
-          <p className="text-[13px] font-semibold text-ink-600">Co si odnáší</p>
-          <Markdown source={feedback.takeaway} className="mt-1" />
+          <p className="text-[13px] font-bold opacity-70">Co si odnáší</p>
+          <Markdown
+            source={feedback.takeaway}
+            tone="accent"
+            size="lg"
+            className="mt-1 font-display font-bold"
+          />
         </div>
       )}
       {feedback.favorite_topic && (
         <div>
-          <p className="text-[13px] font-semibold text-ink-600">Nejvíc bavilo</p>
-          <Markdown source={feedback.favorite_topic} className="mt-1" />
+          <p className="text-[13px] font-bold opacity-70">Nejvíc ho bavilo</p>
+          <Markdown source={feedback.favorite_topic} tone="accent" className="mt-1" />
         </div>
       )}
-      {rows.map((row) => (
-        <div key={row.label} className="flex items-baseline justify-between gap-3">
-          <p className="text-[13px] font-semibold text-ink-600">{row.label}</p>
-          <p className="text-right text-[15px] font-semibold text-ink">{row.value}</p>
-        </div>
-      ))}
+      {chips.length > 0 && (
+        <p className="flex flex-wrap gap-1.5">
+          {chips.map((chip) => (
+            <span
+              key={chip}
+              className="rounded-full bg-white/85 px-3 py-1.5 text-[13px] font-bold"
+            >
+              {chip}
+            </span>
+          ))}
+        </p>
+      )}
     </section>
   );
 }
@@ -586,30 +779,39 @@ function DeleteSession({
   const [pending, startTransition] = useTransition();
 
   if (!confirming) {
+    // Schválně nenápadné: mazání nemá soutěžit s ukládáním a zveřejněním.
     return (
-      <Button variant="danger" full onClick={() => setConfirming(true)}>
-        Smazat sezení
-      </Button>
+      <div className="text-center">
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          className="min-h-[44px] px-4 text-[14px] font-bold text-danger active:opacity-60"
+        >
+          Smazat sezení
+        </button>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-3 rounded-group bg-surface p-4">
-      <p className="text-[15px] leading-relaxed text-ink-600">
+    <div className="space-y-3 rounded-[24px] bg-surface p-5">
+      <p className="font-display text-[18px] font-extrabold tracking-tight text-ink">
+        Opravdu smazat?
+      </p>
+      <p className="text-[15px] leading-snug text-ink-600">
         Smaže zápis i zpětnou vazbu klienta. Nejde to vrátit.
       </p>
       <FormError>{error}</FormError>
-      <div className="flex gap-3">
-        <Button
-          variant="quiet"
-          className="flex-1"
+      <div className="flex gap-2">
+        <button
+          type="button"
           onClick={() => setConfirming(false)}
+          className="min-h-[48px] flex-1 rounded-full bg-canvas px-5 text-[15px] font-bold text-ink"
         >
-          Zpět
-        </Button>
-        <Button
-          variant="danger"
-          className="flex-1"
+          Nechat být
+        </button>
+        <button
+          type="button"
           disabled={pending}
           onClick={() =>
             startTransition(async () => {
@@ -618,9 +820,10 @@ function DeleteSession({
               onDeleted();
             })
           }
+          className="min-h-[48px] flex-1 rounded-full bg-danger px-5 text-[15px] font-extrabold text-white disabled:opacity-50"
         >
           {pending ? "Mažu…" : "Smazat"}
-        </Button>
+        </button>
       </div>
     </div>
   );

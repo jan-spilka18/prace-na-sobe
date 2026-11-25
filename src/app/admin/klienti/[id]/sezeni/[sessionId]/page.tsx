@@ -2,8 +2,7 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Screen } from "@/components/ui/Screen";
-import { formatCzechDate } from "@/lib/date";
-import { SESSION_KIND_LABELS } from "@/lib/sessionTemplate";
+import { sessionHeading } from "@/lib/sessionTemplate";
 import { SessionEditor } from "./SessionEditor";
 import { PrepEditor } from "./PrepEditor";
 import { emailConfigured } from "@/lib/email";
@@ -66,29 +65,38 @@ export default async function AdminSessionPage({
       .filter((row) => row.status === "published" || row.id === session.id)
       .findIndex((row) => row.id === session.id) + 1;
 
+  const heading = sessionHeading(session.session_date, session.kind, order);
+  const hasContent = Object.values(session.content ?? {}).some(
+    (value) => (value ?? "").trim() !== "",
+  );
+
   return (
     <Screen
-      title={formatCzechDate(session.session_date)}
-      subtitle={SESSION_KIND_LABELS[session.kind]}
+      eyebrow={client?.full_name || client?.email || "Klient"}
+      title={heading.title}
+      subtitle={heading.subtitle}
       back={{ href: `/admin/klienti/${id}/sezeni`, label: "Sezení" }}
     >
-      <div className="space-y-5">
-        {/* Nad zápisem schválně: připravuje se dřív, než se píše. */}
-        <PrepEditor sessionId={sessionId} initial={prep?.content ?? ""} />
-
-        <SessionEditor
-          session={session}
-          feedback={feedback ?? null}
-          clientId={id}
-          order={order}
-          coachNote={coachNote?.note ?? ""}
-          email={{
-            ready: emailConfigured(),
-            to: client?.email ?? "",
-            name: client?.full_name || client?.email || "klient",
-          }}
-        />
-      </div>
+      <SessionEditor
+        session={session}
+        feedback={feedback ?? null}
+        clientId={id}
+        order={order}
+        coachNote={coachNote?.note ?? ""}
+        email={{
+          ready: emailConfigured(),
+          to: client?.email ?? "",
+          name: client?.full_name || client?.email || "klient",
+        }}
+        prep={
+          // Před sezením otevřená, po něm (když už je zápis) sbalená.
+          <PrepEditor
+            sessionId={sessionId}
+            initial={prep?.content ?? ""}
+            defaultOpen={!hasContent}
+          />
+        }
+      />
     </Screen>
   );
 }
