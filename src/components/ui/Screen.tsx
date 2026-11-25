@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
-import { BrandLogo } from "@/components/Brand";
+import { BrandMark } from "@/components/Brand";
 
 /**
  * Obrazovka: malý štítek nad velkým nadpisem a obsah pod ním.
@@ -24,7 +24,7 @@ export function Screen({
    * nechce malé verzálkové nadtitulky, proto je pod nadpisem a běžným písmem.
    */
   eyebrow?: React.ReactNode;
-  /** Logo nad nadpisem — jen na hlavních obrazovkách. */
+  /** Miniatura „hs." nad nadpisem — jen na hlavních obrazovkách. */
   brand?: boolean;
   /** Text, nebo při načítání kostra místo něj. */
   title: React.ReactNode;
@@ -82,7 +82,7 @@ export function Screen({
       >
         {brand && !back && (
           <div className="px-1 pt-4">
-            <BrandLogo className="h-[22px]" />
+            <BrandMark className="h-9 w-9" />
           </div>
         )}
         <div className={cn("mb-6 flex items-end gap-3 px-1", !back && "pt-5")}>

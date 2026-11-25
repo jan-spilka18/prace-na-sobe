@@ -1,4 +1,4 @@
-import { BrandLogo } from "@/components/Brand";
+import { BrandMark } from "@/components/Brand";
 import { requireProfile } from "@/lib/auth";
 import { Screen } from "@/components/ui/Screen";
 import { ListGroup, ListRow } from "@/components/ui/List";
@@ -77,7 +77,7 @@ export default async function SettingsPage() {
         </section>
 
         <div className="flex flex-col items-center gap-2 pt-4">
-          <BrandLogo className="h-5 opacity-80" />
+          <BrandMark className="h-9 w-9" />
           <p className="text-[14px] text-ink-500">{APP_NAME}</p>
         </div>
       </div>

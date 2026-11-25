@@ -187,28 +187,6 @@ b {
   letter-spacing: -0.02em;
 }
 
-/*
-  Logo má dvě verze: tmavé na světlé pozadí a bílé na tmavé. Která se
-  ukáže, řídí stejná pravidla jako barvy — podle telefonu, nebo ruční volby.
-*/
-.brand-on-dark {
-  display: none;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .brand-on-light {
-    display: none;
-  }
-  :root:not([data-theme="light"]) .brand-on-dark {
-    display: block;
-  }
-}
-:root[data-theme="dark"] .brand-on-light {
-  display: none;
-}
-:root[data-theme="dark"] .brand-on-dark {
-  display: block;
-}
-
 /* Bezpečné zóny pro iPhone s home indicatorem */
 @utility pb-safe {
   padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);

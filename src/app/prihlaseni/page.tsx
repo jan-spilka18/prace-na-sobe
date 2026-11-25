@@ -1,5 +1,5 @@
 import { APP_NAME } from "@/lib/config";
-import { BrandLogo } from "@/components/Brand";
+import { BrandMark } from "@/components/Brand";
 import { SignInForm } from "./SignInForm";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/auth";
@@ -21,9 +21,8 @@ export default async function SignInPage({
     <div className="flex min-h-dvh flex-col justify-center bg-canvas px-5 py-12">
       <div className="mx-auto w-full max-w-sm">
         <div className="mb-10 text-center">
-          {/* Wordmark přes zhruba 60 % šířky, jak říká manuál log. */}
-          <BrandLogo className="mx-auto h-auto w-[60vw] max-w-[230px]" />
-          <h1 className="mt-9 font-display text-[28px] font-bold leading-[1.15] text-ink">
+          <BrandMark className="mx-auto h-[84px] w-[84px]" />
+          <h1 className="mt-6 font-display text-[28px] font-bold leading-[1.15] text-ink">
             {APP_NAME}
           </h1>
           <p className="mt-1.5 text-[16px] leading-normal text-ink-600">
