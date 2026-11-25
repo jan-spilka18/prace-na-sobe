@@ -506,7 +506,7 @@ export function SessionEditor({
             </div>
           </div>
 
-          {email.ready && (
+          {email.ready ? (
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-[16px] bg-surface px-4 py-3">
               <p className="min-w-0 text-[14px] leading-snug text-ink-600">
                 {emailedLabel
@@ -519,8 +519,23 @@ export function SessionEditor({
                 onClick={resend}
                 className="shrink-0 rounded-full bg-night px-4 py-2 text-[13px] font-extrabold text-white disabled:opacity-50"
               >
-                {emailedLabel ? "Poslat znovu" : "Poslat teď"}
+                {emailedLabel ? "Poslat znovu" : "Poslat e-mail teď"}
               </button>
+            </div>
+          ) : (
+            // Bez propojení s Gmailem tlačítko nejde nabídnout — ale musí
+            // být vidět proč, jinak ho Honza marně hledá.
+            <div className="space-y-1 rounded-[16px] bg-surface px-4 py-3">
+              <p className="text-[14px] font-bold text-ink">
+                E-mail zatím poslat nejde
+              </p>
+              <p className="text-[13px] leading-snug text-ink-600">
+                Aplikace ještě není propojená s tvým Gmailem. Ve Vercelu chybí{" "}
+                <code className="font-semibold">GMAIL_USER</code> a{" "}
+                <code className="font-semibold">GMAIL_APP_PASSWORD</code>. Jakmile
+                je doplníš a dáš Redeploy, objeví se tady tlačítko „Poslat e-mail
+                teď“.
+              </p>
             </div>
           )}
 
@@ -562,7 +577,7 @@ export function SessionEditor({
               </span>
               <span className="block text-[13px] leading-snug text-ink-500">
                 {!email.ready
-                  ? "Zatím nejde — chybí propojení s Gmailem ve Vercelu."
+                  ? "Zatím nejde — ve Vercelu chybí GMAIL_USER a GMAIL_APP_PASSWORD."
                   : emailedAt
                     ? "Už jednou odešel. Zapni, jen když ho chceš poslat znovu."
                     : `Na ${email.to}, hned po zveřejnění.`}
